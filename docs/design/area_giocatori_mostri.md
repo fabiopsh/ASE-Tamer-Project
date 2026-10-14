@@ -22,7 +22,7 @@ User stories coperte: US-01, US-02, US-03, US-05 🟡, US-06, US-09, US-10, US-1
 | D4 | Caratteristiche dei mostri | **Ricche**: elemento, rarità, 4 statistiche, abilità speciale, crescita di livello | Danno varietà agli encounter |
 | D5 | Scala delle statistiche | **Interi 1–100** | Comodi per i calcoli; il frontend può mostrarli come stelle |
 | D6 | Duplicati | **Ammessi**: ogni mostro posseduto è un'istanza con un proprio `owned_id` | Catturare due volte la stessa specie è naturale; livello e XP sono per istanza |
-| D7 | Collezione iniziale | Il giocatore **sceglie 3 starter distinti** da un pool di **~10 mostri common**, una sola volta | Personalizza l'inizio del gioco (copre anche US-07, verde) |
+| D7 | Collezione iniziale | Il giocatore **sceglie 3 starter distinti** da un pool di **10 mostri common** estratto a caso per il suo account, una sola volta | Personalizza l'inizio del gioco (copre anche US-07, verde) |
 | D8 | Immagini | **File statici** serviti dal backend; nel DB solo `image_url` | Evita BLOB nel database |
 | D9 | Catalogo | **100 mostri**: dati e descrizioni generati; immagini pixel art da un modello locale tramite pipeline | Catalogo ampio senza lavoro manuale per ogni mostro |
 | D10 | Formato AC | **Lista puntata**, criteri brevi e testabili | Entrano in 1–2 slide |
@@ -53,6 +53,7 @@ User stories coperte: US-01, US-02, US-03, US-05 🟡, US-06, US-09, US-10, US-1
 | `player_id` | UUID, PK | |
 | `display_name` | string | Nome mostrato in gioco |
 | `stage` | int | Progressione nel gioco; significato da concordare con chi definisce gli encounter |
+| `starter_pool` | lista di `monster_id` | 10 common estratti a caso alla creazione dell'account; fissati, così ricaricare non cambia l'offerta |
 | `starters_chosen` | bool | `true` dopo la scelta degli starter, che non si può ripetere |
 | `created_at` | timestamp | |
 
@@ -63,9 +64,8 @@ User stories coperte: US-01, US-02, US-03, US-05 🟡, US-06, US-09, US-10, US-1
 | `monster_id` | int, PK | |
 | `name` | string, unique | |
 | `description` | string | |
-| `element` | enum | Es. fire / water / earth / air / dark (lista definitiva in fase di generazione) |
+| `element` | enum | `dream` / `echo` / `time` / `gravity` / `silence` / `memory` / `chaos` (vedi sezione 5) |
 | `rarity` | enum | `common` / `rare` / `legendary` |
-| `is_starter` | bool | Marca i ~10 common del pool starter |
 | `base_hp`, `base_attack`, `base_defense`, `base_speed` | int 1–100 | Statistiche al livello 1 |
 | `growth_hp`, `growth_attack`, `growth_defense`, `growth_speed` | number | Aumento della statistica per ogni livello |
 | `ability_id` | ref → `Abilities` | |
@@ -142,7 +142,8 @@ statistica_effettiva = base + growth × (level − 1)
 
 **US-06 — Ricevere una collezione iniziale** 🔴
 *Dipendenze: US-01, US-10*
-- Il giocatore vede il pool di ~10 starter.
+- Alla creazione dell'account viene estratto a caso un pool di 10 mostri common, diverso per ogni giocatore e salvato nel suo profilo.
+- Il giocatore vede il proprio pool; ricaricare la pagina o rifare il login non lo cambia.
 - Ne sceglie esattamente 3, distinti tra loro.
 - I 3 mostri vengono aggiunti alla collezione a livello 1, con `source = starter`.
 - La scelta si può fare una sola volta (`starters_chosen`).
@@ -187,6 +188,60 @@ statistica_effettiva = base + growth × (level − 1)
 | Architettura | Auth come componente separato con il proprio database (`Accounts`). |
 | Tutti | D7 copre anche **US-07** (verde) e D13 tocca **US-13** (verde): entrano già nel nostro scope. |
 
-## 5. Prossimo passo
+## 5. Catalogo dei mostri
 
-Generazione dei 100 mostri: elenco degli elementi, distribuzione delle rarità, catalogo delle abilità, dati e descrizioni, poi pipeline per le immagini pixel art.
+### Decisioni sui dati
+
+| # | Tema | Decisione |
+|---|---|---|
+| G1 | Elementi | 7 elementi **concettuali**: Dream, Echo, Time, Gravity, Silence, Memory, Chaos |
+| G2 | Interazioni | **Ciclo semplice**: ogni elemento è forte contro il successivo, debole contro il precedente, neutro con gli altri 4 |
+| G3 | Rarità | **60 common / 30 rare / 10 legendary** |
+| G4 | Distribuzione | **Chaos speciale**: 8 mostri quasi tutti rare/legendary; gli altri 6 elementi si dividono i restanti 92 (15–16 ciascuno) |
+| G5 | Abilità | ~25: ~10 **generiche** + 2–3 **per elemento**; i legendary hanno abilità **esclusive** più forti |
+| G6 | Starter | Pool di **10 common estratti a caso per ogni nuovo account** (salvato in `Players.starter_pool`); il giocatore ne sceglie 3 distinti. Nessun mostro è marcato come starter nel catalogo |
+| G7 | Lingua | Nomi e descrizioni in **inglese** |
+| G8 | Stile visivo | **Stile Pokémon, approccio ibrido**: circa metà dei mostri sono oggetti legati all'elemento con tratti da mostro (occhi, bocca, arti, espressione), l'altra metà creature fuse con oggetti dell'elemento. Common carini, rare "cool", legendary maestosi; niente horror né grottesco |
+| G9 | Immagini | SDXL + LoRA Pixel Art XL in locale, sprite **64×64** trasparenti (pipeline in `tools/monster-gen/`) |
+
+### Ciclo degli elementi
+
+```
+Silence → Echo → Memory → Time → Chaos → Gravity → Dream → Silence
+```
+
+| Forte | contro | Perché |
+|---|---|---|
+| Silence | Echo | Il silenzio spegne l'eco |
+| Echo | Memory | L'eco distorce i ricordi |
+| Memory | Time | La memoria sopravvive al tempo |
+| Time | Chaos | Il tempo ricompone il caos |
+| Chaos | Gravity | Il caos rompe le leggi fisiche |
+| Gravity | Dream | La gravità riporta a terra chi sogna |
+| Dream | Silence | Il sogno riempie il silenzio |
+
+### Distribuzione proposta
+
+| Elemento | Common | Rare | Legendary | Totale |
+|---|---|---|---|---|
+| Chaos | 1 | 4 | 3 | 8 |
+| Altri 6 (ciascuno) | 9–10 | 4–5 | 1–2 | 15–16 |
+| **Totale** | **60** | **30** | **10** | **100** |
+
+### Motivi visivi per elemento (proposta per i prompt)
+
+Gli elementi concettuali vanno resi con oggetti concreti, altrimenti a 64×64 non si riconoscono:
+
+| Elemento | Motivi | Palette |
+|---|---|---|
+| Dream | nuvole, stelle, lune, occhi socchiusi, cuscini | lilla, rosa pastello |
+| Echo | onde sonore, conchiglie, campane, bocche aperte, cristalli che vibrano | turchese, argento |
+| Time | clessidre, ingranaggi, quadranti, sabbia | ottone, ocra |
+| Gravity | pianeti in orbita, rocce sospese, anelli, buchi neri | blu notte, viola |
+| Silence | maschere, neve, piume, bende sulla bocca | bianco, grigio freddo |
+| Memory | fotografie, libri, nastri, fili annodati, vetro incrinato | seppia, ambra |
+| Chaos | frammenti, glitch, colori incoerenti, forme impossibili | colori saturi in contrasto |
+
+## 6. Prossimo passo
+
+Generare `abilities.json` e `monsters.json` in `tools/monster-gen/data/`, validarli, poi avviare la pipeline delle immagini.

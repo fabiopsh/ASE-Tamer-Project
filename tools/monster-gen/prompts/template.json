@@ -1,0 +1,23 @@
+{
+  "prefix": "pixel art, pokemon style",
+  "suffix": "single monster isolated on a {background}, whole body visible, centered, flat colors, clean outline",
+  "background": {
+    "default": "plain white background",
+    "silence": "plain black background"
+  },
+  "rarity": {
+    "common": "cute, simple clean shapes",
+    "rare": "cool, appealing design",
+    "legendary": "large, majestic, appealing design"
+  },
+  "element": {
+    "dream": "lilac and pastel pink palette",
+    "echo": "turquoise and silver palette",
+    "time": "brass and ochre palette",
+    "gravity": "navy blue and violet palette",
+    "silence": "white and cold grey palette",
+    "memory": "sepia and amber palette",
+    "chaos": "clashing saturated colors"
+  },
+  "negative": "sprite sheet, character sheet, multiple views, many creatures, group, crowd, grid, duplicates, cut off, out of frame, ugly, grotesque, zombie, demon, screaming, sharp teeth, messy, creepy, humanoid, human face, realistic, 3d render, photo, blurry, text, watermark, scenery, frame, shadow"
+}

@@ -1,0 +1,282 @@
+[
+  {
+    "ability_id": 1,
+    "name": "Thick Hide",
+    "scope": "generic",
+    "element": null,
+    "effect_type": "damage_reduction",
+    "effect_value": 10,
+    "trigger": "always",
+    "description": "Tough skin reduces all damage taken by 10%."
+  },
+  {
+    "ability_id": 2,
+    "name": "Quick Reflexes",
+    "scope": "generic",
+    "element": null,
+    "effect_type": "dodge",
+    "effect_value": 10,
+    "trigger": "always",
+    "description": "10% chance to dodge any attack."
+  },
+  {
+    "ability_id": 3,
+    "name": "Second Wind",
+    "scope": "generic",
+    "element": null,
+    "effect_type": "heal",
+    "effect_value": 15,
+    "trigger": "hp_below_50",
+    "description": "The first time HP drops below 50%, restores 15% of max HP."
+  },
+  {
+    "ability_id": 4,
+    "name": "Opening Strike",
+    "scope": "generic",
+    "element": null,
+    "effect_type": "damage_boost",
+    "effect_value": 20,
+    "trigger": "first_turn",
+    "description": "Deals 20% more damage on its first action."
+  },
+  {
+    "ability_id": 5,
+    "name": "Stubborn",
+    "scope": "generic",
+    "element": null,
+    "effect_type": "damage_reduction",
+    "effect_value": 20,
+    "trigger": "hp_below_50",
+    "description": "Below 50% HP, takes 20% less damage."
+  },
+  {
+    "ability_id": 6,
+    "name": "Momentum",
+    "scope": "generic",
+    "element": null,
+    "effect_type": "speed_boost",
+    "effect_value": 15,
+    "trigger": "always",
+    "description": "Speed increased by 15%."
+  },
+  {
+    "ability_id": 7,
+    "name": "Spiteful Thorns",
+    "scope": "generic",
+    "element": null,
+    "effect_type": "reflect",
+    "effect_value": 10,
+    "trigger": "on_hit",
+    "description": "Returns 10% of the damage taken to the attacker."
+  },
+  {
+    "ability_id": 8,
+    "name": "Lullaby",
+    "scope": "element",
+    "element": "dream",
+    "effect_type": "stun",
+    "effect_value": 15,
+    "trigger": "on_attack",
+    "description": "Its attacks have a 15% chance to put the opponent to sleep for one action."
+  },
+  {
+    "ability_id": 9,
+    "name": "Lucid Shift",
+    "scope": "element",
+    "element": "dream",
+    "effect_type": "dodge",
+    "effect_value": 20,
+    "trigger": "hp_above_50",
+    "description": "While above 50% HP, has a 20% chance to dodge attacks."
+  },
+  {
+    "ability_id": 10,
+    "name": "Resonance",
+    "scope": "element",
+    "element": "echo",
+    "effect_type": "damage_boost",
+    "effect_value": 15,
+    "trigger": "always",
+    "description": "Its attacks resonate, dealing 15% more damage."
+  },
+  {
+    "ability_id": 11,
+    "name": "Feedback",
+    "scope": "element",
+    "element": "echo",
+    "effect_type": "reflect",
+    "effect_value": 20,
+    "trigger": "on_hit",
+    "description": "Returns 20% of the damage taken as a painful echo."
+  },
+  {
+    "ability_id": 12,
+    "name": "Rewind",
+    "scope": "element",
+    "element": "time",
+    "effect_type": "heal",
+    "effect_value": 25,
+    "trigger": "hp_below_50",
+    "description": "The first time HP drops below 50%, rewinds its wounds restoring 25% of max HP."
+  },
+  {
+    "ability_id": 13,
+    "name": "Haste",
+    "scope": "element",
+    "element": "time",
+    "effect_type": "speed_boost",
+    "effect_value": 25,
+    "trigger": "first_turn",
+    "description": "Speed increased by 25% on its first action."
+  },
+  {
+    "ability_id": 14,
+    "name": "Heavy Body",
+    "scope": "element",
+    "element": "gravity",
+    "effect_type": "damage_reduction",
+    "effect_value": 20,
+    "trigger": "always",
+    "description": "Its immense density reduces all damage taken by 20%."
+  },
+  {
+    "ability_id": 15,
+    "name": "Crushing Pull",
+    "scope": "element",
+    "element": "gravity",
+    "effect_type": "damage_boost",
+    "effect_value": 25,
+    "trigger": "vs_faster",
+    "description": "Deals 25% more damage to faster opponents."
+  },
+  {
+    "ability_id": 16,
+    "name": "Muffle",
+    "scope": "element",
+    "element": "silence",
+    "effect_type": "weaken",
+    "effect_value": 15,
+    "trigger": "first_turn",
+    "description": "Smothers the opponent at the start, reducing its attack by 15%."
+  },
+  {
+    "ability_id": 17,
+    "name": "Unseen",
+    "scope": "element",
+    "element": "silence",
+    "effect_type": "dodge",
+    "effect_value": 25,
+    "trigger": "first_turn",
+    "description": "25% chance to dodge the first attack it receives."
+  },
+  {
+    "ability_id": 18,
+    "name": "Recall",
+    "scope": "element",
+    "element": "memory",
+    "effect_type": "damage_boost",
+    "effect_value": 20,
+    "trigger": "hp_below_50",
+    "description": "Remembers every wound: below 50% HP deals 20% more damage."
+  },
+  {
+    "ability_id": 19,
+    "name": "Imprint",
+    "scope": "element",
+    "element": "memory",
+    "effect_type": "ignore_disadvantage",
+    "effect_value": 100,
+    "trigger": "always",
+    "description": "Has learned from the past: element disadvantage has no effect on it."
+  },
+  {
+    "ability_id": 20,
+    "name": "Entropy",
+    "scope": "element",
+    "element": "chaos",
+    "effect_type": "random_boost",
+    "effect_value": 30,
+    "trigger": "always",
+    "description": "At every action, a random stat is increased by 30%."
+  },
+  {
+    "ability_id": 21,
+    "name": "Wild Surge",
+    "scope": "element",
+    "element": "chaos",
+    "effect_type": "damage_boost",
+    "effect_value": 40,
+    "trigger": "hp_below_50",
+    "description": "Below 50% HP, chaos takes over: deals 40% more damage."
+  },
+  {
+    "ability_id": 22,
+    "name": "Dreamweaver",
+    "scope": "legendary",
+    "element": "dream",
+    "effect_type": "stun",
+    "effect_value": 35,
+    "trigger": "on_attack",
+    "description": "Its attacks have a 35% chance to trap the opponent in a dream for one action."
+  },
+  {
+    "ability_id": 23,
+    "name": "Endless Chorus",
+    "scope": "legendary",
+    "element": "echo",
+    "effect_type": "reflect",
+    "effect_value": 40,
+    "trigger": "on_hit",
+    "description": "Every blow it receives echoes back: returns 40% of the damage taken."
+  },
+  {
+    "ability_id": 24,
+    "name": "Hourglass Reversal",
+    "scope": "legendary",
+    "element": "time",
+    "effect_type": "revive",
+    "effect_value": 50,
+    "trigger": "once",
+    "description": "Once per encounter, when defeated, turns back time and returns with 50% HP."
+  },
+  {
+    "ability_id": 25,
+    "name": "Event Horizon",
+    "scope": "legendary",
+    "element": "gravity",
+    "effect_type": "damage_reduction",
+    "effect_value": 40,
+    "trigger": "always",
+    "description": "Attacks bend around it: all damage taken is reduced by 40%."
+  },
+  {
+    "ability_id": 26,
+    "name": "Absolute Quiet",
+    "scope": "legendary",
+    "element": "silence",
+    "effect_type": "weaken",
+    "effect_value": 35,
+    "trigger": "always",
+    "description": "Imposes total silence: the opponent's attack is reduced by 35%."
+  },
+  {
+    "ability_id": 27,
+    "name": "Eternal Archive",
+    "scope": "legendary",
+    "element": "memory",
+    "effect_type": "copy_ability",
+    "effect_value": 100,
+    "trigger": "first_turn",
+    "description": "Reads the opponent's past and copies its ability for the rest of the encounter."
+  },
+  {
+    "ability_id": 28,
+    "name": "Paradox Engine",
+    "scope": "legendary",
+    "element": "chaos",
+    "effect_type": "invert_advantage",
+    "effect_value": 100,
+    "trigger": "always",
+    "description": "Breaks the rules: element advantages are reversed for the whole encounter."
+  }
+]

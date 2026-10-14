@@ -1,0 +1,29 @@
+{
+  "cycle": [
+    "silence",
+    "echo",
+    "memory",
+    "time",
+    "chaos",
+    "gravity",
+    "dream"
+  ],
+  "strong_against": {
+    "silence": "echo",
+    "echo": "memory",
+    "memory": "time",
+    "time": "chaos",
+    "chaos": "gravity",
+    "gravity": "dream",
+    "dream": "silence"
+  },
+  "weak_against": {
+    "silence": "dream",
+    "echo": "silence",
+    "memory": "echo",
+    "time": "memory",
+    "chaos": "time",
+    "gravity": "chaos",
+    "dream": "gravity"
+  }
+}
