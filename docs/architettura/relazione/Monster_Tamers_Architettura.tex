@@ -1,0 +1,977 @@
+% Monster Tamers - Documento di architettura
+% Compilazione: tectonic Monster_Tamers_Architettura.tex
+\PassOptionsToPackage{obeyspaces,spaces}{url}
+\documentclass[11pt,a4paper]{report}
+
+\usepackage{fontspec}
+\usepackage[italian]{babel}
+\usepackage[a4paper,top=2.6cm,bottom=2.6cm,left=2.7cm,right=2.7cm,headheight=14pt]{geometry}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,fit,calc,shapes.geometric}
+\usepackage{array,tabularx,booktabs,xltabular}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{caption}
+\usepackage{amsmath}
+\usepackage{needspace}
+\usepackage[hidelinks]{hyperref}
+
+\setmainfont{texgyrepagella}[
+  Extension=.otf, UprightFont=*-regular, BoldFont=*-bold,
+  ItalicFont=*-italic, BoldItalicFont=*-bolditalic]
+\setsansfont{texgyreheros}[
+  Extension=.otf, UprightFont=*-regular, BoldFont=*-bold,
+  ItalicFont=*-italic, BoldItalicFont=*-bolditalic]
+\setmonofont{lmmono10-regular}[Extension=.otf, Scale=MatchLowercase]
+
+\definecolor{rule}{gray}{0.55}
+\definecolor{boxfill}{gray}{0.93}
+
+% Typography
+\linespread{1.08}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.55em}
+\setlength{\emergencystretch}{3em}
+\setlist{itemsep=0.15em, topsep=0.3em}
+\captionsetup{font=small, labelfont=bf, labelsep=period}
+\renewcommand{\arraystretch}{1.25}
+\renewcommand{\topfraction}{0.9}
+\renewcommand{\textfraction}{0.1}
+\renewcommand{\floatpagefraction}{0.85}
+\makeatletter\setlength{\@fptop}{0pt}\makeatother
+
+\titleformat{\chapter}[display]
+  {\sffamily\bfseries\Large}{\normalsize\MakeUppercase{\chaptertitlename}~\thechapter}{0.3em}{\LARGE}
+  [\vspace{0.2em}{\color{rule}\titlerule}]
+\titlespacing*{\chapter}{0pt}{0pt}{1.6em}
+\titleformat{\section}{\sffamily\bfseries\large}{\thesection}{0.8em}{}
+\titleformat{\subsection}{\sffamily\bfseries\normalsize}{\thesubsection}{0.8em}{}
+\titleformat{\paragraph}[runin]{\sffamily\bfseries\small}{}{0pt}{}[.]
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\sffamily Monster Tamers}
+\fancyhead[R]{\small\sffamily\leftmark}
+\fancyfoot[C]{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\chaptermark}[1]{\markboth{#1}{}}
+\fancypagestyle{plain}{\fancyhf{}\fancyfoot[C]{\small\thepage}\renewcommand{\headrulewidth}{0pt}}
+
+\usepackage{url}
+\DeclareUrlCommand\code{\urlstyle{tt}}
+\renewcommand{\UrlBreaks}{\do\/\do\_\do\-\do\.\do\,\do\=\do\?\do\&}
+\newcommand{\us}[1]{US-#1}
+\newcolumntype{L}{>{\raggedright\arraybackslash}X}
+\newcolumntype{P}[1]{>{\raggedright\arraybackslash}p{#1}}
+
+% Boxed note, grayscale
+\newenvironment{nota}[1]
+  {\par\smallskip\noindent\begin{tabular}{@{}p{\dimexpr\linewidth-2\tabcolsep}@{}}\toprule\textsf{\textbf{\small #1}}\\[0.1em]\small}
+  {\\\bottomrule\end{tabular}\par\smallskip}
+
+% TikZ styles
+\tikzset{
+  svc/.style={draw, rectangle, minimum width=2.25cm, minimum height=1.0cm, align=center, font=\small\sffamily, fill=white},
+  infra/.style={draw, rectangle, rounded corners=2pt, minimum height=1.0cm, align=center, font=\small\sffamily, fill=boxfill},
+  db/.style={draw, cylinder, shape border rotate=90, aspect=0.18, minimum width=1.6cm, minimum height=1.0cm, align=center, font=\scriptsize\sffamily, fill=boxfill},
+  arr/.style={-{Stealth[length=2mm]}, semithick},
+  dasharr/.style={-{Stealth[length=2mm]}, semithick, dashed},
+  lbl/.style={font=\scriptsize\sffamily, fill=white, inner sep=1.5pt},
+}
+
+\hypersetup{pdftitle={Monster Tamers - Documento di architettura}, pdfauthor={Gruppo Monster Tamers}}
+
+\begin{document}
+
+% ---------------------------------------------------------------- Title page
+\begin{titlepage}
+  \sffamily
+  \vspace*{2.5cm}
+  {\small UNIVERSITÀ DI PISA \textbullet{} ADVANCED SOFTWARE ENGINEERING \textbullet{} A.A. 2026/27}\par
+  \vspace{0.6cm}
+  {\color{rule}\rule{\linewidth}{0.6pt}}\par
+  \vspace{0.8cm}
+  {\fontsize{30}{36}\selectfont\bfseries Monster Tamers}\par
+  \vspace{0.4cm}
+  {\Large Documento di architettura e delle scelte progettuali}\par
+  \vspace{0.8cm}
+  {\color{rule}\rule{\linewidth}{0.6pt}}\par
+  \vspace{1.2cm}
+  \begin{tabular}{@{}ll@{}}
+    \textbf{Progetto} & Gioco di collezione di mostri con backend a microservizi \\
+    \textbf{Versione} & 1.0 — prototipo completo \\
+    \textbf{Data} & \today \\
+    \textbf{Stack} & Quarkus 3.27, Java 21, PostgreSQL 16, nginx, Docker Compose \\
+  \end{tabular}
+  \vfill
+  \rmfamily\small
+  Il documento descrive l'architettura del sistema, le motivazioni delle scelte tecnologiche e di progetto, il modello dei dati, le regole di gioco implementate, le misure di sicurezza, la strategia di test e il deployment. Il contratto REST dettagliato è in \code{docs/architettura/api-contract.md}.
+\end{titlepage}
+
+\pagenumbering{roman}
+\tableofcontents
+\clearpage
+\pagenumbering{arabic}
+
+% ================================================================ 1
+\chapter{Introduzione}
+
+\section{Scopo del documento}
+
+Il documento descrive il sistema \emph{Monster Tamers} realizzato per il progetto di laboratorio di Advanced Software Engineering. Ha due obiettivi: spiegare \emph{come} è costruito il sistema e motivare \emph{perché} è stato costruito così. Per ogni decisione rilevante sono indicate le alternative considerate e il criterio che ha portato alla scelta.
+
+Il documento si rivolge ai membri del gruppo, al docente e a chiunque debba estendere o mantenere il sistema.
+
+\section{Il prodotto in sintesi}
+
+Monster Tamers è un gioco di collezione di mostri. Il giocatore:
+\begin{enumerate}
+  \item crea un account e sceglie 3 mostri iniziali da un insieme di 10 estratti per lui;
+  \item compone dei team di massimo 3 mostri;
+  \item affronta \emph{encounter} contro mostri selvatici o contro il guardiano dello stage;
+  \item in caso di vittoria ottiene esperienza, può catturare il mostro sconfitto e, battendo il guardiano, avanza di stage;
+  \item consulta in ogni momento collezione, catalogo e storico delle battaglie.
+\end{enumerate}
+
+\section{Requisiti di progetto}
+
+I requisiti tecnici della consegna e il modo in cui sono soddisfatti sono riassunti in Tabella~\ref{tab:req}.
+
+\begin{table}[ht]
+\centering\small
+\begin{tabularx}{\linewidth}{@{}P{5.2cm}L@{}}
+\toprule
+\textbf{Requisito} & \textbf{Soluzione} \\
+\midrule
+Applicazione distribuita & Sei microservizi indipendenti più un gateway, ognuno in un proprio container \\
+Interfaccia REST & Tutte le funzionalità sono esposte come API REST/JSON, documentate con OpenAPI \\
+Almeno un database & PostgreSQL, con un database e un utente dedicati per ogni servizio \\
+Meccanismi di sicurezza & HTTPS, JWT firmati RS256, bcrypt, rate limiting, controllo di proprietà, catena di hash sullo storico (Capitolo~\ref{ch:security}) \\
+Unit test e test di prestazione & 179 unit test JUnit, 132 test API end-to-end, test di carico Locust (Capitolo~\ref{ch:test}) \\
+Analisi di sicurezza & Capitolo~\ref{ch:security} e \code{docs/architettura/sicurezza.md} \\
+Frontend minimale senza logica di business & Client web statico che usa solo la REST API \\
+Avvio con container & Un solo comando: \code{docker compose up -d --build} \\
+\bottomrule
+\end{tabularx}
+\caption{Requisiti tecnici della consegna.}
+\label{tab:req}
+\end{table}
+
+\section{Struttura del repository}
+
+\begin{center}\small
+\begin{tabularx}{\linewidth}{@{}P{4.4cm}L@{}}
+\toprule
+\textbf{Percorso} & \textbf{Contenuto} \\
+\midrule
+\code{backend/<servizio>/} & Un servizio Quarkus per cartella: \code{pom.xml}, \code{Dockerfile}, sorgenti, test, README \\
+\code{backend/monsters/seed/} & Catalogo generato: 100 mostri, 28 abilità, ciclo degli elementi, sprite $64\times64$ \\
+\code{frontend/} & Client web (HTML, CSS, JavaScript) \\
+\code{gateway/} & Configurazione nginx e Dockerfile del gateway \\
+\code{infra/} & Script di inizializzazione di database, chiavi e certificato \\
+\code{tests/} & Test API (pytest) e test di carico (Locust) \\
+\code{tools/monster-gen/} & Pipeline di generazione del catalogo e delle immagini \\
+\code{docs/} & Consegna, design, architettura (questo documento) \\
+\code{docker-compose.yml} & Definizione dell'intero sistema \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+% ================================================================ 2
+\chapter{Requisiti funzionali}
+
+\section{User stories}
+
+Il backlog contiene 28 user stories. Il colore indica la priorità di progetto: \emph{rossa} per il prototipo, \emph{gialla} per la consegna finale, \emph{verde} opzionale. La Tabella~\ref{tab:us} riporta per ciascuna il servizio che la realizza.
+
+\begin{xltabular}{\linewidth}{@{}P{1.3cm}LP{1.6cm}P{3.2cm}@{}}
+\caption{User stories e servizi responsabili.}\label{tab:us}\\
+\toprule
+\textbf{ID} & \textbf{User story} & \textbf{Priorità} & \textbf{Realizzata da} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{ID} & \textbf{User story} & \textbf{Priorità} & \textbf{Realizzata da} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+\us{01} & Creare un account & rossa & auth, players \\
+\us{02} & Login & rossa & auth \\
+\us{03} & Ritrovare i progressi salvati & rossa & players, PostgreSQL \\
+\us{04} & Personalizzare nome e avatar & verde & players \\
+\us{05} & Proteggere i dati dell'account & gialla & auth, gateway, tutti \\
+\us{06} & Ricevere una collezione iniziale & rossa & players, monsters \\
+\us{07} & Scegliere il primo mostro & verde & players \\
+\us{08} & Scegliere una fazione & verde & \emph{non realizzata} \\
+\us{09} & Vedere la collezione personale & rossa & monsters \\
+\us{10} & Sfogliare il catalogo & rossa & monsters \\
+\us{11} & Vedere i dettagli di un mostro & rossa & monsters \\
+\us{12} & Ottenere un mostro guadagnato & rossa & encounters, monsters \\
+\us{13} & Sviluppare i mostri & verde & monsters (livelli ed esperienza) \\
+\us{14} & Creare un team & rossa & teams \\
+\us{15} & Modificare un team & rossa & teams \\
+\us{16} & Validare un team & rossa & teams \\
+\us{17} & Sfogliare gli encounter & rossa & encounters \\
+\us{18} & Avviare un encounter & rossa & encounters \\
+\us{19} & Risolvere un encounter & rossa & encounters \\
+\us{20} & Dettagli del risultato & rossa & encounters \\
+\us{21} & Abbandonare un encounter & verde & \emph{non applicabile}\textsuperscript{a} \\
+\us{22} & Scegliere le azioni in battaglia & verde & \emph{non realizzata}\textsuperscript{a} \\
+\us{23} & Vedere lo storico & rossa & history \\
+\us{24} & Dettagli di un encounter passato & rossa & history \\
+\us{25} & Proteggere i salvataggi & gialla & history, PostgreSQL \\
+\us{26} & Gestire gli amici & verde & \emph{non realizzata} \\
+\us{27} & Sfidare un amico & verde & \emph{non realizzata} \\
+\us{28} & Interfaccia semplice & rossa & frontend \\
+\end{xltabular}
+{\footnotesize \textsuperscript{a} La battaglia è risolta interamente dal server in un'unica richiesta (Sezione~\ref{sec:battle}); non esiste uno stato intermedio da cui fuggire o in cui scegliere un'azione.\par}
+
+Tutte le user stories rosse e gialle sono realizzate. Delle verdi sono realizzate US-04, US-07 e US-13, che si integrano senza costi nel modello dei dati scelto.
+
+\section{Criteri di accettazione}
+
+I criteri di accettazione delle storie dell'area giocatori e mostri sono in \code{docs/design/area_giocatori_mostri.md}. Quelli delle altre aree sono codificati nel contratto API e verificati dalla suite di test end-to-end (Capitolo~\ref{ch:test}), che riporta per ogni file le user stories coperte.
+
+% ================================================================ 3
+\chapter{Architettura}
+
+\section{Vista d'insieme}
+
+Il sistema segue un'architettura a microservizi con un unico punto di ingresso (Figura~\ref{fig:arch}). Il browser comunica solo con il gateway tramite HTTPS. Il gateway serve il frontend statico e inoltra le richieste \code{/api/*} al servizio competente. I servizi comunicano tra loro con chiamate REST sincrone su una rete Docker privata e ciascuno accede soltanto al proprio database.
+
+\begin{figure}[ht]
+\centering
+\begin{tikzpicture}[node distance=0.6cm and 0.25cm, svc/.append style={minimum width=2.1cm}]
+  \node[svc] (auth) {auth};
+  \node[svc, right=of auth] (players) {players};
+  \node[svc, right=of players] (monsters) {monsters};
+  \node[svc, right=of monsters] (teams) {teams};
+  \node[svc, right=of teams] (enc) {encounters};
+  \node[svc, right=of enc] (hist) {history};
+  \path let \p1 = ($(hist.east)-(auth.west)$) in
+    node[infra, minimum width=\x1, anchor=south] (gw) at ($(auth.north west)!0.5!(hist.north east)+(0,1.1)$)
+    {Gateway nginx\\\scriptsize TLS \textbullet{} file statici \textbullet{} reverse proxy \code{/api/*}, \code{/images/*} \textbullet{} rate limit \textbullet{} header di sicurezza};
+  \node[infra, minimum width=3.4cm, above=0.9cm of gw] (browser) {Browser\\\scriptsize frontend JS};
+  \draw[arr] (browser) -- node[lbl, right=2pt]{HTTPS :8443} (gw);
+  \foreach \s in {auth,players,monsters,teams,enc,hist} \draw[arr] (gw.south -| \s.north) -- (\s.north);
+
+  \foreach \s/\n in {auth/auth,players/players,monsters/monsters,teams/teams,enc/encounters,hist/history}
+    \node[db, below=0.9cm of \s] (db\s) {\n};
+  \foreach \s in {auth,players,monsters,teams,enc,hist} \draw[semithick] (\s.south) -- (db\s.north);
+
+  \node[draw, dashed, rounded corners=3pt, inner sep=5pt, fit=(dbauth)(dbhist), label={[font=\scriptsize\sffamily]below:PostgreSQL 16 \textendash{} un database e un utente per servizio}] {};
+  \node[draw, dashed, rounded corners=3pt, inner sep=7pt, fit=(auth)(hist)(gw), label={[font=\scriptsize\sffamily, anchor=south east]north east:rete Docker \texttt{backend}}] {};
+\end{tikzpicture}
+\caption{Architettura a livello di container.}
+\label{fig:arch}
+\end{figure}
+
+\section{Decomposizione in servizi}
+
+La suddivisione segue i \emph{bounded context} del dominio: ogni servizio possiede un insieme coeso di entità e ne è l'unico autore. La Tabella~\ref{tab:services} riassume le responsabilità.
+
+\begin{table}[ht]
+\centering\small
+\begin{tabularx}{\linewidth}{@{}P{2.0cm}LP{3.6cm}@{}}
+\toprule
+\textbf{Servizio} & \textbf{Responsabilità} & \textbf{Entità} \\
+\midrule
+auth & Registrazione, verifica delle credenziali, emissione dei JWT & \code{Account} \\
+players & Profilo di gioco, pool e scelta degli starter, avanzamento di stage, progressi aggregati & \code{Player} \\
+monsters & Catalogo, abilità, elementi, sprite; collezione dei giocatori, statistiche effettive, esperienza e livelli & \code{Monster}, \code{Ability}, \code{OwnedMonster} \\
+teams & Composizione dei team e loro validazione & \code{Team} \\
+encounters & Bacheca degli encounter, motore di battaglia, calcolo e assegnazione delle ricompense & \code{EncounterOffer}, \code{EncounterRun} \\
+history & Storico persistente delle battaglie, catena di hash, statistiche & \code{HistoryRecord} \\
+\bottomrule
+\end{tabularx}
+\caption{Servizi e responsabilità.}
+\label{tab:services}
+\end{table}
+
+\paragraph{Criteri di decomposizione}
+\begin{itemize}
+  \item \textbf{Credenziali isolate.} \code{auth} è l'unico servizio che conosce password e chiave privata di firma. Il profilo di gioco sta in \code{players}, così i dati sensibili restano confinati in un componente piccolo e facile da verificare.
+  \item \textbf{Il catalogo e la collezione insieme.} Le statistiche effettive di un mostro posseduto dipendono dalla specie (statistiche base e crescita). Tenere \code{OwnedMonster} nello stesso servizio del catalogo evita una chiamata remota per ogni mostro mostrato.
+  \item \textbf{Logica di gioco in un solo punto.} \code{encounters} orchestra la battaglia ma non possiede né la collezione né lo stage: chiede ai servizi proprietari di applicare le modifiche. Ogni dato ha un solo autore.
+  \item \textbf{Storico separato.} \code{history} è un archivio in sola aggiunta con propri requisiti di integrità (US-25); separarlo rende la catena di hash indipendente dalla logica di gioco.
+\end{itemize}
+
+\paragraph{Alternative considerate}
+Un \emph{monolite modulare} sarebbe stato più semplice da sviluppare, ma la consegna richiede un'applicazione distribuita. Una decomposizione più fine (per esempio catalogo e collezione separati) avrebbe moltiplicato le chiamate di rete senza un beneficio reale di indipendenza.
+
+\section{Dipendenze tra servizi}
+
+Le chiamate interne formano un grafo aciclico (Figura~\ref{fig:deps}). \code{monsters} e \code{history} non chiamano nessuno; \code{encounters} è l'unico orchestratore.
+
+\begin{figure}[ht]
+\centering
+\begin{tikzpicture}
+  \node[svc] (auth) at (0,0) {auth};
+  \node[svc] (enc) at (5,0) {encounters};
+  \node[svc] (teams) at (10,0) {teams};
+  \node[svc] (players) at (0,-2.6) {players};
+  \node[svc] (hist) at (5,-2.6) {history};
+  \node[svc] (monsters) at (10,-2.6) {monsters};
+  \draw[arr] (auth) -- node[lbl]{crea profilo} (players);
+  \draw[arr] (enc) -- node[lbl]{team} (teams);
+  \draw[arr] (enc.south west) -- node[lbl]{stage} (players.north east);
+  \draw[arr] (enc) -- node[lbl]{registra} (hist);
+  \draw[arr] (enc.south east) -- node[lbl]{XP, catture, membri} (monsters.north west);
+  \draw[arr] (teams) -- node[lbl]{membri} (monsters);
+  \draw[arr] (players) -- node[lbl]{statistiche} (hist);
+  \draw[arr] (players.south) -- ++(0,-0.8) -| node[lbl, pos=0.25]{catalogo, starter, statistiche} (monsters.south);
+\end{tikzpicture}
+\caption{Chiamate interne tra servizi (la freccia va dal chiamante al chiamato).}
+\label{fig:deps}
+\end{figure}
+
+Nessun servizio chiama \code{auth}: ogni servizio verifica i token localmente con la chiave pubblica. Così \code{auth} non diventa un collo di bottiglia né un punto di guasto per ogni richiesta.
+
+\section{Stack tecnologico}
+
+\begin{table}[ht]
+\centering\small
+\begin{tabularx}{\linewidth}{@{}P{2.6cm}P{3.6cm}L@{}}
+\toprule
+\textbf{Ambito} & \textbf{Scelta} & \textbf{Motivazione} \\
+\midrule
+Servizi & Quarkus 3.27 (LTS), Java 21 & Avvio rapido e memoria contenuta (rilevanti con sei JVM); estensioni integrate per REST, JPA, JWT, OpenAPI e health check; versione LTS per stabilità \\
+REST & Quarkus REST + Jackson & Modello JAX-RS standard; JSON in \code{snake_case} configurato una volta per servizio \\
+Persistenza & Hibernate ORM Panache & Entità semplici con query parametrizzate; schema generato dalle entità \\
+Chiamate interne & MicroProfile REST Client & Interfacce dichiarative, header del token interno aggiunto in modo dichiarativo \\
+Database & PostgreSQL 16 & Relazionale, transazioni e lock affidabili (necessari per sequenze dello storico e XP) \\
+Gateway & nginx 1.27 & Terminazione TLS, reverse proxy, file statici e rate limiting in un solo componente leggero \\
+Frontend & HTML, CSS, JavaScript senza framework & Nessuna build e nessuna dipendenza; il client non contiene logica e resta piccolo (circa 1000 righe) \\
+Deployment & Docker Compose & Un comando avvia l'intero sistema; build multi-stage senza Maven locale \\
+Test & JUnit 5, pytest, Locust & Unit test sulla logica pura; test black-box del contratto; carico realistico \\
+\bottomrule
+\end{tabularx}
+\caption{Tecnologie e motivazioni.}
+\end{table}
+
+\paragraph{Perché un database per servizio}
+Il pattern \emph{database per service} impedisce a un servizio di leggere o modificare i dati di un altro aggirandone le regole. Per contenere le risorse si usa una sola istanza PostgreSQL con sei database e sei utenti distinti, privi di privilegi reciproci. Separare in seguito le istanze non richiede modifiche al codice, solo alla configurazione.
+
+\paragraph{Perché comunicazione sincrona}
+Tutte le interazioni sono richiesta--risposta brevi e l'utente attende il risultato (per esempio l'esito di una battaglia). Un broker di messaggi avrebbe aggiunto un componente da gestire senza un caso d'uso che ne tragga beneficio. I limiti di questa scelta sono discussi nella Sezione~\ref{sec:consistency}.
+
+% ================================================================ 4
+\chapter{Comunicazione e contratto API}
+
+\section{Instradamento nel gateway}
+
+Il gateway applica una regola uniforme: \code{/api/<servizio>/...} viene inoltrato a \code{http://<servizio>:8080/<servizio>/...}. Fanno eccezione \code{/api/collection/...} e \code{/images/...}, entrambi serviti da \code{monsters}. I percorsi \code{/internal/*} e \code{/q/*} (health check) non sono mai inoltrati: dall'esterno restituiscono 404.
+
+I nomi dei servizi sono risolti dal DNS di Docker a ogni richiesta, quindi il gateway si avvia anche se un servizio non è ancora disponibile e lo raggiunge appena torna in linea.
+
+\section{Convenzioni comuni}
+
+\begin{itemize}
+  \item \textbf{Formato.} JSON con nomi in \code{snake_case}; date in ISO-8601 UTC; identificatori UUID per le entità create a runtime, interi per il catalogo.
+  \item \textbf{Errori.} Corpo uniforme \code{{"error", "message", "details"}} con codici stabili: 400 \code{validation_error}, 401 \code{unauthorized}, 403 \code{forbidden}, 404 \code{not_found}, 409 \code{conflict}, 429 \code{too_many_requests}, 503 \code{upstream_error}.
+  \item \textbf{Autenticazione.} Header \code{Authorization: Bearer <JWT>}. L'identità del giocatore è sempre il \code{sub} del token, mai un parametro inviato dal client.
+  \item \textbf{Proprietà.} Una risorsa di un altro giocatore restituisce 403; una risorsa inesistente 404.
+  \item \textbf{Documentazione.} Ogni servizio pubblica la propria specifica OpenAPI su \code{/api/<servizio>/openapi} e la Swagger UI su \code{/api/<servizio>/swagger-ui}.
+\end{itemize}
+
+\section{Chiamate interne}
+
+Le API interne vivono sotto \code{/internal/...} e sono protette da due livelli indipendenti:
+\begin{enumerate}
+  \item il gateway non le inoltra, quindi sono raggiungibili solo dalla rete Docker;
+  \item ogni servizio richiede l'header \code{X-Internal-Token}, confrontato in tempo costante con il segreto condiviso configurato.
+\end{enumerate}
+Un errore o un timeout del servizio chiamato si traduce in 503 per il client. Le chiamate di sola lettura usate per comporre dati accessori (i progressi nel profilo) tollerano il guasto: il campo corrispondente vale \code{null} e la risposta resta 200.
+
+\section{Flussi principali}
+
+\subsection{Registrazione}
+
+\begin{figure}[ht]
+\centering
+\begin{tikzpicture}[x=3.1cm, y=-0.8cm, font=\scriptsize\sffamily]
+  \foreach \i/\n in {0/Client, 1/auth, 2/players, 3/monsters} {
+    \node[draw, fill=boxfill, minimum width=2cm, minimum height=0.55cm] at (\i,0) {\n};
+    \draw[densely dotted] (\i,0.5) -- (\i,10.2);
+  }
+  \draw[arr] (0,1.3) -- node[above]{POST /auth/register} (1,1.3);
+  \node[anchor=west] at (1.05,2.1) {valida, bcrypt, INSERT (transazione aperta)};
+  \draw[arr] (1,3.3) -- node[above]{POST /internal/players} (2,3.3);
+  \draw[arr] (2,4.3) -- node[above]{GET /internal/monsters} (3,4.3);
+  \draw[dasharr] (3,5.3) -- node[above]{100 specie} (2,5.3);
+  \node[anchor=west] at (2.05,6.1) {estrae 10 common, salva profilo};
+  \draw[dasharr] (2,7.3) -- node[above]{201} (1,7.3);
+  \node[anchor=west] at (1.05,8.1) {COMMIT};
+  \draw[dasharr] (1,9.3) -- node[above]{201 \{player\_id\}} (0,9.3);
+\end{tikzpicture}
+\caption{Registrazione: se la creazione del profilo fallisce, la transazione dell'account viene annullata.}
+\end{figure}
+
+La creazione del profilo avviene \emph{dentro} la transazione dell'account: se \code{players} non risponde l'account non viene salvato e il client riceve 503. Così non possono esistere account senza profilo. La creazione del profilo è idempotente, quindi un nuovo tentativo non produce duplicati.
+
+\subsection{Avvio e risoluzione di un encounter}
+
+\begin{figure}[ht]
+\centering
+\begin{tikzpicture}[x=2.55cm, y=-0.78cm, font=\scriptsize\sffamily]
+  \foreach \i/\n in {0/Client, 1/encounters, 2/teams, 3/monsters, 4/players, 5/history} {
+    \node[draw, fill=boxfill, minimum width=1.75cm, minimum height=0.55cm] at (\i,0) {\n};
+    \draw[densely dotted] (\i,0.5) -- (\i,12.6);
+  }
+  \draw[arr] (0,1.3) -- node[above]{POST /start} (1,1.3);
+  \draw[arr] (1,2.2) -- node[above]{team} (2,2.2);
+  \draw[arr] (1,3.1) -- node[above, pos=0.7]{membri + statistiche} (3,3.1);
+  \node[anchor=west, fill=white] at (1.05,4.1) {simulazione deterministica (seed)};
+  \draw[arr] (1,5.4) -- node[above, pos=0.7]{XP} (3,5.4);
+  \draw[arr] (1,6.3) -- node[above, pos=0.7]{cattura (se riuscita)} (3,6.3);
+  \draw[arr] (1,7.2) -- node[above, pos=0.8]{advance-stage (guardian)} (4,7.2);
+  \node[anchor=west, fill=white] at (1.05,8.1) {salva run e offerta};
+  \draw[arr] (1,8.9) -- node[above, pos=0.85]{registra risultato} (5,8.9);
+  \draw[dasharr] (1,10.2) -- node[above]{201 EncounterResult} (0,10.2);
+  \node[anchor=west] at (0.05,11.2) {replay animato del log};
+\end{tikzpicture}
+\caption{Flusso di \texttt{POST /encounters/\{id\}/start}.}
+\end{figure}
+
+Il client invia una sola richiesta e riceve l'esito completo, compreso il log degli eventi che il frontend riproduce come animazione. Le richieste dello stesso giocatore sono serializzate per evitare doppie ricompense in caso di doppio invio.
+
+% ================================================================ 5
+\chapter{Modello dei dati}
+
+\section{Principi}
+
+\begin{itemize}
+  \item Ogni entità appartiene a un solo servizio. I riferimenti tra servizi sono \emph{logici}: si salva l'identificatore (per esempio \code{player_id}), non una chiave esterna tra database.
+  \item Il \code{player_id} è lo stesso UUID in tutti i servizi ed è il \code{sub} del JWT.
+  \item I mostri posseduti sono \emph{istanze} (\code{owned_id}), non specie: i duplicati sono ammessi e ognuno ha livello ed esperienza propri. Team e battaglie riferiscono istanze.
+  \item I valori derivati non sono salvati: le statistiche effettive si calcolano dal livello, i progressi del giocatore da collezione e storico.
+\end{itemize}
+
+\section{Entità per servizio}
+
+\needspace{8\baselineskip}
+\subsection{auth --- \texttt{accounts}}
+\begin{center}\small
+\begin{tabularx}{\linewidth}{@{}P{3.4cm}P{2.6cm}L@{}}
+\toprule
+\textbf{Campo} & \textbf{Tipo} & \textbf{Note} \\
+\midrule
+\code{player_id} & UUID, PK & identità condivisa da tutti i servizi \\
+\code{username} & testo, unico & 3--20 caratteri, salvato in minuscolo \\
+\code{password_hash} & testo & bcrypt, costo 12, salt incluso \\
+\code{failed_attempts}, \code{locked_until} & intero, istante & protezione da brute force \\
+\code{created_at}, \code{last_login} & istante & \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\needspace{8\baselineskip}
+\subsection{players --- \texttt{players}}
+\begin{center}\small
+\begin{tabularx}{\linewidth}{@{}P{3.4cm}P{2.6cm}L@{}}
+\toprule
+\textbf{Campo} & \textbf{Tipo} & \textbf{Note} \\
+\midrule
+\code{player_id} & UUID, PK & \\
+\code{display_name} & testo & 3--20 caratteri, modificabile \\
+\code{avatar_monster_id} & intero, nullable & deve essere una specie posseduta \\
+\code{stage} & intero & 1--10; 11 indica gioco completato \\
+\code{starter_pool} & lista ordinata di interi & 10 common estratti alla creazione, fissi \\
+\code{starters_chosen} & booleano & la scelta si fa una sola volta \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\needspace{8\baselineskip}
+\subsection{monsters --- \texttt{monsters}, \texttt{abilities}, \texttt{owned\_monsters}}
+\begin{center}\small
+\begin{tabularx}{\linewidth}{@{}P{3.4cm}P{2.6cm}L@{}}
+\toprule
+\textbf{Campo} & \textbf{Tipo} & \textbf{Note} \\
+\midrule
+\multicolumn{3}{@{}l}{\textit{Monster (100 righe di seed)}}\\
+\code{monster_id}, \code{name} & intero PK, testo & \\
+\code{element}, \code{rarity} & enum & 7 elementi; common / rare / legendary \\
+\code{base_*}, \code{growth_*} & interi 1--100, decimali & hp, attack, defense, speed \\
+\code{ability_id}, \code{image_url} & riferimento, testo & \\
+\midrule
+\multicolumn{3}{@{}l}{\textit{Ability (28 righe di seed)}}\\
+\code{effect_type}, \code{effect_value}, \code{trigger} & enum, numero, enum & effetto descritto come dato, applicato da \code{encounters} \\
+\midrule
+\multicolumn{3}{@{}l}{\textit{OwnedMonster}}\\
+\code{owned_id} & UUID, PK & istanza posseduta \\
+\code{player_id}, \code{monster_id} & riferimenti & \\
+\code{level}, \code{xp} & interi & livello da 1 a 50 \\
+\code{source}, \code{encounter_id} & enum, UUID nullable & \code{starter} o \code{encounter} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\needspace{8\baselineskip}
+\subsection{teams --- \texttt{teams}, \texttt{team\_members}}
+Un team ha \code{team_id}, \code{player_id}, \code{name} e una lista \emph{ordinata} di \code{owned_id} (tabella \code{team_members} con colonna di posizione): l'ordine è l'ordine di ingresso in battaglia.
+
+\subsection{encounters --- \texttt{encounter\_offers}, \texttt{encounter\_runs}}
+L'offerta descrive un encounter disponibile (tipo, stage, specie e livello del nemico, stato \code{open}/\code{completed}). Il run conserva l'esito di una battaglia: seed, risultato completo in JSON e data.
+
+\subsection{history --- \texttt{history\_records}}
+Ogni record contiene il risultato completo della battaglia (\code{payload}, testo JSON), il numero di sequenza per giocatore e i campi della catena di integrità \code{prev_hash} e \code{hash}. I vincoli di unicità su \code{run_id} e su (\code{player_id}, \code{sequence}) impediscono duplicati.
+
+\section{Catalogo}
+
+Il catalogo (100 mostri, 28 abilità, ciclo degli elementi, sprite) è prodotto dalla pipeline \code{tools/monster-gen} ed esportato in \code{backend/monsters/seed/}. Il servizio lo carica nel database al primo avvio e lo tiene in memoria, perché non cambia a runtime. Gli sprite sono serviti come file statici e non sono salvati nel database.
+
+\begin{center}\small
+\begin{tabular}{@{}lccc|c@{}}
+\toprule
+\textbf{Elementi} & \textbf{Common} & \textbf{Rare} & \textbf{Legendary} & \textbf{Totale} \\
+\midrule
+Chaos & 1 & 4 & 3 & 8 \\
+Dream, Memory (ciascuno) & 9--10 & 4--5 & 1--2 & 16 \\
+Time, Echo, Gravity, Silence (ciascuno) & 9--10 & 4--5 & 1--2 & 15 \\
+\midrule
+\textbf{Totale} & 60 & 30 & 10 & 100 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% ================================================================ 6
+\chapter{Logica di gioco}
+\label{ch:game}
+
+Tutte le regole sono implementate nel backend. Il frontend mostra soltanto ciò che le API restituiscono.
+
+\section{Crescita dei mostri}
+
+\begin{align*}
+\text{statistica effettiva} &= \operatorname{round}\big(\text{base} + \text{growth}\cdot(\text{livello}-1)\big)\\
+\text{xp per il livello successivo} &= 25 \cdot \text{livello}, \qquad \text{livello massimo} = 50
+\end{align*}
+L'esperienza in eccesso si trasferisce al livello successivo, quindi un singolo premio può far salire di più livelli.
+
+\section{Stage e bacheca degli encounter}
+
+Il giocatore progredisce in 10 stage. Per ogni stage la bacheca contiene tre encounter \emph{wild} e un \emph{guardian}.
+
+\begin{center}\small
+\begin{tabularx}{\linewidth}{@{}P{3.3cm}L@{}}
+\toprule
+\textbf{Aspetto} & \textbf{Regola (stage $s$)} \\
+\midrule
+Livello dei wild & casuale in $[3s-2,\ 3s]$; difficoltà easy / normal / hard \\
+Specie dei wild & stage 1--3 solo common; 4--6 common 70\% e rare 30\%; 7--10 common 30\% e rare 70\%; mai legendary; specie distinte sulla stessa bacheca \\
+Guardian & livello $3s+2$; uguale per tutti i giocatori; rare negli stage 1--5, legendary negli stage 6--10, elementi a rotazione \\
+Rinnovo & un wild vinto viene sostituito; uno perso resta disponibile \\
+Fine del gioco & battuto il guardian dello stage 10 il gioco è completato; restano disponibili wild di livello stage 10 \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\section{Motore di battaglia}
+\label{sec:battle}
+
+La battaglia è simulata dal server in modo \emph{deterministico}: dato il seed, salvato insieme al risultato, la stessa battaglia produce sempre lo stesso log. Questo rende il motore testabile e consente di riprodurre ogni battaglia dallo storico.
+
+\begin{itemize}
+  \item I membri del team combattono in ordine contro il nemico; quando uno va KO entra il successivo.
+  \item In ogni round agisce per primo chi ha velocità maggiore (a parità, il giocatore).
+  \item Vittoria se il nemico va KO; sconfitta se cade tutto il team o dopo 100 round.
+\end{itemize}
+
+\begin{align*}
+\text{HP di battaglia} &= (2\cdot\text{hp} + 10)\cdot m, \qquad m = 1 \text{ (team)},\ 1.5 \text{ (wild)},\ 1.4 \text{ (guardian)}\\
+\text{danno} &= \max\!\Big(1,\ \operatorname{round}\Big(\frac{\text{atk}^2}{\text{atk}+\text{def}}\cdot v \cdot e \cdot k\Big)\Big), \quad v \in [0.85, 1]
+\end{align*}
+dove $e$ è il moltiplicatore elementale (1.5 se forte, 0.67 se debole, 1 altrimenti) e $k$ raccoglie critico (probabilità 6.25\%, $\times 1.5$) ed effetti delle abilità.
+
+\paragraph{Ciclo degli elementi}
+\textit{Silence $\rightarrow$ Echo $\rightarrow$ Memory $\rightarrow$ Time $\rightarrow$ Chaos $\rightarrow$ Gravity $\rightarrow$ Dream $\rightarrow$ Silence}: ogni elemento è forte contro il successivo e debole contro il precedente. Gli elementi sono concettuali per caratterizzare il gioco; la regola a ciclo resta semplice da comprendere e da bilanciare.
+
+\paragraph{Abilità}
+Ogni abilità è descritta da dati: tipo di effetto, valore e condizione di attivazione. Il motore implementa 13 tipi di effetto e 8 condizioni (Tabella~\ref{tab:abilities}). Descrivere gli effetti come dati, e non come codice per ogni abilità, permette di aggiungere abilità modificando solo il catalogo.
+
+\begin{table}[ht]
+\centering\small
+\begin{tabularx}{\linewidth}{@{}P{3.3cm}L@{}}
+\toprule
+\textbf{Effetto} & \textbf{Semantica ($v$ = \code{effect_value} in \%)} \\
+\midrule
+\code{damage_boost} & danno inflitto $\times(1+v)$ \\
+\code{damage_reduction} & danno subito $\times(1-v)$ \\
+\code{dodge} & probabilità $v$ di schivare un attacco \\
+\code{heal} & cura $v$ degli HP massimi (una volta sotto il 50\%, oppure a ogni azione) \\
+\code{speed_boost} & velocità $\times(1+v)$ nel determinare l'ordine \\
+\code{reflect} & restituisce all'attaccante $v$ del danno subito \\
+\code{stun} & probabilità $v$ di far saltare il turno all'avversario \\
+\code{weaken} & attacco dell'avversario $\times(1-v)$ finché resta in campo \\
+\code{ignore_disadvantage} & in attacco lo svantaggio elementale viene annullato \\
+\code{revive} & una volta per battaglia, al KO torna con $v$ degli HP \\
+\code{random_boost} & danno moltiplicato per un valore casuale in $[1-v,\ 1+2v]$ \\
+\code{invert_advantage} & vantaggio e svantaggio elementale scambiati \\
+\code{copy_ability} & all'ingresso copia l'abilità dell'avversario \\
+\midrule
+\textit{Condizioni} & \code{always}, \code{first_turn}, \code{hp_above_50}, \code{hp_below_50}, \code{on_hit}, \code{on_attack}, \code{once}, \code{vs_faster} \\
+\bottomrule
+\end{tabularx}
+\caption{Effetti delle abilità.}
+\label{tab:abilities}
+\end{table}
+
+\section{Ricompense}
+
+\begin{itemize}
+  \item \textbf{Esperienza.} Ogni membro del team riceve $10 \times$ livello del nemico (doppio contro il guardian); in caso di sconfitta il 30\%.
+  \item \textbf{Cattura.} Solo in vittoria: common 60\%, rare 35\%, guardian sempre. Il mostro catturato entra nella collezione a livello 1, collegato al run che l'ha prodotto.
+  \item \textbf{Avanzamento.} La vittoria sul guardian porta allo stage successivo.
+\end{itemize}
+Nessun endpoint pubblico permette di aggiungere mostri o esperienza: le ricompense sono assegnate solo da \code{encounters} tramite le API interne di \code{monsters} e \code{players} (US-12).
+
+\section{Bilanciamento}
+
+I parametri sono stati tarati con un test automatico che simula 500 battaglie con i dati reali del catalogo, usando squadre casuali di tre common di livello 1.
+
+\begin{center}\small
+\begin{tabular}{@{}lcc@{}}
+\toprule
+\textbf{Avversario} & \textbf{Vittorie misurate} & \textbf{Intervallo obiettivo} \\
+\midrule
+Wild dello stage 1 (common, livello 1--3) & 95.8\% & 75--98\% \\
+Guardian dello stage 1 (rare, livello 5) & 37.0\% & 25--80\% \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Con la prima ipotesi (HP del guardian $\times 2.5$) il guardian dello stage 1 risultava imbattibile (meno dell'1\% di vittorie), perché la formula del danno favorisce fortemente chi ha attacco più alto. Si è scelto di correggere i moltiplicatori degli HP, che hanno un effetto lineare e prevedibile, lasciando invariate le formule. Tra le specie candidate a guardian viene scelta quella con attacco base minore, per evitare guardiani con attacco sproporzionato rispetto al livello del giocatore. Il test resta nella suite e segnala ogni modifica che alteri l'equilibrio.
+
+% ================================================================ 7
+\chapter{Sicurezza}
+\label{ch:security}
+
+\section{Modello delle minacce}
+
+Si considera un attaccante esterno che può raggiungere il gateway e intercettare il traffico di rete, e un giocatore autenticato che tenta di accedere a dati altrui o di ottenere vantaggi non previsti. Le misure adottate sono riassunte in Tabella~\ref{tab:sec}.
+
+\begin{xltabular}{\linewidth}{@{}P{3.6cm}L@{}}
+\caption{Minacce e contromisure.}\label{tab:sec}\\
+\toprule
+\textbf{Minaccia} & \textbf{Contromisura} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Minaccia} & \textbf{Contromisura} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+Intercettazione del traffico & Solo HTTPS (TLS 1.2/1.3) terminato dal gateway; la porta HTTP esegue solo un redirect; header HSTS \\
+Furto delle password & Hash bcrypt con costo 12 e salt; password mai salvate né registrate nei log \\
+Attacchi a forza bruta & Blocco dell'account per 5 minuti dopo 5 tentativi falliti; limite di frequenza per IP su \code{/api/auth/} \\
+Enumerazione degli utenti & Stesso messaggio e stesso tempo di risposta per utente inesistente e password errata (confronto bcrypt eseguito comunque) \\
+Token falsificati & JWT RS256 con scadenza di un'ora e verifica dell'emittente; la chiave privata è montata solo nel container di \code{auth} \\
+Accesso a dati altrui & Il giocatore è identificato solo dal token; ogni accesso per id verifica la proprietà (403) \\
+Uso diretto delle API interne & Non inoltrate dal gateway; protette da token condiviso confrontato in tempo costante \\
+Manipolazione del gioco & Nessun endpoint per assegnarsi mostri, esperienza o stage; battaglie e premi calcolati solo dal server \\
+Injection & Query parametrizzate; validazione di ogni input (Bean Validation); limiti di dimensione delle richieste \\
+XSS e clickjacking & Content Security Policy restrittiva, \code{X-Frame-Options: DENY}, \code{nosniff}; il frontend applica l'escape a ogni valore dinamico \\
+Manomissione dei salvataggi & Catena HMAC sullo storico (Sezione~\ref{sec:integrity}) \\
+Accesso trasversale ai database & Un utente PostgreSQL per servizio senza privilegi sugli altri database; PostgreSQL non esposto all'esterno \\
+Compromissione di un container & Processi Java eseguiti come utente non privilegiato su immagini minimali \\
+Segreti nel repository & Segreti in \code{.env} escluso da git; chiavi e certificato generati al primo avvio in volumi Docker \\
+\end{xltabular}
+
+\section{Gestione delle chiavi}
+
+Al primo avvio il container \code{init-secrets} genera la coppia di chiavi RSA per i JWT e il certificato TLS, e li salva in tre volumi distinti:
+
+\begin{center}\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Volume} & \textbf{Contenuto} & \textbf{Montato in} \\
+\midrule
+\code{jwt-private} & chiave privata di firma & solo \code{auth} \\
+\code{jwt-public} & chiave pubblica di verifica & tutti i servizi \\
+\code{tls} & certificato e chiave TLS & solo \code{gateway} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+I file esistenti non vengono rigenerati, quindi token e certificato sopravvivono ai riavvii. Ogni servizio verifica i token in autonomia con la chiave pubblica, senza chiamare \code{auth}.
+
+\section{Integrità dello storico}
+\label{sec:integrity}
+
+Per ogni giocatore lo storico è una catena di record. Il record di sequenza $n$ contiene
+\[
+h_n = \operatorname{HMAC\text{-}SHA256}\big(K,\ h_{n-1} \,\|\, n \,\|\, \text{payload}_n\big), \qquad h_0 = \texttt{GENESIS}
+\]
+dove $K$ è un segreto noto solo al servizio \code{history}. L'endpoint \code{GET /history/verify} ricalcola la catena e indica il primo record non valido. Una modifica del contenuto, la cancellazione di un record intermedio o un riordino vengono rilevati; senza la chiave non è possibile ricalcolare hash validi.
+
+Le sequenze sono assegnate sotto un lock transazionale per giocatore e protette da un vincolo di unicità, così richieste concorrenti non producono buchi né duplicati nella catena.
+
+% ================================================================ 8
+\chapter{Persistenza e consistenza}
+\label{sec:consistency}
+
+\section{Transazioni locali}
+
+Ogni servizio usa transazioni del proprio database. Le operazioni che modificano più righe sono atomiche:
+\begin{itemize}
+  \item l'assegnazione degli starter inserisce i tre mostri in un'unica transazione;
+  \item l'assegnazione dell'esperienza è tutto-o-niente: se un mostro non appartiene al giocatore nessuna modifica viene applicata;
+  \item le righe interessate sono bloccate (\code{PESSIMISTIC_WRITE}) per evitare aggiornamenti persi in caso di richieste simultanee.
+\end{itemize}
+
+\section{Operazioni distribuite}
+
+Un encounter modifica dati di quattro servizi. Il sistema non usa transazioni distribuite né saghe: l'orchestratore esegue i passi in un ordine stabilito (esperienza, cattura, avanzamento, salvataggio del run, storico) e in caso di errore risponde 503.
+
+\begin{nota}{Scelta consapevole}
+Il caso peggiore è una ricompensa applicata senza il corrispondente record nello storico. È un'incoerenza a favore del giocatore, non perde dati e non è sfruttabile, perché il client non può provocarla. Una saga con compensazioni avrebbe aggiunto complessità sproporzionata per un prototipo. La Sezione~\ref{sec:future} indica come evolvere verso un pattern \emph{outbox}.
+\end{nota}
+
+Altre misure contro le incoerenze:
+\begin{itemize}
+  \item la creazione del profilo e l'avanzamento di stage sono idempotenti;
+  \item \code{history} rifiuta un secondo record con lo stesso \code{run_id} (409);
+  \item le richieste di uno stesso giocatore verso \code{encounters} sono serializzate.
+\end{itemize}
+
+\section{Durabilità}
+
+I dati risiedono nel volume Docker \code{pgdata} e sopravvivono a riavvii e ricreazioni dei container. Il backup completo si ottiene con \code{pg_dumpall}.
+
+% ================================================================ 9
+\chapter{Frontend}
+
+\section{Scelta tecnologica}
+
+Il frontend è scritto in HTML, CSS e JavaScript con moduli ES nativi, senza framework e senza fase di build. La scelta segue dai vincoli di progetto: il client deve essere minimale e privo di logica di business, quindi i vantaggi di un framework (gestione di stato complesso, componenti riutilizzabili su larga scala) non compensano dipendenze e tooling aggiuntivi. Il risultato sono 14 file per circa 1000 righe, serviti come file statici dal gateway sulla stessa origine delle API (niente CORS).
+
+\section{Struttura}
+
+\begin{itemize}
+  \item \code{api.js}: chiamate HTTP con il token, gestione uniforme degli errori, logout automatico su 401.
+  \item \code{router.js}: navigazione basata sull'hash dell'URL e protezione delle viste riservate.
+  \item \code{ui.js}: template con escape automatico, modali, notifiche, card dei mostri.
+  \item \code{battle.js}: riproduzione animata del log di battaglia (barre degli HP, danni, critici, efficacia elementale, abilità, cambio di mostro, risultati).
+  \item un modulo per ogni vista: login, starter, home, collezione, catalogo, team, encounter, storico, profilo.
+\end{itemize}
+
+\section{Separazione delle responsabilità}
+
+Il client non calcola nulla che abbia valore di regola. Per esempio:
+\begin{itemize}
+  \item la validità di un team è richiesta a \code{POST /teams/validate} durante la composizione;
+  \item le statistiche mostrate sono quelle effettive calcolate da \code{monsters};
+  \item la battaglia non viene simulata nel browser: il client riproduce gli eventi ricevuti.
+\end{itemize}
+Ogni comportamento del gioco è quindi verificabile tramite la sola REST API, come richiesto dalla consegna.
+
+% ================================================================ 10
+\chapter{Deployment}
+
+\section{Composizione}
+
+Il file \code{docker-compose.yml} definisce nove container sulla rete privata \code{backend}:
+
+\begin{center}\small
+\begin{tabularx}{\linewidth}{@{}P{2.8cm}P{4.2cm}L@{}}
+\toprule
+\textbf{Container} & \textbf{Immagine} & \textbf{Ruolo} \\
+\midrule
+\code{init-secrets} & alpine 3.20 & genera chiavi e certificato, poi termina \\
+\code{postgres} & postgres 16-alpine & database; crea un database e un utente per servizio \\
+6 servizi & build multi-stage (Maven $\rightarrow$ JRE 21 alpine) & API; health check su \code{/q/health/ready} \\
+\code{gateway} & nginx 1.27-alpine & unico container con porte pubblicate (8080, 8443) \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+L'ordine di avvio è garantito dalle condizioni di \code{depends_on}: i servizi partono quando il database è pronto e i segreti sono stati generati; il gateway parte quando tutti i servizi superano l'health check.
+
+\section{Build}
+
+Ogni servizio ha un Dockerfile multi-stage. Il primo stadio compila con Maven ed esegue gli unit test, quindi un'immagine non viene prodotta se i test falliscono. Il secondo stadio contiene solo il runtime Java e l'applicazione e la esegue con un utente non privilegiato. Le dipendenze Maven sono in cache tra una build e l'altra, e non serve Maven installato sulla macchina dello sviluppatore.
+
+\section{Configurazione}
+
+La configurazione è passata tramite variabili d'ambiente con valori di sviluppo predefiniti, in modo che il sistema parta anche senza configurazione. I segreti (password dei database, token interno, chiave dello storico) si impostano nel file \code{.env}, a partire da \code{.env.example}.
+
+\section{Avvio}
+
+\begin{center}\small
+\begin{tabularx}{\linewidth}{@{}P{7.4cm}L@{}}
+\toprule
+\textbf{Comando o indirizzo} & \textbf{Uso} \\
+\midrule
+\code{docker compose up -d --build} & avvia il sistema \\
+\code{https://localhost:8443} & interfaccia di gioco \\
+\code{https://localhost:8443/api/<servizio>/swagger-ui} & documentazione interattiva delle API \\
+\code{docker compose down -v} & arresta e cancella dati, chiavi e certificato \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+% ================================================================ 11
+\chapter{Test e qualità}
+\label{ch:test}
+
+\section{Strategia}
+
+I test sono organizzati su tre livelli.
+
+\begin{center}\small
+\begin{tabularx}{\linewidth}{@{}P{2.6cm}P{2.2cm}L@{}}
+\toprule
+\textbf{Livello} & \textbf{Strumento} & \textbf{Oggetto} \\
+\midrule
+Unit & JUnit 5 & Logica di dominio in classi pure, senza database né framework: regole, formule, motore di battaglia, catena di hash \\
+API end-to-end & pytest & Il sistema completo attraverso il gateway, verificando il contratto e le user stories \\
+Prestazioni & Locust & Percorsi realistici di gioco con utenti concorrenti \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+La logica di dominio è isolata in classi senza dipendenze (per esempio \code{BattleEngine}, \code{TeamRules}, \code{HashChain}, \code{Growth}, \code{StarterPolicy}). Questo rende gli unit test veloci, deterministici ed eseguibili a ogni build.
+
+\section{Unit test}
+
+\begin{center}\small
+\begin{tabularx}{\linewidth}{@{}lrL@{}}
+\toprule
+\textbf{Servizio} & \textbf{Test} & \textbf{Copertura principale} \\
+\midrule
+auth & 4 & blocco dei tentativi, hash con salt \\
+players & 33 & estrazione e scelta degli starter, avanzamento di stage, validazione del profilo \\
+monsters & 48 & crescita e livelli, paginazione, filtri, coerenza del catalogo reale \\
+teams & 19 & regole di composizione dei team \\
+encounters & 47 & motore di battaglia (tutti gli effetti e le condizioni), bacheca, ricompense, bilanciamento \\
+history & 28 & catena di hash e rilevamento delle manomissioni, estrazione dei riepiloghi \\
+\midrule
+\textbf{Totale} & \textbf{179} & \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\section{Test API}
+
+La suite in \code{tests/api} contiene 132 test che usano il sistema avviato come farebbe un client reale. Ogni test crea i propri utenti, quindi i test sono indipendenti. Oltre ai casi funzionali verifica i requisiti di sicurezza: accesso senza token o con token manomesso, risorse di altri giocatori, endpoint interni non raggiungibili dall'esterno, assenza di endpoint per assegnarsi mostri. L'esecuzione completa dura circa un minuto e risulta interamente superata.
+
+\section{Test di prestazione}
+
+Il test di carico simula giocatori che si registrano, scelgono gli starter, creano un team e poi alternano consultazione del catalogo, della collezione, della bacheca e dello storico con l'avvio di battaglie. I risultati di un'esecuzione con 30 utenti concorrenti per 45 secondi sono riportati di seguito.
+
+\begin{center}\small
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+\textbf{Operazione} & \textbf{Mediana (ms)} & \textbf{95° perc. (ms)} & \textbf{Errori} \\
+\midrule
+Catalogo (pagine, filtri, ricerca) & 3 & 5 & 0 \\
+Collezione & 4 & 6 & 0 \\
+Bacheca degli encounter & 7 & 14 & 0 \\
+Storico & 6 & 8 & 0 \\
+Avvio e risoluzione di un encounter & 86 & 93 & 0 \\
+Login & 230 & 240 & 0 \\
+Registrazione & 270 & 290 & 0 \\
+\midrule
+\textbf{Complessivo (842 richieste)} & \textbf{6} & \textbf{230} & \textbf{0} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+I tempi di login e registrazione sono dominati dal costo di bcrypt, voluto per rendere costoso un attacco alle password. La risoluzione di un encounter include cinque chiamate interne e la simulazione completa.
+
+% ================================================================ 12
+\chapter{Limiti e sviluppi futuri}
+\label{sec:future}
+
+\begin{xltabular}{\linewidth}{@{}P{4.2cm}L@{}}
+\toprule
+\textbf{Limite} & \textbf{Evoluzione possibile} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+Certificato TLS autofirmato & Certificato emesso da una CA (per esempio Let's Encrypt) o \code{mkcert} in sviluppo \\
+JWT non revocabili prima della scadenza & Token di accesso brevi con refresh token revocabili \\
+Token interno condiviso tra i servizi & Mutual TLS tra servizi o token di servizio firmati \\
+Operazioni distribuite senza compensazione & Pattern \emph{transactional outbox} per lo storico e le ricompense \\
+Serializzazione degli encounter in memoria & Lock distribuito o vincoli sul database per scalare \code{encounters} su più istanze \\
+Catena di hash non protegge l'ultimo record & Pubblicazione periodica dell'ultimo hash in un registro esterno \\
+Battaglia non interattiva (US-21, US-22) & Encounter a turni con stato persistito e azioni del giocatore \\
+Funzioni social (US-26, US-27) & Nuovo servizio \code{social} con amicizie e sfide tra team \\
+Una sola istanza PostgreSQL & Istanze separate per servizio, senza modifiche al codice \\
+\end{xltabular}
+
+\appendix
+
+% ================================================================ A
+\chapter{Riferimento degli endpoint pubblici}
+
+Tutti i percorsi sono relativi a \code{https://localhost:8443/api}. Tutti richiedono un JWT, salvo dove indicato. Il contratto completo, con i formati JSON, è in \code{docs/architettura/api-contract.md}.
+
+\begin{xltabular}{\linewidth}{@{}P{2.5cm}P{5.4cm}L@{}}
+\toprule
+\textbf{Metodo} & \textbf{Percorso} & \textbf{Descrizione} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Metodo} & \textbf{Percorso} & \textbf{Descrizione} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+POST & \code{/auth/register} & registrazione (senza token) \\
+POST & \code{/auth/login} & login, restituisce il JWT (senza token) \\
+GET & \code{/auth/me} & dati dell'account \\
+\midrule
+GET & \code{/players/me} & profilo, stage, pool degli starter, progressi \\
+PATCH & \code{/players/me} & nome e avatar \\
+POST & \code{/players/me/starters} & scelta dei 3 starter \\
+\midrule
+GET & \code{/monsters} & catalogo paginato con filtri e ricerca \\
+GET & \code{/monsters/{id}} & dettaglio di una specie \\
+GET & \code{/monsters/abilities} & elenco delle abilità \\
+GET & \code{/monsters/elements} & ciclo degli elementi \\
+GET & \code{/collection} & collezione del giocatore \\
+GET & \code{/collection/{owned_id}} & dettaglio di un mostro posseduto \\
+GET & \code{/images/monsters/NNN.png} & sprite (pubblico, fuori da \code{/api}) \\
+\midrule
+GET & \code{/teams} & elenco dei team \\
+POST & \code{/teams} & creazione \\
+GET, PUT, DELETE & \code{/teams/{team_id}} & lettura, modifica, eliminazione \\
+POST & \code{/teams/validate} & validazione senza salvataggio \\
+\midrule
+GET & \code{/encounters} & bacheca dello stage corrente \\
+GET & \code{/encounters/{id}} & dettaglio di un encounter \\
+POST & \code{/encounters/{id}/start} & avvio e risoluzione con un team \\
+GET & \code{/encounters/runs/{run_id}} & risultato di una battaglia \\
+\midrule
+GET & \code{/history} & storico paginato, filtrabile per esito \\
+GET & \code{/history/{run_id}} & dettaglio con risultato completo \\
+GET & \code{/history/verify} & verifica dell'integrità della catena \\
+\end{xltabular}
+
+% ================================================================ B
+\chapter{Variabili di configurazione}
+
+\begin{center}\small
+\begin{tabularx}{\linewidth}{@{}P{4.6cm}L@{}}
+\toprule
+\textbf{Variabile} & \textbf{Uso} \\
+\midrule
+\code{POSTGRES_PASSWORD} & password dell'amministratore PostgreSQL \\
+\code{<SERVIZIO>_DB_PASSWORD} & password dell'utente di database di ciascun servizio \\
+\code{INTERNAL_TOKEN} & segreto per le chiamate \code{/internal/*} \\
+\code{HISTORY_SECRET} & chiave HMAC della catena dello storico \\
+\code{DB_URL}, \code{DB_USER}, \code{DB_PASSWORD} & connessione al database (impostate da Compose) \\
+\code{JWT_PUBLIC_KEY}, \code{JWT_PRIVATE_KEY} & percorsi delle chiavi (prefisso \code{file:}) \\
+\code{MONSTERS_URL}, \code{PLAYERS_URL}, \code{TEAMS_URL}, \code{HISTORY_URL} & indirizzi dei servizi per le chiamate interne \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\end{document}
