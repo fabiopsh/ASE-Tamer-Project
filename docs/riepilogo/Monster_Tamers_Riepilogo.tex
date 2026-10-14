@@ -1,0 +1,648 @@
+% =====================================================================
+%  Monster Tamers — Riepilogo della consegna e dei requisiti funzionali
+%  Advanced Software Engineering (Lab) — Università di Pisa
+%  Fonti: "Project Kickoff.pdf" (A. Bocci, 07/10/2026)
+%         "Monster_Tamers_Backlog.xlsx" (foglio "Project backlog")
+%  Compilazione: tectonic -X compile Monster_Tamers_Riepilogo.tex
+% =====================================================================
+\documentclass[11pt,a4paper]{article}
+
+% ---------------------------------------------------------------------
+%  Pacchetti
+% ---------------------------------------------------------------------
+\usepackage{fontspec}
+\usepackage[italian]{babel}
+\usepackage[a4paper,margin=2cm,headheight=14pt]{geometry}
+\usepackage[table]{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc,decorations.pathreplacing,shapes.misc}
+\usepackage[most]{tcolorbox}
+\usepackage{array,tabularx,booktabs}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{parskip}
+\usepackage{needspace}
+\usepackage[hidelinks]{hyperref}
+
+% ---------------------------------------------------------------------
+%  Font: tutto il documento in sans (TeX Gyre Heros)
+% ---------------------------------------------------------------------
+\setmainfont{texgyreheros}[
+  Extension      = .otf,
+  UprightFont    = *-regular,
+  BoldFont       = *-bold,
+  ItalicFont     = *-italic,
+  BoldItalicFont = *-bolditalic]
+\setsansfont{texgyreheros}[
+  Extension      = .otf,
+  UprightFont    = *-regular,
+  BoldFont       = *-bold,
+  ItalicFont     = *-italic,
+  BoldItalicFont = *-bolditalic]
+\setmonofont{lmmono10-regular}[Extension=.otf, Scale=MatchLowercase]
+
+% ---------------------------------------------------------------------
+%  Colori
+% ---------------------------------------------------------------------
+\definecolor{accent}{HTML}{1F4E78}
+\definecolor{accentlight}{HTML}{5B9BD5}
+\definecolor{prRed}{HTML}{C62828}
+\definecolor{prYellow}{HTML}{F9A825}
+\definecolor{prGreen}{HTML}{2E7D32}
+\definecolor{softgray}{HTML}{F4F6F8}
+\definecolor{midgray}{HTML}{6B7280}
+
+% ---------------------------------------------------------------------
+%  Titoli, intestazioni, elenchi
+% ---------------------------------------------------------------------
+\titleformat{\section}{\Large\bfseries\color{accent}}{\thesection}{0.6em}{}[{\color{accentlight}\titlerule[1pt]}]
+\titleformat{\subsection}{\large\bfseries\color{accent}}{\thesubsection}{0.6em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{accent}}{}{0em}{}
+\titlespacing*{\section}{0pt}{1.6em}{0.8em}
+\titlespacing*{\subsection}{0pt}{1.2em}{0.4em}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{midgray}Monster Tamers --- Riepilogo progetto ASE}
+\fancyhead[R]{\small\color{midgray}A.A.\ 2026/27}
+\fancyfoot[C]{\small\color{midgray}\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{accentlight}\leaders\hrule height \headrulewidth\hfill}}
+
+\setlist{itemsep=2pt,topsep=4pt}
+\setlist[itemize]{label={\color{accent}\textbullet}}
+
+% ---------------------------------------------------------------------
+%  Macro
+% ---------------------------------------------------------------------
+\newcommand{\badge}[3]{{\setlength{\fboxsep}{2.2pt}\colorbox{#1}{\textcolor{#2}{\scriptsize\bfseries\strut #3}}}}
+\newcommand{\rosso}{\badge{prRed}{white}{PRIMA CONSEGNA}}
+\newcommand{\giallo}{\badge{prYellow}{black}{CONSEGNA FINALE}}
+\newcommand{\verde}{\badge{prGreen}{white}{OPZIONALE}}
+\newcommand{\enc}{\emph{encounter}}
+\newcommand{\us}[1]{\textbf{\color{accent}US-#1}}
+
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+
+% Box generici
+\newtcolorbox{infobox}[1][]{enhanced,breakable,colback=accent!5,colframe=accent,
+  boxrule=0.8pt,arc=3pt,left=8pt,right=8pt,top=6pt,bottom=6pt,
+  fonttitle=\bfseries,coltitle=white,#1}
+\newtcolorbox{notebox}[1][]{enhanced,breakable,colback=softgray,colframe=softgray,
+  borderline west={3pt}{0pt}{accentlight},arc=0pt,left=10pt,right=8pt,top=5pt,bottom=5pt,#1}
+\newtcolorbox{warnbox}[1][]{enhanced,breakable,colback=prRed!5,colframe=prRed!5,
+  borderline west={3pt}{0pt}{prRed},arc=0pt,left=10pt,right=8pt,top=5pt,bottom=5pt,#1}
+\newtcolorbox{choicebox}[1][]{enhanced,breakable,colback=prYellow!8,colframe=prYellow!80!black,
+  boxrule=0.8pt,arc=3pt,left=8pt,right=8pt,top=6pt,bottom=6pt,
+  fonttitle=\bfseries,coltitle=black,colbacktitle=prYellow!60,#1}
+
+% Tabella delle user stories
+\newenvironment{ustable}{%
+  \par\smallskip
+  \rowcolors{2}{softgray}{white}%
+  \renewcommand{\arraystretch}{1.45}%
+  \tabularx{\linewidth}{@{}L{1.45cm}L{3.5cm}Y C{3.0cm}@{}}
+  \rowcolor{accent}
+  \textcolor{white}{\bfseries\small ID} &
+  \textcolor{white}{\bfseries\small Titolo} &
+  \textcolor{white}{\bfseries\small Cosa vuole il giocatore e perché} &
+  \textcolor{white}{\bfseries\small Quando} \\
+}{%
+  \endtabularx\par\medskip
+}
+\newcommand{\usrow}[5]{\us{#1} & \textbf{#2} & \small Voglio #3, \emph{così che} #4. & #5 \\}
+
+% =====================================================================
+\begin{document}
+
+% ---------------------------------------------------------------------
+%  Frontespizio
+% ---------------------------------------------------------------------
+\thispagestyle{empty}
+\begin{tcolorbox}[enhanced,colback=accent,colframe=accent,arc=4pt,
+  left=14pt,right=14pt,top=16pt,bottom=16pt]
+  \color{white}
+  {\small ADVANCED SOFTWARE ENGINEERING (LAB) --- UNIVERSITÀ DI PISA}\par\medskip
+  {\fontsize{30}{34}\selectfont\bfseries Monster Tamers}\par\smallskip
+  {\Large Riepilogo della consegna e dei requisiti funzionali}\par\medskip
+  {\raggedright\small Docente: Alessandro Bocci\par
+  Fonti: \emph{Lab Project Kick-off} (07/10/2026) e \emph{Monster\_Tamers\_Backlog.xlsx}\par}
+\end{tcolorbox}
+
+\vspace{4mm}
+
+\begin{infobox}[title={In breve}]
+\begin{itemize}[leftmargin=1.2em]
+  \item \textbf{Cosa:} un gioco di collezione di mostri (\emph{Monster Tamers}) realizzato come
+        \textbf{applicazione distribuita} con backend \textbf{REST}, uno o più \textbf{database}
+        e un \textbf{frontend minimale}.
+  \item \textbf{Chi:} gruppi da \textbf{3 o 4 persone}, da formare entro il \textbf{1 novembre}.
+  \item \textbf{Scadenza finale:} \textbf{15 dicembre}. Discussione orale a \textbf{gennaio/febbraio}.
+  \item \textbf{Cosa si consegna:} repository Git (codice + documentazione) e un breve report
+        su template fornito dal docente.
+  \item \textbf{Requisiti:} 28 user stories --- \textbf{18} per la prima consegna, \textbf{2} in più
+        per la consegna finale, \textbf{8} opzionali.
+\end{itemize}
+\end{infobox}
+
+\vspace{2mm}
+\setcounter{tocdepth}{1}
+{\small\tableofcontents}
+
+\newpage
+
+% =====================================================================
+\section{Organizzazione e scadenze}
+% =====================================================================
+
+\subsection{Gruppi}
+\begin{itemize}
+  \item Gruppi da \textbf{3 o 4 persone}.
+  \item Per formarli si usa il \textbf{documento condiviso su Moodle}: seguire le istruzioni del primo
+        foglio per cercare compagni e ``iscrivere'' il gruppo.
+  \item \textbf{1 novembre}: la modifica del file viene bloccata, quindi il gruppo deve essere iscritto entro quella data.
+\end{itemize}
+
+\subsection{Roadmap}
+
+\begin{center}
+\begin{tikzpicture}[x=1cm,y=1cm,
+  ms/.style={circle,draw=#1,fill=white,line width=1.6pt,minimum size=10pt,inner sep=0pt},
+  dt/.style={font=\bfseries\small,text=#1},
+  lab/.style={align=center,font=\footnotesize,text width=2.4cm}]
+  \draw[-{Stealth[length=3.5mm]},line width=1.2pt,accentlight] (-0.3,0) -- (15.95,0);
+  % 1
+  \node[ms=accent]   (a) at (0.8,0) {};
+  \draw[accent,dashed] (a) -- (0.8,0.9);
+  \node[dt=accent,above] at (0.8,0.9) {7 ott};
+  \node[lab,above] at (0.8,1.3) {Kickoff del progetto};
+  % 2
+  \node[ms=midgray]  (b) at (3.15,0) {};
+  \draw[midgray,dashed] (b) -- (3.15,-0.9);
+  \node[dt=midgray,below] at (3.15,-0.9) {20 ott};
+  \node[lab,below] at (3.15,-1.3) {Architettura generale\\\emph{(opzionale)}};
+  % 3
+  \node[ms=accent]   (c) at (5.5,0) {};
+  \draw[accent,dashed] (c) -- (5.5,0.9);
+  \node[dt=accent,above] at (5.5,0.9) {21 ott};
+  \node[lab,above] at (5.5,1.3) {Pubblicazione documento dei requisiti};
+  % 4
+  \node[ms=prRed]    (d) at (7.85,0) {};
+  \draw[prRed,dashed] (d) -- (7.85,-0.9);
+  \node[dt=prRed,below] at (7.85,-0.9) {1 nov};
+  \node[lab,below] at (7.85,-1.3) {Scadenza iscrizione gruppi};
+  % 5
+  \node[ms=midgray]  (e) at (10.2,0) {};
+  \draw[midgray,dashed] (e) -- (10.2,0.9);
+  \node[dt=midgray,above] at (10.2,0.9) {10 nov};
+  \node[lab,above] at (10.2,1.3) {Primo prototipo\\\emph{(opzionale)}};
+  % 6
+  \node[ms=prRed]    (f) at (12.55,0) {};
+  \draw[prRed,dashed] (f) -- (12.55,-0.9);
+  \node[dt=prRed,below] at (12.55,-0.9) {15 dic};
+  \node[lab,below] at (12.55,-1.3) {\textbf{Consegna finale}};
+  % 7
+  \node[ms=prRed]    (g) at (14.9,0) {};
+  \draw[prRed,dashed] (g) -- (14.9,0.9);
+  \node[dt=prRed,above] at (14.9,0.9) {gen/feb};
+  \node[lab,above] at (14.9,1.3) {Discussione del progetto};
+  % legenda
+  \node[font=\scriptsize,anchor=west] at (-0.3,-3.3)
+    {\tikz\node[ms=prRed]{};\ obbligatorio \quad
+     \tikz\node[ms=midgray]{};\ opzionale (solo feedback) \quad
+     \tikz\node[ms=accent]{};\ evento informativo};
+\end{tikzpicture}
+\end{center}
+
+\begin{center}
+\rowcolors{2}{softgray}{white}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabularx}{\linewidth}{@{}L{2.7cm}L{4.4cm}Y@{}}
+  \rowcolor{accent}
+  \textcolor{white}{\bfseries Data} & \textcolor{white}{\bfseries Evento} & \textcolor{white}{\bfseries Note} \\
+  7 ottobre    & Kickoff                         & Presentazione del progetto. \\
+  20 ottobre   & Consegna architettura generale  & \textbf{Opzionale}. Dettagli nella Sezione~\ref{sec:arch}. \\
+  21 ottobre   & Pubblicazione requisiti         & Il docente pubblica il documento con i requisiti del progetto. \\
+  1 novembre   & Scadenza gruppi                 & Il documento condiviso su Moodle viene bloccato. \\
+  10 novembre  & Consegna primo prototipo        & \textbf{Opzionale}. Dettagli nella Sezione~\ref{sec:proto}. \\
+  15 dicembre  & \textbf{Consegna finale}        & \textbf{Obbligatoria}. Dettagli nella Sezione~\ref{sec:final}. \\
+  gennaio e febbraio & Discussione                 & Orale di gruppo con valutazione individuale (Sezione~\ref{sec:orale}). \\
+\end{tabularx}
+\end{center}
+
+\subsection{Perché ci sono consegne opzionali}
+\begin{notebox}
+Le consegne opzionali servono \textbf{solo a ricevere feedback}: \textbf{non hanno voto} e
+\textbf{non c'è penalità} se non si consegna. Sono un'occasione per scoprire presto problemi di
+progettazione, perché un feedback anticipato costa di solito meno di un refactoring successivo.
+Se non si consegna l'architettura non succede nulla, si perde solo il feedback anticipato.
+\end{notebox}
+
+In caso di dubbi o blocchi si può scrivere al docente via email e/o andare a ricevimento.
+
+% =====================================================================
+\section{Cosa consegnare}
+% =====================================================================
+
+\subsection{Consegna 1 --- Architettura generale \badge{midgray}{white}{OPZIONALE · 20 OTT}}\label{sec:arch}
+
+Uno \textbf{schizzo di un'architettura software monolitica} che contenga:
+\begin{enumerate}[label=\textbf{\arabic*.}]
+  \item i \textbf{componenti principali};
+  \item la \textbf{comunicazione con gli utenti} (quali operazioni fa l'utente e verso quale componente);
+  \item il \textbf{contenuto del/i database};
+  \item le \textbf{user stories complete} (con criteri di accettazione e dipendenze, vedi Sezione~\ref{sec:completare}).
+\end{enumerate}
+
+\subsubsection{Formato}
+File \textbf{.pdf di slide} (con l'account Unipi sono disponibili gratis Office e Google Docs), possibilmente
+\textbf{sotto le 10 slide}, caricato su \textbf{Moodle} (sezione progetto) da \textbf{un solo membro} del gruppo.
+
+\begin{center}
+\rowcolors{2}{softgray}{white}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabularx}{0.92\linewidth}{@{}L{2.6cm}Y@{}}
+  \rowcolor{accent}
+  \textcolor{white}{\bfseries Slide} & \textcolor{white}{\bfseries Contenuto} \\
+  1        & Nome del gruppo e membri. \\
+  2        & Rappresentazione delle informazioni del giocatore. \\
+  3        & Collezione dei mostri e regole degli \enc. \\
+  4 (max 2 slide) & User stories complete. \\
+  successive & Disegno dell'architettura, interazioni dell'utente e database. \\
+\end{tabularx}
+\end{center}
+
+\subsubsection{Linee guida per disegnare l'architettura}
+\begin{itemize}
+  \item Partire dalle \textbf{user stories} per individuare le operazioni degli utenti.
+  \item Definire \textbf{componenti con uno scopo chiaro}.
+  \item Ricordare che poi andranno \textbf{implementati i componenti e la API RESTful}.
+  \item \textbf{KISS} --- \emph{Keep It Simple and Stupid}.
+\end{itemize}
+
+\begin{infobox}[title={Esempio del docente: negozio online (riassunto)}]
+L'esempio mostra il livello di dettaglio atteso. Ogni operazione dell'utente è associata a un
+componente e a un endpoint REST (descrivibile con \textbf{OpenAPI}); ogni componente che deve
+ricordare dati ha il suo database.
+
+\medskip
+\rowcolors{2}{white}{accent!4}
+\renewcommand{\arraystretch}{1.35}
+\begin{tabularx}{\linewidth}{@{}L{2.6cm}L{3.6cm}Y L{1.6cm}@{}}
+  \textbf{Componente} & \textbf{Operazioni utente} & \textbf{Endpoint REST} & \textbf{DB} \\ \midrule
+  Authentication & login & \texttt{PUT /login?user=\{username\}...} & Users \\
+  Catalogue      & consultare gli articoli & \texttt{GET /items}, \texttt{GET /items/\{item\_id\}} & Items \\
+  Orders         & creare ordini e pagare, controllare lo stato & \texttt{PUT /orders} + JSON, \texttt{PUT /payment} + JSON, \texttt{GET /orders/\{id\_order\}} & Orders \\
+  Payments       & interno (verso un \emph{Bank service} esterno) & --- & --- \\
+\end{tabularx}
+
+\medskip
+\textbf{Errore tipico evidenziato:} nella prima versione dell'esempio l'operazione ``controllare lo stato
+dell'ordine'' non aveva un database degli ordini su cui appoggiarsi. Ogni operazione deve avere i dati che le servono.
+
+\textbf{Database:} i DB disegnati possono essere DBMS diversi, database diversi nello stesso DBMS
+oppure tabelle diverse dello stesso DB. La scelta è libera.
+
+\textbf{Record d'esempio:} \emph{Users} (username, password, dati di fatturazione, storico, \dots),
+\emph{Items} (nome, prezzo, disponibilità, \dots).
+\end{infobox}
+
+\subsection{Consegna 2 --- Primo prototipo \badge{midgray}{white}{OPZIONALE · 10 NOV}}\label{sec:proto}
+
+Un \textbf{repository GitHub} contenente:
+\begin{itemize}
+  \item \textbf{descrizione generale} del progetto;
+  \item \textbf{codice};
+  \item \textbf{quick start}: istruzioni di installazione ed esecuzione;
+  \item \textbf{API completa e relativi test}.
+\end{itemize}
+Come preparare quick start, API e test verrà spiegato nei prossimi laboratori.
+Il prototipo copre le user stories \rosso.
+
+\subsection{Consegna finale \badge{prRed}{white}{OBBLIGATORIA · 15 DIC}}\label{sec:final}
+\begin{itemize}
+  \item \textbf{Repository GitHub} strutturato come per il prototipo (codice e documentazione).
+  \item \textbf{Report} che descrive il progetto, scritto sul \textbf{template fornito dal docente}.
+\end{itemize}
+La differenza tra prototipo e consegna finale è l'aggiunta delle funzionalità (requisiti) che verranno
+trattate più avanti nel corso: in particolare le user stories \giallo.
+
+\subsection{Discussione del progetto (gennaio/febbraio)}\label{sec:orale}
+\begin{itemize}
+  \item La consegna finale riceve \textbf{lo stesso voto per tutti i membri} del gruppo.
+  \item Nel periodo d'esame (gennaio e febbraio) il docente proporrà alcune date per incontrare il gruppo.
+  \item Durante la discussione il docente fa domande sulla realizzazione del progetto per valutare il
+        \textbf{coinvolgimento individuale}.
+  \item La discussione \textbf{aggiunge o toglie punti} al voto della consegna, \textbf{individualmente}.
+\end{itemize}
+\begin{warnbox}
+Se uno studente non sa rispondere e non dimostra un coinvolgimento sufficiente nel progetto, il suo
+voto finale è \textbf{``Failed''} e dovrà sostenere l'esame \textbf{senza il progetto}.
+\end{warnbox}
+
+% =====================================================================
+\needspace{9cm}
+\section{Requisiti tecnici del software}
+% =====================================================================
+
+\begin{tcbraster}[raster columns=3,raster equal height,raster column skip=3mm,raster row skip=3mm]
+  \begin{tcolorbox}[colback=accent!5,colframe=accent!70,title=Applicazione distribuita,fonttitle=\bfseries\small,arc=3pt]
+    \small Il sistema deve essere un'applicazione distribuita.
+  \end{tcolorbox}
+  \begin{tcolorbox}[colback=accent!5,colframe=accent!70,title=Interfaccia REST,fonttitle=\bfseries\small,arc=3pt]
+    \small Tutte le funzionalità devono essere utilizzabili tramite un'interfaccia RESTful.
+  \end{tcolorbox}
+  \begin{tcolorbox}[colback=accent!5,colframe=accent!70,title=Uno o più database,fonttitle=\bfseries\small,arc=3pt]
+    \small Persistenza dei dati, incluso lo storico degli \enc.
+  \end{tcolorbox}
+  \begin{tcolorbox}[colback=accent!5,colframe=accent!70,title=Meccanismi di sicurezza,fonttitle=\bfseries\small,arc=3pt]
+    \small Protezione di account e dati di gioco.
+  \end{tcolorbox}
+  \begin{tcolorbox}[colback=accent!5,colframe=accent!70,title=Testing,fonttitle=\bfseries\small,arc=3pt]
+    \small Test unitari e test di performance.
+  \end{tcolorbox}
+  \begin{tcolorbox}[colback=accent!5,colframe=accent!70,title=Analisi di sicurezza,fonttitle=\bfseries\small,arc=3pt]
+    \small Analisi della sicurezza del sistema.
+  \end{tcolorbox}
+\end{tcbraster}
+
+\subsection{Backend}
+Il focus principale del progetto è il \textbf{backend}. Il servizio deve gestire:
+\begin{itemize}
+  \item la \textbf{collezione globale} dei mostri e le \textbf{collezioni personali} dei giocatori;
+  \item la \textbf{selezione del team};
+  \item gli \textbf{\enc};
+  \item lo \textbf{storico degli \enc}, con \textbf{memorizzazione permanente}.
+\end{itemize}
+Tutto deve essere eseguibile tramite l'\textbf{interfaccia RESTful}.
+
+\subsection{Frontend}
+\begin{itemize}
+  \item Richiesto un \textbf{frontend minimale} con una UI di base, usato come sistema di debug,
+        che chiama la \textbf{REST API del backend} per le operazioni principali.
+  \item L'aspetto grafico è libero: conta come viene usato e come interagisce con il backend.
+\end{itemize}
+\begin{warnbox}
+\textbf{Nessuna logica di business rilevante nel frontend.} Le regole del gioco stanno nel backend.
+\end{warnbox}
+
+\subsection{Scelte libere}
+Linguaggi di programmazione, database e altri aspetti non specificati sono a scelta del gruppo.
+Le funzionalità da implementare sono quelle descritte nelle user stories (Sezione~\ref{sec:us}).
+
+% =====================================================================
+\needspace{10cm}
+\section{Il gioco: Monster Tamers}
+% =====================================================================
+
+\subsection{Il ciclo di gioco (game loop)}
+
+Il ciclo minimo richiesto è \textbf{Prepara $\rightarrow$ Affronta $\rightarrow$ Esito $\rightarrow$ Progresso}.
+Si può estendere a piacere.
+
+\begin{center}
+\begin{tikzpicture}[
+  step/.style={rounded corners=4pt,draw=#1!80!black,fill=#1!12,line width=0.8pt,
+               text width=2.1cm,align=center,minimum height=1.4cm,font=\scriptsize,inner sep=4pt},
+  arr/.style={-{Stealth[length=2.6mm]},line width=0.9pt,color=black!55},
+  brace/.style={decorate,decoration={brace,amplitude=5pt},line width=0.8pt,color=accent},
+  phase/.style={font=\small\bfseries,text=accent,above=6pt}]
+  \node[step=accent]   (col)  at (0,0)       {\textbf{1. Collezione}\\raccogli e possiedi mostri};
+  \node[step=accent]   (team) at (2.7,0)     {\textbf{2. Team}\\forma un team con i tuoi mostri};
+  \node[step=prRed]    (enc)  at (5.4,0)     {\textbf{3. Encounter}\\affronta una sfida con il team};
+  \node[step=prGreen]  (win)  at (8.4,1.0)   {\textbf{4a. Successo}\\encounter vinto};
+  \node[step=prRed]    (lose) at (8.4,-1.0)  {\textbf{4b. Fallimento}\\encounter perso};
+  \node[step=violet]   (hist) at (11.4,0)    {\textbf{5. Storico}\\rivedi encounter ed esiti};
+  \node[step=prYellow,dashed] (rew) at (14.1,0) {\textbf{Ricompensa}\\\emph{(opzionale)}\\nuovi mostri};
+
+  \draw[arr] (col) -- (team);
+  \draw[arr] (team) -- (enc);
+  \draw[arr] (enc.east) -- ++(0.3,0) |- (win.west);
+  \draw[arr] (enc.east) -- ++(0.3,0) |- (lose.west);
+  \draw[arr] (win.east)  -- ++(0.3,0) |- (hist.west);
+  \draw[arr] (lose.east) -- ++(0.3,0) |- (hist.west);
+  \draw[arr,dashed] (hist) -- (rew);
+  \draw[arr,dashed] (rew.south) -- ++(0,-1.75) -| node[pos=0.25,below,font=\scriptsize,text=black!60]
+       {nuovi mostri entrano nella collezione: il ciclo ricomincia} (col.south);
+
+  \draw[brace] ($(col.west)+(0,2.0)$)  -- node[phase]{Prepara}   ($(team.east)+(0,2.0)$);
+  \draw[brace] ($(enc.west)+(0,2.0)$)  -- node[phase]{Affronta}  ($(enc.east)+(0,2.0)$);
+  \draw[brace] ($(win.west)+(0,1.0)$)  -- node[phase]{Esito}     ($(win.east)+(0,1.0)$);
+  \draw[brace] ($(hist.west)+(0,2.0)$) -- node[phase]{Progresso} ($(rew.east)+(0,2.0)$);
+\end{tikzpicture}
+\end{center}
+
+\subsection{Giocatori}
+Come rappresentare un giocatore è a scelta del gruppo. \textbf{Minimo obbligatorio:}
+\begin{itemize}
+  \item delle \textbf{credenziali};
+  \item lo \textbf{storico degli \enc}.
+\end{itemize}
+Si possono aggiungere altri dati (immagine, amici, \dots) e si possono tenere separati
+\textbf{profilo} e \textbf{account} del giocatore.
+
+\subsection{Mostri}
+\begin{itemize}
+  \item Ogni gruppo sceglie la \textbf{collezione di mostri} del proprio progetto.
+  \item Ogni mostro deve avere \textbf{almeno}:
+    \begin{itemize}
+      \item un'\textbf{immagine} che lo rappresenta;
+      \item \textbf{due caratteristiche} usate nel gameplay degli \enc{} (se ne possono aggiungere altre).
+    \end{itemize}
+  \item Le caratteristiche \textbf{influenzano gli \enc}.
+  \item Ogni giocatore possiede una \textbf{collezione personale}.
+  \item Durante il gioco si possono \textbf{ottenere nuovi mostri}.
+\end{itemize}
+\begin{notebox}
+\textbf{Solo come esempio}, nelle slide i mostri hanno: un elemento (fuoco, acqua, terra, oscurità),
+le statistiche \emph{Power}, \emph{Speed}, \emph{Defense}, \emph{Magic} (da 1 a 5 stelle) e un'abilità speciale
+(es.\ ``riduce il danno subito del 25\%''). Non è un vincolo.
+\end{notebox}
+
+\subsection{Team}
+Prima di un \enc{} il giocatore prepara un team con i mostri della propria collezione. Il team deve:
+\begin{itemize}
+  \item avere una \textbf{dimensione limitata};
+  \item \textbf{rispettare le regole del gioco};
+  \item essere composto \textbf{solo da mostri posseduti}.
+\end{itemize}
+Le regole precise dei team sono a scelta del gruppo.
+
+\subsection{Encounter}
+Un \enc{} è una sfida tra un team e un \textbf{``mostro selvatico''}.
+\begin{itemize}
+  \item \enc{} diversi possono avere caratteristiche diverse;
+  \item il risultato \textbf{dipende dal team scelto};
+  \item un \enc{} può \textbf{riuscire o fallire};
+  \item alcuni esiti possono \textbf{dare un nuovo mostro}.
+\end{itemize}
+Un \enc{} \textbf{non deve per forza} essere una battaglia a turni.
+
+\subsection{Regole del gioco}
+Le regole sono in gran parte libere. Ad esempio vanno definiti:
+l'obiettivo principale del gioco, come si amplia la collezione, come funzionano gli \enc,
+se sono ammessi duplicati nelle collezioni personali, ecc.
+
+\emph{Esempio dalle slide:} \enc{} basati su combattimenti, con l'obiettivo di battere un boss finale
+dopo diverse battaglie di difficoltà crescente.
+
+\begin{choicebox}[title={Decisioni lasciate al gruppo}]
+\begin{itemize}[leftmargin=1.2em]
+  \item Dati del giocatore oltre al minimo (credenziali + storico); profilo e account separati o no.
+  \item Collezione dei mostri: quali mostri, quali caratteristiche (almeno immagine + 2 caratteristiche).
+  \item Regole dei team: dimensione massima e vincoli.
+  \item Meccanica degli \enc: come si calcola l'esito (anche non a turni), quando si ottiene un mostro.
+  \item Obiettivo del gioco, crescita della collezione, gestione dei duplicati.
+  \item Funzionalità extra (user stories verdi o idee nuove).
+  \item Linguaggi, database, aspetto grafico del frontend.
+\end{itemize}
+\end{choicebox}
+
+% =====================================================================
+\section{Requisiti funzionali (user stories)}\label{sec:us}
+% =====================================================================
+
+\subsection{Come leggere le priorità}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.5}
+\begin{tabularx}{0.95\linewidth}{@{}C{3.2cm}Y C{1.6cm}@{}}
+  \toprule
+  \textbf{Colore} & \textbf{Significato} & \textbf{N.\ US} \\ \midrule
+  \rosso   & Funzionalità core, da implementare già nel \textbf{primo prototipo} (e quindi presenti anche nella consegna finale). & \textbf{18} \\
+  \giallo  & Funzionalità da aggiungere per la \textbf{consegna finale} (legate ad argomenti trattati più avanti nel corso). & \textbf{2} \\
+  \verde   & \textbf{Facoltative}: proposte dagli studenti, si possono implementare oppure no. & \textbf{8} \\ \bottomrule
+\end{tabularx}
+\end{center}
+
+\begin{notebox}
+\begin{itemize}[leftmargin=1.2em]
+  \item La priorità indica il \textbf{prodotto minimo funzionante per il progetto}, non per un prodotto reale.
+  \item Le user stories sono volutamente \textbf{generiche} per lasciare libertà ai gruppi (ad esempio, non
+        esiste una user story su come implementare gli \enc). Quelle specifiche sono tutte verdi.
+  \item Si possono aggiungere \textbf{funzionalità non presenti} nelle user stories.
+  \item In tutte le user stories l'attore è \textbf{il giocatore} (``Come giocatore, voglio\dots'').
+\end{itemize}
+\end{notebox}
+
+{\footnotesize\color{midgray} Nota: il file Excel contiene anche un foglio ``Realistic backlog'' con priorità P1--P3
+pensate per un gioco reale. Non riguardano il progetto e sono state omesse; da quel foglio sono ripresi solo
+i titoli brevi delle user stories.\par}
+
+\subsection{Da completare a cura del gruppo}\label{sec:completare}
+Il file del docente riporta solo le user stories con la loro priorità (criteri di accettazione e dipendenze
+sono stati omessi di proposito). Il docente chiede di:
+\begin{itemize}
+  \item definire i \textbf{criteri di accettazione} almeno per le user stories ad \textbf{alta e media priorità};
+  \item definire le \textbf{dipendenze} tra le user stories.
+\end{itemize}
+
+\subsection{Account e progressi}
+\begin{ustable}
+  \usrow{01}{Creare un account}{creare un account}{i miei progressi di gioco siano associati a me}{\rosso}
+  \usrow{02}{Accedere (login)}{effettuare il login}{io possa accedere al mio gioco e continuare a giocare}{\rosso}
+  \usrow{03}{Ritrovare i progressi salvati}{ritrovare i miei progressi quando torno}{io possa riprendere da dove avevo lasciato}{\rosso}
+  \usrow{04}{Personalizzare il profilo}{scegliere o modificare il mio nome da giocatore e il mio avatar}{io possa personalizzare la mia identità}{\verde}
+  \usrow{05}{Proteggere i dati dell'account}{che i dati del mio account siano protetti}{nessun altro possa accedervi o modificarli senza permesso}{\giallo}
+\end{ustable}
+
+\subsection{Collezione di mostri}
+\begin{ustable}
+  \usrow{06}{Ricevere una collezione iniziale}{ricevere un set iniziale di mostri quando inizio a giocare}{io possa formare il mio primo team}{\rosso}
+  \usrow{07}{Scegliere il primo mostro}{scegliere il mio primo mostro}{io possa personalizzare la mia strategia iniziale}{\verde}
+  \usrow{08}{Scegliere una fazione}{scegliere una fazione (o un'affiliazione iniziale equivalente)}{la mia scelta iniziale possa influenzare l'esperienza di gioco}{\verde}
+  \usrow{09}{Vedere la collezione personale}{vedere i mostri che possiedo}{io sappia quali mostri posso usare}{\rosso}
+  \usrow{10}{Sfogliare la collezione globale}{sfogliare tutti i mostri disponibili nel gioco}{io capisca cosa posso incontrare od ottenere}{\rosso}
+  \usrow{11}{Vedere i dettagli di un mostro}{vedere l'immagine e le caratteristiche di un mostro}{io possa valutare quanto può essermi utile negli \enc}{\rosso}
+  \usrow{12}{Ottenere un mostro guadagnato}{che un mostro guadagnato o catturato in un \enc{} venga aggiunto alla mia collezione}{le mie scelte future si amplino}{\rosso}
+  \usrow{13}{Sviluppare i mostri}{migliorare o personalizzare i miei mostri}{io possa sviluppare strategie diverse nel tempo}{\verde}
+\end{ustable}
+
+\subsection{Team}
+\begin{ustable}
+  \usrow{14}{Creare un team}{creare un team usando i mostri della mia collezione}{io possa prepararmi a un \enc}{\rosso}
+  \usrow{15}{Modificare un team}{sostituire o rimuovere mostri dal mio team}{io possa adattare la strategia prima di un \enc}{\rosso}
+  \usrow{16}{Validare un team}{sapere se il team selezionato rispetta le regole del gioco}{io non inizi con un team non valido}{\rosso}
+\end{ustable}
+
+\subsection{Encounter}
+\begin{ustable}
+  \usrow{17}{Sfogliare gli encounter}{vedere gli \enc{} disponibili e le loro caratteristiche}{io possa scegliere una sfida adatta}{\rosso}
+  \usrow{18}{Avviare un encounter}{avviare un \enc{} con il team selezionato}{io possa affrontare una sfida}{\rosso}
+  \usrow{19}{Risolvere un encounter}{che l'\enc{} venga risolto secondo le regole del gioco}{io sappia se ho avuto successo o ho fallito}{\rosso}
+  \usrow{20}{Dettagli del risultato}{vedere i dettagli del risultato di un \enc}{io capisca l'esito e il team coinvolto}{\rosso}
+  \usrow{21}{Abbandonare un encounter}{abbandonare o fuggire da un \enc{} quando le regole lo consentono}{io possa interrompere una sfida che non voglio più continuare}{\verde}
+  \usrow{22}{Scegliere le azioni}{scegliere azioni come attaccare o tentare di catturare un mostro durante un \enc}{le mie decisioni possano influenzarne l'esito}{\verde}
+\end{ustable}
+
+\subsection{Storico e integrità}
+\begin{ustable}
+  \usrow{23}{Vedere lo storico}{vedere i miei \enc{} precedenti}{io possa rivedere i miei progressi e i risultati}{\rosso}
+  \usrow{24}{Dettagli di un encounter passato}{vedere i dettagli di un \enc{} passato}{io possa imparare dalla scelta del team e dal risultato}{\rosso}
+  \usrow{25}{Proteggere i salvataggi}{che collezione, storico e progressi siano protetti da manomissioni o perdite}{io possa fidarmi del mio salvataggio}{\giallo}
+\end{ustable}
+
+\subsection{Social}
+\begin{ustable}
+  \usrow{26}{Gestire gli amici}{aggiungere e gestire amici}{io possa tenere traccia delle persone che conosco nel gioco}{\verde}
+  \usrow{27}{Sfidare un amico}{sfidare un amico}{io possa giocare con altri in una modalità aggiuntiva}{\verde}
+\end{ustable}
+
+\subsection{Interfaccia del giocatore}
+\begin{ustable}
+  \usrow{28}{Usare un'interfaccia semplice}{eseguire le azioni principali del gioco tramite un'interfaccia semplice}{io possa giocare senza usare strumenti tecnici}{\rosso}
+\end{ustable}
+
+\subsection{Vista per consegna}
+
+\begin{tcbraster}[raster columns=3,raster equal height,raster column skip=3mm]
+  \begin{tcolorbox}[colback=prRed!5,colframe=prRed,title={Primo prototipo (18)},fonttitle=\bfseries\small,arc=3pt,left=5pt,right=5pt]
+    \footnotesize
+    \us{01} Creare account\\
+    \us{02} Login\\
+    \us{03} Ritrovare progressi\\
+    \us{06} Collezione iniziale\\
+    \us{09} Collezione personale\\
+    \us{10} Collezione globale\\
+    \us{11} Dettagli mostro\\
+    \us{12} Ottenere mostro\\
+    \us{14} Creare team\\
+    \us{15} Modificare team\\
+    \us{16} Validare team\\
+    \us{17} Sfogliare encounter\\
+    \us{18} Avviare encounter\\
+    \us{19} Risolvere encounter\\
+    \us{20} Dettagli risultato\\
+    \us{23} Storico\\
+    \us{24} Dettagli encounter passato\\
+    \us{28} Interfaccia semplice
+  \end{tcolorbox}
+  \begin{tcolorbox}[colback=prYellow!10,colframe=prYellow!90!black,coltitle=black,title={+ Consegna finale (2)},fonttitle=\bfseries\small,arc=3pt,left=5pt,right=5pt]
+    \footnotesize
+    \us{05} Protezione dati account\\
+    \us{25} Protezione salvataggi da manomissioni o perdite
+
+    \medskip
+    \textit{Tutte e due riguardano la sicurezza e l'integrità dei dati, in linea con i requisiti tecnici
+    ``meccanismi di sicurezza'' e ``analisi di sicurezza''.}
+
+    \medskip
+    \textit{La consegna finale comprende quindi tutte le 18 US rosse più queste 2.}
+  \end{tcolorbox}
+  \begin{tcolorbox}[colback=prGreen!6,colframe=prGreen,title={Opzionali (8)},fonttitle=\bfseries\small,arc=3pt,left=5pt,right=5pt]
+    \footnotesize
+    \us{04} Nome e avatar\\
+    \us{07} Scegliere primo mostro\\
+    \us{08} Scegliere fazione\\
+    \us{13} Sviluppare mostri\\
+    \us{21} Abbandonare encounter\\
+    \us{22} Scegliere azioni\\
+    \us{26} Gestire amici\\
+    \us{27} Sfidare amico
+  \end{tcolorbox}
+\end{tcbraster}
+
+\end{document}
