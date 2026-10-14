@@ -1,0 +1,4 @@
+# Only the gateway is built from the repo root; it needs gateway/ and frontend/.
+*
+!gateway/
+!frontend/

@@ -17,3 +17,7 @@ tools/monster-gen/output/
 Thumbs.db
 .vscode/
 .idea/
+
+# Maven / env
+target/
+.env

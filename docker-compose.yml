@@ -1,0 +1,145 @@
+name: monster-tamers
+
+x-service: &service
+  restart: unless-stopped
+  depends_on:
+    postgres: { condition: service_healthy }
+    init-secrets: { condition: service_completed_successfully }
+  networks: [backend]
+
+x-common-env: &common-env
+  INTERNAL_TOKEN: ${INTERNAL_TOKEN:-dev-internal-token}
+  JWT_PUBLIC_KEY: file:/secrets/public/jwt-public.pem
+  MONSTERS_URL: http://monsters:8080
+  PLAYERS_URL: http://players:8080
+  TEAMS_URL: http://teams:8080
+  HISTORY_URL: http://history:8080
+
+services:
+  init-secrets:
+    image: alpine:3.20
+    command: ["sh", "/init.sh"]
+    volumes:
+      - ./infra/secrets/init.sh:/init.sh:ro
+      - jwt-private:/jwt-private
+      - jwt-public:/jwt-public
+      - tls:/tls
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      AUTH_DB_PASSWORD: ${AUTH_DB_PASSWORD:-auth}
+      PLAYERS_DB_PASSWORD: ${PLAYERS_DB_PASSWORD:-players}
+      MONSTERS_DB_PASSWORD: ${MONSTERS_DB_PASSWORD:-monsters}
+      TEAMS_DB_PASSWORD: ${TEAMS_DB_PASSWORD:-teams}
+      ENCOUNTERS_DB_PASSWORD: ${ENCOUNTERS_DB_PASSWORD:-encounters}
+      HISTORY_DB_PASSWORD: ${HISTORY_DB_PASSWORD:-history}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./infra/postgres/init.sh:/docker-entrypoint-initdb.d/init.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks: [backend]
+
+  auth:
+    <<: *service
+    build: ./backend/auth
+    environment:
+      <<: *common-env
+      DB_URL: jdbc:postgresql://postgres:5432/auth
+      DB_USER: auth
+      DB_PASSWORD: ${AUTH_DB_PASSWORD:-auth}
+      JWT_PRIVATE_KEY: file:/secrets/private/jwt-private.pem
+    volumes:
+      - jwt-private:/secrets/private:ro
+      - jwt-public:/secrets/public:ro
+
+  players:
+    <<: *service
+    build: ./backend/players
+    environment:
+      <<: *common-env
+      DB_URL: jdbc:postgresql://postgres:5432/players
+      DB_USER: players
+      DB_PASSWORD: ${PLAYERS_DB_PASSWORD:-players}
+    volumes:
+      - jwt-public:/secrets/public:ro
+
+  monsters:
+    <<: *service
+    build: ./backend/monsters
+    environment:
+      <<: *common-env
+      DB_URL: jdbc:postgresql://postgres:5432/monsters
+      DB_USER: monsters
+      DB_PASSWORD: ${MONSTERS_DB_PASSWORD:-monsters}
+    volumes:
+      - jwt-public:/secrets/public:ro
+
+  teams:
+    <<: *service
+    build: ./backend/teams
+    environment:
+      <<: *common-env
+      DB_URL: jdbc:postgresql://postgres:5432/teams
+      DB_USER: teams
+      DB_PASSWORD: ${TEAMS_DB_PASSWORD:-teams}
+    volumes:
+      - jwt-public:/secrets/public:ro
+
+  encounters:
+    <<: *service
+    build: ./backend/encounters
+    environment:
+      <<: *common-env
+      DB_URL: jdbc:postgresql://postgres:5432/encounters
+      DB_USER: encounters
+      DB_PASSWORD: ${ENCOUNTERS_DB_PASSWORD:-encounters}
+    volumes:
+      - jwt-public:/secrets/public:ro
+
+  history:
+    <<: *service
+    build: ./backend/history
+    environment:
+      <<: *common-env
+      DB_URL: jdbc:postgresql://postgres:5432/history
+      DB_USER: history
+      DB_PASSWORD: ${HISTORY_DB_PASSWORD:-history}
+      HISTORY_SECRET: ${HISTORY_SECRET:-dev-history-secret}
+    volumes:
+      - jwt-public:/secrets/public:ro
+
+  gateway:
+    build:
+      context: .
+      dockerfile: gateway/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+      - "8443:443"
+    depends_on:
+      init-secrets: { condition: service_completed_successfully }
+      auth: { condition: service_healthy }
+      players: { condition: service_healthy }
+      monsters: { condition: service_healthy }
+      teams: { condition: service_healthy }
+      encounters: { condition: service_healthy }
+      history: { condition: service_healthy }
+    volumes:
+      - tls:/tls:ro
+    networks: [backend]
+
+networks:
+  backend:
+
+volumes:
+  pgdata:
+  jwt-private:
+  jwt-public:
+  tls:
