@@ -1,9 +1,9 @@
 # monsters
 
-Catalogo dei mostri, abilità e collezione personale.
+Catalogo dei mostri, abilità, elementi e collezione personale per run (livelli e XP).
 
-- **Entità:** `Monsters`, `Abilities`, `OwnedMonsters`
-- **User stories:** US-06, US-09, US-10, US-11, US-12
+- **Entità:** `Monsters`, `Abilities`, `Elements`, `OwnedMonsters`
+- **User stories:** US-06, US-09, US-10, US-11, US-12, US-13
 
 ## Dati di seed (`seed/`)
 

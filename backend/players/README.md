@@ -1,6 +1,6 @@
 # players
 
-Profilo di gioco e progressi del giocatore.
+Profilo di gioco, pool degli starter e run corrente del giocatore.
 
 - **Entità:** `Players`
-- **User stories:** US-03, US-06 (stato `starters_chosen`)
+- **User stories:** US-03, US-04, US-06, US-07

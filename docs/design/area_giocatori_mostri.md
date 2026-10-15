@@ -1,6 +1,10 @@
 # Monster Tamers — Area Giocatori e Mostri
 
-Proposta per la consegna opzionale dell'architettura (20/10). Copre:
+Proposta per la consegna opzionale dell'architettura (20/10).
+
+> **Aggiornamento 15/10:** alcune decisioni sono cambiate con l'introduzione delle run roguelike (stage, starter per run, livello dei mostri ottenuti, `run_id` in `OwnedMonsters`). Vedi [architettura_backend.md, sezione 8](../architettura/architettura_backend.md#8-cosa-cambia-nelle-decisioni-precedenti).
+
+Copre:
 
 - dati del giocatore (account, credenziali, progressi);
 - catalogo dei mostri e collezione personale;

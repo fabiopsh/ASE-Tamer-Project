@@ -19,4 +19,4 @@ docs/
   architettura/     diagrammi, API e slide
 ```
 
-Tecnologie non ancora decise. Nomi e confini dei servizi sono provvisori: si confermano con l'architettura.
+Stack: Quarkus (Java 21), PostgreSQL (un database per servizio), Nginx come gateway, docker compose. Architettura e regole di gioco in [`docs/architettura/architettura_backend.md`](docs/architettura/architettura_backend.md).
