@@ -26,28 +26,28 @@ I valori numerici delle formule di gioco (sezione 4) sono **valori iniziali**: v
 
 | # | Tema | Decisione |
 |---|---|---|
-| G1 | Struttura | **Roguelike a run**: una run va dalla scelta degli starter alla vittoria finale, alla sconfitta o alla resa |
-| G2 | Obiettivo | **8 stage** di difficoltà crescente; battere il boss dello stage 8 vince la run |
-| G3 | Encounter | **Battaglia interattiva a turni**, team contro un mostro selvatico |
-| G4 | Formato | **1v1 a staffetta**: combatte un mostro del team alla volta, nell'ordine del team; il selvatico tiene i danni |
-| G5 | Azioni | **Attacco**, **Cambio mostro**, **Fuga** (niente azione di cattura) |
-| G6 | Ricompensa | **Vittoria = il selvatico entra in collezione**, sempre |
-| G7 | Fuga | Riesce **con probabilità** che dipende dalla speed; se fallisce il turno è perso |
-| G8 | Team | Da **1 a 3** mostri posseduti nella run corrente; **ammesse più copie della stessa specie** (non la stessa istanza due volte); nessun altro vincolo |
-| G9 | Team nella run | **Modificabile tra un encounter e l'altro** |
-| G10 | HP | **Pieni all'inizio di ogni encounter** (non persistono tra encounter) |
-| G11 | XP | In vittoria **tutto il team** riceve XP, anche chi non è sceso in campo |
-| G12 | Catalogo encounter | **Template statici** per stage; il selvatico è estratto a caso dal catalogo all'avvio |
-| G13 | Boss | Uno per stage, **battibile una volta per run**; la vittoria dà il boss e sblocca lo stage successivo |
-| G14 | Sconfitta | **Run persa, reset completo**: collezione, livelli e stage ripartono da zero; nuovi starter da un nuovo pool. Restano account, storico e run passate |
-| G15 | Mostri delle run chiuse | **Archiviati**, non cancellati: il giocatore consulta le vecchie run per capire dove ha sbagliato |
-| G16 | Fine run vinta | Run marcata `won`; il giocatore ne inizia una nuova quando vuole (con reset) |
-| G17 | Resa | Il giocatore può **abbandonare la run**: stesso reset della sconfitta |
-| G18 | Encounter attivi | **Uno alla volta** per giocatore; scade dopo **30 minuti** di inattività |
-| G19 | Stato della battaglia | **In memoria** nel servizio `encounters`; la run è invece **persistita** in Postgres |
-| G20 | Storico | **Riepilogo + log completo dei turni** per ogni encounter |
+| R1 | Struttura | **Roguelike a run**: una run va dalla scelta degli starter alla vittoria finale, alla sconfitta o alla resa |
+| R2 | Obiettivo | **8 stage** di difficoltà crescente; battere il boss dello stage 8 vince la run |
+| R3 | Encounter | **Battaglia interattiva a turni**, team contro un mostro selvatico |
+| R4 | Formato | **1v1 a staffetta**: combatte un mostro del team alla volta, nell'ordine del team; il selvatico tiene i danni |
+| R5 | Azioni | **Attacco**, **Cambio mostro**, **Fuga** (niente azione di cattura) |
+| R6 | Ricompensa | **Vittoria = il selvatico entra in collezione**, sempre |
+| R7 | Fuga | Riesce **con probabilità** che dipende dalla speed; se fallisce il turno è perso |
+| R8 | Team | Da **1 a 3** mostri posseduti nella run corrente; **ammesse più copie della stessa specie** (non la stessa istanza due volte); nessun altro vincolo |
+| R9 | Team nella run | **Modificabile tra un encounter e l'altro** |
+| R10 | HP | **Pieni all'inizio di ogni encounter** (non persistono tra encounter) |
+| R11 | XP | In vittoria **tutto il team** riceve XP, anche chi non è sceso in campo |
+| R12 | Catalogo encounter | **Template statici** per stage; il selvatico è estratto a caso dal catalogo all'avvio |
+| R13 | Boss | Uno per stage, **battibile una volta per run**; la vittoria dà il boss e sblocca lo stage successivo |
+| R14 | Sconfitta | **Run persa, reset completo**: collezione, livelli e stage ripartono da zero; nuovi starter da un nuovo pool. Restano account, storico e run passate |
+| R15 | Mostri delle run chiuse | **Archiviati**, non cancellati: il giocatore consulta le vecchie run per capire dove ha sbagliato |
+| R16 | Fine run vinta | Run marcata `won`; il giocatore ne inizia una nuova quando vuole (con reset) |
+| R17 | Resa | Il giocatore può **abbandonare la run**: stesso reset della sconfitta |
+| R18 | Encounter attivi | **Uno alla volta** per giocatore; scade dopo **30 minuti** di inattività |
+| R19 | Stato della battaglia | **In memoria** nel servizio `encounters`; la run è invece **persistita** in Postgres |
+| R20 | Storico | **Riepilogo + log completo dei turni** per ogni encounter |
 
-**Limite noto di G19.** Se `encounters` si riavvia, le battaglie in corso vanno perse (vengono chiuse come `interrupted`, senza ricompensa e senza perdere la run) e il servizio non si può replicare su più istanze. La run, lo stage e la collezione non si perdono.
+**Limite noto di R19.** Se `encounters` si riavvia, le battaglie in corso vanno perse (vengono chiuse come `interrupted`, senza ricompensa e senza perdere la run) e il servizio non si può replicare su più istanze. La run, lo stage e la collezione non si perdono.
 
 ---
 
