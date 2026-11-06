@@ -1,0 +1,54 @@
+# Test override (TEST-1, P-13): exposes each service on 127.0.0.1 for the component tests,
+# enables the "tests" service client and raises the gateway rate limit (Locust).
+#   docker compose -f docker-compose.yml -f docker-compose.test.yml up -d --build --wait
+# auth 9001, players 9002, monsters 9003, teams 9004, encounters 9005, history 9006
+
+services:
+  gateway:
+    environment:
+      AUTH_RATE_LIMIT: 6000r/m
+      AUTH_RATE_BURST: "1000"
+
+  auth:
+    ports:
+      - "127.0.0.1:9001:8443"
+    networks:
+      - backend
+      - edge
+    environment:
+      TAMER_TEST_CLIENT_ENABLED: "true"
+
+  players:
+    ports:
+      - "127.0.0.1:9002:8443"
+    networks:
+      - backend
+      - edge
+
+  monsters:
+    ports:
+      - "127.0.0.1:9003:8443"
+    networks:
+      - backend
+      - edge
+
+  teams:
+    ports:
+      - "127.0.0.1:9004:8443"
+    networks:
+      - backend
+      - edge
+
+  encounters:
+    ports:
+      - "127.0.0.1:9005:8443"
+    networks:
+      - backend
+      - edge
+
+  history:
+    ports:
+      - "127.0.0.1:9006:8443"
+    networks:
+      - backend
+      - edge

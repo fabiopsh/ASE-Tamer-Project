@@ -157,14 +157,14 @@ Record the chosen versions here when INFRA-1 is done:
 
 | Component | Version |
 |---|---|
-| Java (Temurin / UBI OpenJDK) | 21.x |
-| Quarkus platform | _fill in (latest 3.x LTS)_ |
-| Maven | _fill in_ |
-| PostgreSQL image | _fill in (e.g. 17.x-alpine)_ |
-| nginx-unprivileged image | _fill in_ |
-| Alpine (init-secrets) | _fill in_ |
+| Java (Temurin / UBI OpenJDK) | 21 (`maven.compiler.release=21`); runtime image `registry.access.redhat.com/ubi9/openjdk-21-runtime:1.24` |
+| Quarkus platform | 3.39.5 |
+| Maven (build image) | `maven:3.9.16-eclipse-temurin-21`; plugins: compiler 3.16.0, surefire/failsafe 3.6.1, resources 3.5.0 |
+| PostgreSQL image | `postgres:17.11-alpine3.24` (not 18: its data directory layout changed) |
+| nginx-unprivileged image | `nginxinc/nginx-unprivileged:1.30.6-alpine3.24` |
+| Alpine (init-secrets) | `alpine:3.24.4` |
 | Node.js | _fill in (LTS)_ |
-| Bruno CLI | _fill in_ |
+| Bruno CLI | `@usebruno/cli@4.3.0` (run with `npx`) |
 | Locust | _fill in_ |
 
 ## Git workflow

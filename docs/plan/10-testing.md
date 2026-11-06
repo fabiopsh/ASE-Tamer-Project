@@ -37,12 +37,14 @@ What the requirements ask (§5):
 docker compose -f docker-compose.yml -f docker-compose.test.yml up -d --build
 scripts/test-env.sh        # writes docs/tests/bruno/.env (CA path, tests client secret) — gitignored
 cd docs/tests/bruno
-bru run services --env component --cacert ../../../.test-secrets/ca.crt
-bru run services/auth/public services/players/public services/monsters/public services/teams/public services/encounters/public services/history/public --env integration --cacert ../../../.test-secrets/ca.crt
-bru run e2e --env integration --cacert ../../../.test-secrets/ca.crt
+bru run services -r --env component --cacert ../../../.test-secrets/ca.crt
+bru run services/auth/public services/players/public services/monsters/public services/teams/public services/encounters/public services/history/public -r --env integration --cacert ../../../.test-secrets/ca.crt
+bru run e2e -r --env integration --cacert ../../../.test-secrets/ca.crt
 ```
 
-`scripts/test-env.sh` reads `ca.crt` and `tests/client.env` from the `secrets` volume with a throw-away container (`docker run --rm -v <project>_secrets:/s:ro alpine …`) and writes them to `.test-secrets/` (gitignored) and `docs/tests/bruno/.env`.
+`bru` is the Bruno CLI (`npx @usebruno/cli@4.3.0 …`); `-r` is needed to run the requests inside sub-folders.
+
+`scripts/test-env.sh` (done) reads `tests/ca.crt` and `tests/client.env` from the `secrets` volume with a throw-away container (`docker run --rm -v tamer_secrets:/s:ro tamer/init-secrets:dev …`) and writes them to `.test-secrets/` (gitignored) and `docs/tests/bruno/.env`.
 
 Component tests of the five services other than `auth` still need tokens: each service folder starts with a `00-setup` request sequence that registers a random user directly on `auth` (9001), gets a player token, and gets a service token with the `tests` client (for `/internal/*` requests).
 

@@ -1,0 +1,25 @@
+meta {
+  name: POST /api/auth/token - invalid: unknown user (same error as wrong password)
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{authUrl}}/api/auth/token
+  body: formUrlEncoded
+  auth: none
+}
+
+body:form-urlencoded {
+  grant_type: password
+  username: nobody_{{$randomInt}}
+  password: pikachu123
+}
+
+tests {
+  test("400 invalid_grant, indistinguishable from a wrong password", function () {
+    expect(res.getStatus()).to.equal(400);
+    expect(res.getBody().error).to.equal("invalid_grant");
+    expect(res.getBody().error_description).to.equal("Invalid username or password.");
+  });
+}

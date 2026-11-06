@@ -87,17 +87,21 @@ CREATE INDEX ix_refresh_tokens_player ON refresh_tokens (player_id);
 
 ## AUTH-1 — Schema and Account entity · P1
 
+**Status:** done on 06/11/2026, see [implementation notes](#implementation-notes-06112026).
+
 **Depends on:** INFRA-1, INFRA-3
 
-- [ ] Migration above, entity `Account`, repository `findByUsername(String normalized)`.
-- [ ] `UsernameNormalizer`: trim + `toLowerCase(Locale.ROOT)`; used for both registration and login.
-- [ ] Unit test of the normalizer.
+- [x] Migration above, entity `Account`, repository `findByUsername(String normalized)`.
+- [x] `UsernameNormalizer`: trim + `toLowerCase(Locale.ROOT)`; used for both registration and login.
+- [x] Unit test of the normalizer.
 
 **Done when:** schema created at startup; duplicate username insert fails at DB level.
 
 ---
 
 ## AUTH-2 — Registration (US-01) · P1
+
+**Status:** done (needs PL-1 to work end to end) on 06/11/2026, see [implementation notes](#implementation-notes-06112026).
 
 **Depends on:** AUTH-1, AUTH-4 (local service token), PL-1 (`POST /internal/players`; mock until ready)
 
@@ -126,14 +130,14 @@ sequenceDiagram
     end
 ```
 
-- [ ] DTO `RegisterRequest(username, password)` with Bean Validation.
-- [ ] `BcryptUtil.bcryptHash(password, 12)` (cost 12).
-- [ ] Insert and the call to `players` inside one `@Transactional` method; any exception → rollback.
-- [ ] If the commit fails after `players` succeeded, an orphan profile may remain: harmless (never reachable without an account) and documented.
-- [ ] Duplicate username → `409 USERNAME_TAKEN`, also when caught as unique-constraint violation (concurrent requests).
-- [ ] REST client `PlayersClient` with `@Retry` (the call is idempotent on `player_id`), `@Timeout`, `@CircuitBreaker`.
-- [ ] `auth` signs its own service token for this call (no HTTP round trip to itself).
-- [ ] Never log the password; log `player_id` only.
+- [x] DTO `RegisterRequest(username, password)` with Bean Validation.
+- [x] `BcryptUtil.bcryptHash(password, 12)` (cost 12).
+- [x] Insert and the call to `players` inside one `@Transactional` method; any exception → rollback.
+- [x] If the commit fails after `players` succeeded, an orphan profile may remain: harmless (never reachable without an account) and documented.
+- [x] Duplicate username → `409 USERNAME_TAKEN`, also when caught as unique-constraint violation (concurrent requests).
+- [x] REST client `PlayersClient` with `@Retry` (the call is idempotent on `player_id`), `@Timeout`, `@CircuitBreaker`.
+- [x] `auth` signs its own service token for this call (no HTTP round trip to itself).
+- [x] Never log the password; log `player_id` only.
 
 **Done when**
 
@@ -145,13 +149,15 @@ sequenceDiagram
 
 ## AUTH-3 — OAuth2 password grant and player JWT (US-02) · P1
 
+**Status:** done on 06/11/2026, see [implementation notes](#implementation-notes-06112026).
+
 **Depends on:** AUTH-1, INFRA-4
 
-- [ ] Resource consuming `application/x-www-form-urlencoded` with `@FormParam`s; dispatch on `grant_type`.
-- [ ] `password` grant: normalise username, load account; if absent, still run `BcryptUtil.matches(password, DUMMY_HASH)` so timing does not reveal whether the username exists; on mismatch → `invalid_grant` with the same `error_description` ("Invalid username or password.").
-- [ ] Sign with `Jwt.issuer("tamer-auth").audience("tamer-api").subject(id).upn(username).groups(Set.of("player")).expiresIn(ttl).jws().keyId("tamer-1").sign()` using `smallrye.jwt.sign.key.location=/run/secrets/jwt-private.pem`.
-- [ ] Update `last_login`.
-- [ ] `Cache-Control: no-store` on every token response.
+- [x] Resource consuming `application/x-www-form-urlencoded` with `@FormParam`s; dispatch on `grant_type`.
+- [x] `password` grant: normalise username, load account; if absent, still run `BcryptUtil.matches(password, DUMMY_HASH)` so timing does not reveal whether the username exists; on mismatch → `invalid_grant` with the same `error_description` ("Invalid username or password.").
+- [x] Sign with `Jwt.issuer("tamer-auth").audience("tamer-api").subject(id).upn(username).groups(Set.of("player")).expiresIn(ttl).jws().keyId("tamer-1").sign()` using `smallrye.jwt.sign.key.location=/run/secrets/jwt-private.pem`.
+- [x] Update `last_login`.
+- [x] `Cache-Control: no-store` on every token response.
 - [ ] Check the Access Security lab slides for any extra constraint (scopes, endpoint names) and align.
 
 **Done when**
@@ -164,13 +170,15 @@ sequenceDiagram
 
 ## AUTH-4 — Client credentials grant for services · P1
 
+**Status:** done on 06/11/2026, see [implementation notes](#implementation-notes-06112026).
+
 **Depends on:** AUTH-3, INFRA-4
 
-- [ ] `POST /internal/auth/token` (not routed by the gateway), `grant_type=client_credentials`.
-- [ ] Known clients from config `tamer.service-clients.<id>=<secret>` (`players`, `teams`, `encounters`, and `tests` only if `TAMER_TEST_CLIENT_ENABLED=true`).
-- [ ] Compare secrets in constant time (`MessageDigest.isEqual` on UTF-8 bytes).
-- [ ] Service token claims as in the table above, TTL 300 s.
-- [ ] `LocalServiceTokenSigner` used by `auth` for its own outgoing calls.
+- [x] `POST /internal/auth/token` (not routed by the gateway), `grant_type=client_credentials`.
+- [x] Known clients from config `tamer.service-clients.<id>=<secret>` (`players`, `teams`, `encounters`, and `tests` only if `TAMER_TEST_CLIENT_ENABLED=true`).
+- [x] Compare secrets in constant time (`MessageDigest.isEqual` on UTF-8 bytes).
+- [x] Service token claims as in the table above, TTL 300 s.
+- [x] `LocalServiceTokenSigner` used by `auth` for its own outgoing calls.
 
 **Done when**
 
@@ -181,16 +189,20 @@ sequenceDiagram
 
 ## AUTH-5 — Tests · P1
 
+**Status:** done on 06/11/2026, see [implementation notes](#implementation-notes-06112026).
+
 **Depends on:** AUTH-2, AUTH-3, AUTH-4
 
-- [ ] `@QuarkusTest` + RestAssured, Dev Services Postgres, `@InjectMock @RestClient PlayersClient`.
-- [ ] Cases: register valid / duplicate / case-insensitive duplicate / short password / 73-char password / invalid username chars / players failure → rollback; token valid / wrong password / unknown user / missing grant_type / unsupported grant; client credentials valid / invalid; claims (`sub`, `groups`, `aud`, `exp`).
-- [ ] Unit test: stored hash starts with `$2` and is not the password.
-- [ ] Bruno: `auth` component collection and the shared "login" request used by other collections (see [10-testing.md](10-testing.md)).
+- [x] `@QuarkusTest` + RestAssured, Dev Services Postgres, `@InjectMock @RestClient PlayersClient`.
+- [x] Cases: register valid / duplicate / case-insensitive duplicate / short password / 73-char password / invalid username chars / players failure → rollback; token valid / wrong password / unknown user / missing grant_type / unsupported grant; client credentials valid / invalid; claims (`sub`, `groups`, `aud`, `exp`).
+- [x] Unit test: stored hash starts with `$2` and is not the password.
+- [x] Bruno: `auth` component collection and the shared "login" request used by other collections (see [10-testing.md](10-testing.md)).
 
 ---
 
 ## AUTH-6 — Acceptance criteria US-01, US-02 · P1
+
+**Status:** done on 06/11/2026, see [implementation notes](#implementation-notes-06112026).
 
 Write in [`docs/backlog/acceptance_criteria.md`](../backlog/acceptance_criteria.md). Example:
 
@@ -234,3 +246,17 @@ Write in [`docs/backlog/acceptance_criteria.md`](../backlog/acceptance_criteria.
 - [ ] Security event logs (failed login, refresh reuse) with `player_id`/hmac only.
 - [ ] Password policy check: reject passwords equal to username; optional top-1000 common-password list.
 - [ ] Review against the Access Security lab; document in the report.
+
+---
+
+## Implementation notes (06/11/2026)
+
+| Task | Note |
+|---|---|
+| AUTH-1 | `Account` is a Panache entity with `findByUsername`; no separate repository class. |
+| AUTH-2 | bcrypt runs **outside** the transaction (it is slow); `QuarkusTransaction.requiringNew()` wraps the duplicate check, the insert (`persistAndFlush`, so a concurrent duplicate fails on the unique index → 409) and the call to `players`. Any client failure → `503 DEPENDENCY_UNAVAILABLE` and rollback. Passwords longer than 72 **bytes** (not only characters) are rejected, as are passwords equal to the username (`details.code = EQUALS_USERNAME`). |
+| AUTH-2 | Until `players` implements `POST /internal/players` (PL-1, which needs MO-2 for the starter pool), registration through the containers returns 503 by design. The `@QuarkusTest`s mock `PlayersClient`. |
+| AUTH-3 | `PasswordHasher.burn()` runs a bcrypt comparison against a dummy hash when the username does not exist. The token response carries `scope` (`player`/`service`). The upn of the player token is the normalised username. |
+| AUTH-4 | Known clients come from `tamer.service-clients.<id>` (a `@ConfigMapping` map). Secrets are compared as SHA-256 digests with `MessageDigest.isEqual`, also for unknown client ids. `tests` is accepted only with `tamer.test-client.enabled=true` (env `TAMER_TEST_CLIENT_ENABLED`, set by the test override). |
+| AUTH-5 | 38 tests: `RegistrationResourceTest`, `TokenResourceTest`, `InternalTokenResourceTest`, `security/TokenVerificationTest` (tampered, `alg: none`, expired, wrong issuer, wrong audience, wrong role), unit tests for the normaliser and the hasher. `JwtKeysTestResource` generates a throw-away key pair: Quarkus generates its own keys in test mode and sets the inline properties `smallrye.jwt.sign.key` / `mp.jwt.verify.publickey`, which win over `*.location`, so the resource overrides both forms. Bruno: `docs/tests/bruno/services/auth/` (public + internal). |
+| AUTH-6 | Written in [`docs/backlog/acceptance_criteria.md`](../backlog/acceptance_criteria.md). |

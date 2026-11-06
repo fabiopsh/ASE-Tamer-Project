@@ -1,0 +1,29 @@
+meta {
+  name: POST /api/auth/register - invalid: duplicate username (other case)
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{authUrl}}/api/auth/register
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "username": "{{authUsernameUpper}}",
+    "password": "pikachu123"
+  }
+}
+
+script:pre-request {
+  bru.setVar("authUsernameUpper", bru.getVar("authUsername").toUpperCase());
+}
+
+tests {
+  test("409 USERNAME_TAKEN", function () {
+    expect(res.getStatus()).to.equal(409);
+    expect(res.getBody().error).to.equal("USERNAME_TAKEN");
+  });
+}

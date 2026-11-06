@@ -121,6 +121,12 @@ flowchart LR
 
 With 3 people, merge B and D: infrastructure first, then monsters/teams.
 
+## Implementation status
+
+| Date | Done | Notes |
+|---|---|---|
+| 06/11/2026 | INFRA-1…8, AUTH-1…6 | Implementation notes at the end of [02-infrastructure.md](02-infrastructure.md#implementation-notes-06112026) and [03-auth.md](03-auth.md#implementation-notes-06112026). Registration works end to end only after PL-1 (and MO-2). Shared Bruno setup of TEST-1 (`bruno.json`, environments, `scripts/test-env.sh`) also done |
+
 ## Definition of done (every task)
 
 - Code builds with `mvn -f backend/pom.xml verify` (backend) or `npm run build` (frontend).
