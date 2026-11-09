@@ -1,0 +1,1814 @@
+{
+  "info": {
+    "name": "Monster Tamers - services-history",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "00-setup",
+      "item": [
+        {
+          "name": "POST /api/auth/register - register player",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "{{authUrl}}/api/auth/register",
+              "protocol": "",
+              "host": [
+                "{{authUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"username\":\"{{setupUsername}}\",\"password\":\"pikachu123\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "bru.setVar(\"setupUsername\", \"t_\" + Math.random().toString(16).slice(2, 12));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Account registered\", () => {expect(res.getStatus()).to.equal(201); bru.setVar(\"playerId\", res.getBody().player_id);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/auth/token - get player token",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "{{authUrl}}/api/auth/token",
+              "protocol": "",
+              "host": [
+                "{{authUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "token"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "password",
+                  "disabled": false,
+                  "type": "default",
+                  "description": ""
+                },
+                {
+                  "key": "username",
+                  "value": "{{setupUsername}}",
+                  "disabled": false,
+                  "type": "default",
+                  "description": ""
+                },
+                {
+                  "key": "password",
+                  "value": "pikachu123",
+                  "disabled": false,
+                  "type": "default",
+                  "description": ""
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Player token issued\", () => {expect(res.getStatus()).to.equal(200); bru.setVar(\"playerToken\", res.getBody().access_token); bru.setVar(\"ownerToken\", res.getBody().access_token);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/players/me/starters - starter pool",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{playersUrl}}/api/players/me/starters",
+              "protocol": "",
+              "host": [
+                "{{playersUrl}}"
+              ],
+              "path": [
+                "api",
+                "players",
+                "me",
+                "starters"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Ten starter ids\", () => {expect(res.getStatus()).to.equal(200); var pool = res.getBody().pool; expect(pool).to.have.lengthOf(10); bru.setVar(\"starterPool\", JSON.stringify(pool)); bru.setVar(\"starter1\", pool[0]); bru.setVar(\"starter2\", pool[1]); bru.setVar(\"starter3\", pool[2]);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/players/me/starters - choose starters",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{playersUrl}}/api/players/me/starters",
+              "protocol": "",
+              "host": [
+                "{{playersUrl}}"
+              ],
+              "path": [
+                "api",
+                "players",
+                "me",
+                "starters"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"monster_ids\":[{{starter1}},{{starter2}},{{starter3}}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Starters granted and run opened\", () => {expect(res.getStatus()).to.equal(201); var b = res.getBody(); bru.setVar(\"runId\", b.run_id); bru.setVar(\"owned1\", b.starters[0].owned_id); bru.setVar(\"owned2\", b.starters[1].owned_id); bru.setVar(\"owned3\", b.starters[2].owned_id);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/teams - create test team",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{teamsUrl}}/api/teams",
+              "protocol": "",
+              "host": [
+                "{{teamsUrl}}"
+              ],
+              "path": [
+                "api",
+                "teams"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\":\"Main\",\"members\":[\"{{owned1}}\",\"{{owned2}}\",\"{{owned3}}\"]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Team saved\", () => {expect(res.getStatus()).to.equal(201); bru.setVar(\"teamId\", res.getBody().team_id);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/battles - start a battle",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{encountersUrl}}/api/battles",
+              "protocol": "",
+              "host": [
+                "{{encountersUrl}}"
+              ],
+              "path": [
+                "api",
+                "battles"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"template_id\":11,\"team_id\":\"{{teamId}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Battle started\", () => {expect(res.getStatus()).to.equal(201); bru.setVar(\"encounterId\", res.getBody().encounter_id); bru.setVar(\"fleeRounds\", 0);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/battles/current/actions - flee until the battle ends",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{encountersUrl}}/api/battles/current/actions",
+              "protocol": "",
+              "host": [
+                "{{encountersUrl}}"
+              ],
+              "path": [
+                "api",
+                "battles",
+                "current",
+                "actions"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"type\":\"flee\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Round resolved\", () => {",
+                  "  expect(res.getStatus()).to.equal(200);",
+                  "  var b = res.getBody();",
+                  "  var rounds = (bru.getVar(\"fleeRounds\") || 0) + 1;",
+                  "  bru.setVar(\"fleeRounds\", rounds);",
+                  "  if (b.status === \"finished\") {",
+                  "    expect([\"fled\", \"defeat\"]).to.include(b.result.outcome);",
+                  "    bru.setVar(\"battleOutcome\", b.result.outcome);",
+                  "  } else {",
+                  "    expect(rounds).to.be.below(50);",
+                  "    bru.setNextRequest(\"POST /api/battles/current/actions - flee until the battle ends\");",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "auth": {
+        "type": "noauth"
+      }
+    },
+    {
+      "name": "public",
+      "item": [
+        {
+          "name": "GET /api/history - valid: own records of the run",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{historyUrl}}/api/history?run_id={{runId}}",
+              "protocol": "",
+              "host": [
+                "{{historyUrl}}"
+              ],
+              "path": [
+                "api",
+                "history?run_id={{runId}}"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"The finished battle is listed as a summary\", () => {",
+                  "  expect(res.getStatus()).to.equal(200);",
+                  "  var b = res.getBody();",
+                  "  expect(b.total_items).to.equal(1);",
+                  "  expect(b.items[0].encounter_id).to.equal(bru.getVar(\"encounterId\"));",
+                  "  expect(b.items[0].outcome).to.equal(bru.getVar(\"battleOutcome\"));",
+                  "  expect(b.items[0]).to.include.keys(\"outcome\", \"template\", \"wild\", \"xp_gained\", \"started_at\", \"ended_at\");",
+                  "  expect(b.items[0]).to.not.have.property(\"turns\");",
+                  "  expect(b.items[0]).to.not.have.property(\"team_snapshot\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/history - list invalid: no token",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "{{historyUrl}}/api/history",
+              "protocol": "",
+              "host": [
+                "{{historyUrl}}"
+              ],
+              "path": [
+                "api",
+                "history"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"401 without token\", () => {expect(res.getStatus()).to.equal(401);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/history?outcome= - valid: filtered by outcome",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{historyUrl}}/api/history?run_id={{runId}}&outcome={{battleOutcome}}",
+              "protocol": "",
+              "host": [
+                "{{historyUrl}}"
+              ],
+              "path": [
+                "api",
+                "history?run_id={{runId}}&outcome={{battleOutcome}}"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Only records with that outcome\", () => {",
+                  "  expect(res.getStatus()).to.equal(200);",
+                  "  var b = res.getBody();",
+                  "  expect(b.total_items).to.equal(1);",
+                  "  b.items.forEach(i => expect(i.outcome).to.equal(bru.getVar(\"battleOutcome\")));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/history?outcome=draw - list invalid: outcome",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{historyUrl}}/api/history?outcome=draw",
+              "protocol": "",
+              "host": [
+                "{{historyUrl}}"
+              ],
+              "path": [
+                "api",
+                "history?outcome=draw"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"400 VALIDATION_ERROR\", () => {expect(res.getStatus()).to.equal(400); expect(res.getBody().error).to.equal(\"VALIDATION_ERROR\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/history?size=51 - list invalid: page size",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{historyUrl}}/api/history?size=51",
+              "protocol": "",
+              "host": [
+                "{{historyUrl}}"
+              ],
+              "path": [
+                "api",
+                "history?size=51"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"400 VALIDATION_ERROR\", () => {expect(res.getStatus()).to.equal(400); expect(res.getBody().error).to.equal(\"VALIDATION_ERROR\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/history/{{encounterId}} - valid: full record of the battle",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{historyUrl}}/api/history/{{encounterId}}",
+              "protocol": "",
+              "host": [
+                "{{historyUrl}}"
+              ],
+              "path": [
+                "api",
+                "history",
+                "{{encounterId}}"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Full record with team snapshot and turn log\", () => {",
+                  "  expect(res.getStatus()).to.equal(200);",
+                  "  var b = res.getBody();",
+                  "  expect(b.encounter_id).to.equal(bru.getVar(\"encounterId\"));",
+                  "  expect(b.outcome).to.equal(bru.getVar(\"battleOutcome\"));",
+                  "  expect(b.template.template_id).to.equal(11);",
+                  "  expect(b.team_snapshot).to.have.lengthOf(3);",
+                  "  expect(b.turns.length).to.equal(bru.getVar(\"fleeRounds\"));",
+                  "  expect(b.reward).to.equal(null);",
+                  "  expect(b).to.include.keys(\"rng_seed\", \"engine_version\", \"started_at\", \"ended_at\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/history/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee - detail invalid: missing or foreign",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{historyUrl}}/api/history/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+              "protocol": "",
+              "host": [
+                "{{historyUrl}}"
+              ],
+              "path": [
+                "api",
+                "history",
+                "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"404 NOT_FOUND for a missing or foreign record\", () => {expect(res.getStatus()).to.equal(404); expect(res.getBody().error).to.equal(\"NOT_FOUND\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/history/{{encounterId}} - detail invalid: no token",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "{{historyUrl}}/api/history/{{encounterId}}",
+              "protocol": "",
+              "host": [
+                "{{historyUrl}}"
+              ],
+              "path": [
+                "api",
+                "history",
+                "{{encounterId}}"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"401 without token\", () => {expect(res.getStatus()).to.equal(401);});"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "auth": {
+        "type": "noauth"
+      }
+    },
+    {
+      "name": "internal",
+      "item": [
+        {
+          "name": "00-setup",
+          "item": [
+            {
+              "name": "POST /api/auth/register - register player",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "auth": {
+                  "type": "noauth"
+                },
+                "description": "",
+                "url": {
+                  "raw": "{{authUrl}}/api/auth/register",
+                  "protocol": "",
+                  "host": [
+                    "{{authUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "register"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"username\":\"{{setupUsername}}\",\"password\":\"pikachu123\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "bru.setVar(\"setupUsername\", \"t_\" + Math.random().toString(16).slice(2, 12));"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "// Tests",
+                      "test(\"Account registered\", () => {expect(res.getStatus()).to.equal(201); bru.setVar(\"playerId\", res.getBody().player_id);});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "POST /api/auth/token - get player token",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "auth": {
+                  "type": "noauth"
+                },
+                "description": "",
+                "url": {
+                  "raw": "{{authUrl}}/api/auth/token",
+                  "protocol": "",
+                  "host": [
+                    "{{authUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "token"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "grant_type",
+                      "value": "password",
+                      "disabled": false,
+                      "type": "default",
+                      "description": ""
+                    },
+                    {
+                      "key": "username",
+                      "value": "{{setupUsername}}",
+                      "disabled": false,
+                      "type": "default",
+                      "description": ""
+                    },
+                    {
+                      "key": "password",
+                      "value": "pikachu123",
+                      "disabled": false,
+                      "type": "default",
+                      "description": ""
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "// Tests",
+                      "test(\"Player token issued\", () => {expect(res.getStatus()).to.equal(200); bru.setVar(\"playerToken\", res.getBody().access_token);});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "POST /internal/auth/token - get service token",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "auth": {
+                  "type": "noauth"
+                },
+                "description": "",
+                "url": {
+                  "raw": "{{authUrl}}/internal/auth/token",
+                  "protocol": "",
+                  "host": [
+                    "{{authUrl}}"
+                  ],
+                  "path": [
+                    "internal",
+                    "auth",
+                    "token"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "grant_type",
+                      "value": "client_credentials",
+                      "disabled": false,
+                      "type": "default",
+                      "description": ""
+                    },
+                    {
+                      "key": "client_id",
+                      "value": "tests",
+                      "disabled": false,
+                      "type": "default",
+                      "description": ""
+                    },
+                    {
+                      "key": "client_secret",
+                      "value": "{{process.env.TESTS_CLIENT_SECRET}}",
+                      "disabled": false,
+                      "type": "default",
+                      "description": ""
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "// Tests",
+                      "test(\"Service token issued\", () => {expect(res.getStatus()).to.equal(200); bru.setVar(\"serviceToken\", res.getBody().access_token);});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "POST /internal/history - store fixture victory (older)",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{serviceToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "description": "",
+                "url": {
+                  "raw": "{{historyUrl}}/internal/history",
+                  "protocol": "",
+                  "host": [
+                    "{{historyUrl}}"
+                  ],
+                  "path": [
+                    "internal",
+                    "history"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"encounter_id\":\"{{encounterId1}}\",\"player_id\":\"{{playerId}}\",\"run_id\":\"{{runId}}\",\"template\":{\"template_id\":12,\"name\":\"Mossy Hollow\",\"stage\":1,\"element\":\"echo\",\"is_boss\":false},\"wild\":{\"monster_id\":51,\"name\":\"Mossling\",\"level\":2,\"rarity\":\"common\",\"element\":\"echo\"},\"team_snapshot\":[{\"position\":1,\"owned_id\":\"{{ownedId}}\",\"monster_id\":3,\"name\":\"Emberling\",\"level\":3,\"stats\":{\"hp\":30,\"attack\":9}}],\"outcome\":\"victory\",\"reward\":{\"owned_id\":\"{{rewardOwnedId}}\",\"monster_id\":51,\"level\":2},\"xp_gained\":20,\"turns\":[{\"turn\":1,\"events\":[{\"type\":\"damage\",\"target_side\":\"wild\",\"amount\":7}]}],\"rng_seed\":\"-4512345678901234567\",\"engine_version\":1,\"started_at\":\"2026-11-06T10:00:00Z\",\"ended_at\":\"2026-11-06T10:05:00Z\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "function u() { return \"xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx\".replace(/x/g, () => Math.floor(Math.random() * 16).toString(16)); } bru.setVar(\"runId\", u()); bru.setVar(\"otherRunId\", u()); bru.setVar(\"ownedId\", u()); bru.setVar(\"rewardOwnedId\", u()); bru.setVar(\"encounterId1\", u()); bru.setVar(\"encounterId2\", u()); bru.setVar(\"encounterId3\", u());"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "// Tests",
+                      "test(\"Fixture stored\", () => {expect(res.getStatus()).to.equal(201);});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "POST /internal/history - store fixture defeat (newer)",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{serviceToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "description": "",
+                "url": {
+                  "raw": "{{historyUrl}}/internal/history",
+                  "protocol": "",
+                  "host": [
+                    "{{historyUrl}}"
+                  ],
+                  "path": [
+                    "internal",
+                    "history"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"encounter_id\":\"{{encounterId2}}\",\"player_id\":\"{{playerId}}\",\"run_id\":\"{{runId}}\",\"template\":{\"template_id\":12,\"name\":\"Mossy Hollow\",\"stage\":1,\"element\":\"echo\",\"is_boss\":false},\"wild\":{\"monster_id\":51,\"name\":\"Mossling\",\"level\":2,\"rarity\":\"common\",\"element\":\"echo\"},\"team_snapshot\":[{\"position\":1,\"owned_id\":\"{{ownedId}}\",\"monster_id\":3,\"name\":\"Emberling\",\"level\":3,\"stats\":{\"hp\":30,\"attack\":9}}],\"outcome\":\"defeat\",\"reward\":{\"owned_id\":\"{{rewardOwnedId}}\",\"monster_id\":51,\"level\":2},\"xp_gained\":20,\"turns\":[{\"turn\":1,\"events\":[{\"type\":\"damage\",\"target_side\":\"wild\",\"amount\":7}]}],\"rng_seed\":\"-4512345678901234567\",\"engine_version\":1,\"started_at\":\"2026-11-06T10:06:00Z\",\"ended_at\":\"2026-11-06T10:10:00Z\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "// Tests",
+                      "test(\"Fixture stored\", () => {expect(res.getStatus()).to.equal(201);});"
+                    ]
+                  }
+                }
+              ]
+            }
+          ],
+          "auth": {
+            "type": "noauth"
+          }
+        },
+        {
+          "name": "POST /internal/history - store valid",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{serviceToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{historyUrl}}/internal/history",
+              "protocol": "",
+              "host": [
+                "{{historyUrl}}"
+              ],
+              "path": [
+                "internal",
+                "history"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"encounter_id\":\"{{encounterId3}}\",\"player_id\":\"{{playerId}}\",\"run_id\":\"{{otherRunId}}\",\"template\":{\"template_id\":12,\"name\":\"Mossy Hollow\",\"stage\":1,\"element\":\"echo\",\"is_boss\":false},\"wild\":{\"monster_id\":51,\"name\":\"Mossling\",\"level\":2,\"rarity\":\"common\",\"element\":\"echo\"},\"team_snapshot\":[{\"position\":1,\"owned_id\":\"{{ownedId}}\",\"monster_id\":3,\"name\":\"Emberling\",\"level\":3,\"stats\":{\"hp\":30,\"attack\":9}}],\"outcome\":\"fled\",\"reward\":{\"owned_id\":\"{{rewardOwnedId}}\",\"monster_id\":51,\"level\":2},\"xp_gained\":20,\"turns\":[{\"turn\":1,\"events\":[{\"type\":\"damage\",\"target_side\":\"wild\",\"amount\":7}]}],\"rng_seed\":\"-4512345678901234567\",\"engine_version\":1,\"started_at\":\"2026-11-06T11:00:00Z\",\"ended_at\":\"2026-11-06T11:05:00Z\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"201 with the stored summary\", () => {expect(res.getStatus()).to.equal(201); var b = res.getBody(); expect(b.encounter_id).to.equal(bru.getVar(\"encounterId3\")); expect(b.outcome).to.equal(\"fled\"); expect(b.template.name).to.equal(\"Mossy Hollow\"); expect(b.wild.monster_id).to.equal(51); expect(b).to.not.have.property(\"turns\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /internal/history - store same encounter again (idempotent)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{serviceToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{historyUrl}}/internal/history",
+              "protocol": "",
+              "host": [
+                "{{historyUrl}}"
+              ],
+              "path": [
+                "internal",
+                "history"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"encounter_id\":\"{{encounterId3}}\",\"player_id\":\"{{playerId}}\",\"run_id\":\"{{otherRunId}}\",\"template\":{\"template_id\":12,\"name\":\"Mossy Hollow\",\"stage\":1,\"element\":\"echo\",\"is_boss\":false},\"wild\":{\"monster_id\":51,\"name\":\"Mossling\",\"level\":2,\"rarity\":\"common\",\"element\":\"echo\"},\"team_snapshot\":[{\"position\":1,\"owned_id\":\"{{ownedId}}\",\"monster_id\":3,\"name\":\"Emberling\",\"level\":3,\"stats\":{\"hp\":30,\"attack\":9}}],\"outcome\":\"fled\",\"reward\":{\"owned_id\":\"{{rewardOwnedId}}\",\"monster_id\":51,\"level\":2},\"xp_gained\":20,\"turns\":[{\"turn\":1,\"events\":[{\"type\":\"damage\",\"target_side\":\"wild\",\"amount\":7}]}],\"rng_seed\":\"-4512345678901234567\",\"engine_version\":1,\"started_at\":\"2026-11-06T11:00:00Z\",\"ended_at\":\"2026-11-06T11:05:00Z\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"200 and no new record\", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody().encounter_id).to.equal(bru.getVar(\"encounterId3\"));});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /internal/history - invalid: unknown outcome",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{serviceToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{historyUrl}}/internal/history",
+              "protocol": "",
+              "host": [
+                "{{historyUrl}}"
+              ],
+              "path": [
+                "internal",
+                "history"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"encounter_id\":\"{{encounterId3}}\",\"player_id\":\"{{playerId}}\",\"run_id\":\"{{otherRunId}}\",\"template\":{\"template_id\":12,\"name\":\"Mossy Hollow\",\"stage\":1,\"element\":\"echo\",\"is_boss\":false},\"wild\":{\"monster_id\":51,\"name\":\"Mossling\",\"level\":2,\"rarity\":\"common\",\"element\":\"echo\"},\"team_snapshot\":[{\"position\":1,\"owned_id\":\"{{ownedId}}\",\"monster_id\":3,\"name\":\"Emberling\",\"level\":3,\"stats\":{\"hp\":30,\"attack\":9}}],\"outcome\":\"draw\",\"reward\":{\"owned_id\":\"{{rewardOwnedId}}\",\"monster_id\":51,\"level\":2},\"xp_gained\":20,\"turns\":[{\"turn\":1,\"events\":[{\"type\":\"damage\",\"target_side\":\"wild\",\"amount\":7}]}],\"rng_seed\":\"-4512345678901234567\",\"engine_version\":1,\"started_at\":\"2026-11-06T11:00:00Z\",\"ended_at\":\"2026-11-06T11:05:00Z\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"400 VALIDATION_ERROR\", () => {expect(res.getStatus()).to.equal(400); expect(res.getBody().error).to.equal(\"VALIDATION_ERROR\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /internal/history - invalid: missing wild monster",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{serviceToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{historyUrl}}/internal/history",
+              "protocol": "",
+              "host": [
+                "{{historyUrl}}"
+              ],
+              "path": [
+                "internal",
+                "history"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"encounter_id\":\"{{encounterId3}}\",\"player_id\":\"{{playerId}}\",\"run_id\":\"{{otherRunId}}\",\"template\":{\"template_id\":12,\"name\":\"Mossy Hollow\",\"stage\":1,\"element\":\"echo\",\"is_boss\":false},\"outcome\":\"victory\",\"engine_version\":1,\"started_at\":\"2026-11-06T11:00:00Z\",\"ended_at\":\"2026-11-06T11:05:00Z\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"400 naming the field\", () => {expect(res.getStatus()).to.equal(400); expect(res.getBody().error).to.equal(\"VALIDATION_ERROR\"); expect(res.getBody().details.map(d => d.field)).to.include(\"wild\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /internal/history - invalid: unknown field",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{serviceToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{historyUrl}}/internal/history",
+              "protocol": "",
+              "host": [
+                "{{historyUrl}}"
+              ],
+              "path": [
+                "internal",
+                "history"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"encounter_id\":\"{{encounterId3}}\",\"hp\":999}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"400 VALIDATION_ERROR\", () => {expect(res.getStatus()).to.equal(400); expect(res.getBody().error).to.equal(\"VALIDATION_ERROR\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /internal/history - invalid: player token",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{historyUrl}}/internal/history",
+              "protocol": "",
+              "host": [
+                "{{historyUrl}}"
+              ],
+              "path": [
+                "internal",
+                "history"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"encounter_id\":\"{{encounterId3}}\",\"player_id\":\"{{playerId}}\",\"run_id\":\"{{otherRunId}}\",\"template\":{\"template_id\":12,\"name\":\"Mossy Hollow\",\"stage\":1,\"element\":\"echo\",\"is_boss\":false},\"wild\":{\"monster_id\":51,\"name\":\"Mossling\",\"level\":2,\"rarity\":\"common\",\"element\":\"echo\"},\"team_snapshot\":[{\"position\":1,\"owned_id\":\"{{ownedId}}\",\"monster_id\":3,\"name\":\"Emberling\",\"level\":3,\"stats\":{\"hp\":30,\"attack\":9}}],\"outcome\":\"victory\",\"reward\":{\"owned_id\":\"{{rewardOwnedId}}\",\"monster_id\":51,\"level\":2},\"xp_gained\":20,\"turns\":[{\"turn\":1,\"events\":[{\"type\":\"damage\",\"target_side\":\"wild\",\"amount\":7}]}],\"rng_seed\":\"-4512345678901234567\",\"engine_version\":1,\"started_at\":\"2026-11-06T11:00:00Z\",\"ended_at\":\"2026-11-06T11:05:00Z\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"403 FORBIDDEN for a player token\", () => {expect(res.getStatus()).to.equal(403); expect(res.getBody().error).to.equal(\"FORBIDDEN\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /internal/history - invalid: no token",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "{{historyUrl}}/internal/history",
+              "protocol": "",
+              "host": [
+                "{{historyUrl}}"
+              ],
+              "path": [
+                "internal",
+                "history"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"encounter_id\":\"{{encounterId3}}\",\"player_id\":\"{{playerId}}\",\"run_id\":\"{{otherRunId}}\",\"template\":{\"template_id\":12,\"name\":\"Mossy Hollow\",\"stage\":1,\"element\":\"echo\",\"is_boss\":false},\"wild\":{\"monster_id\":51,\"name\":\"Mossling\",\"level\":2,\"rarity\":\"common\",\"element\":\"echo\"},\"team_snapshot\":[{\"position\":1,\"owned_id\":\"{{ownedId}}\",\"monster_id\":3,\"name\":\"Emberling\",\"level\":3,\"stats\":{\"hp\":30,\"attack\":9}}],\"outcome\":\"victory\",\"reward\":{\"owned_id\":\"{{rewardOwnedId}}\",\"monster_id\":51,\"level\":2},\"xp_gained\":20,\"turns\":[{\"turn\":1,\"events\":[{\"type\":\"damage\",\"target_side\":\"wild\",\"amount\":7}]}],\"rng_seed\":\"-4512345678901234567\",\"engine_version\":1,\"started_at\":\"2026-11-06T11:00:00Z\",\"ended_at\":\"2026-11-06T11:05:00Z\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"401 without token\", () => {expect(res.getStatus()).to.equal(401); expect(res.getBody().error).to.equal(\"UNAUTHORIZED\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/history - list valid: stored fixtures, newest first",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{historyUrl}}/api/history?run_id={{runId}}",
+              "protocol": "",
+              "host": [
+                "{{historyUrl}}"
+              ],
+              "path": [
+                "api",
+                "history?run_id={{runId}}"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Own summaries, newest first\", () => {expect(res.getStatus()).to.equal(200); var b = res.getBody(); expect(b.total_items).to.equal(2); expect(b.items.map(i => i.encounter_id)).to.eql([bru.getVar(\"encounterId2\"), bru.getVar(\"encounterId1\")]); expect(b.items[0]).to.include.keys(\"outcome\", \"template\", \"wild\", \"xp_gained\", \"started_at\", \"ended_at\"); expect(b.items[0]).to.not.have.property(\"turns\"); expect(b.items[0]).to.not.have.property(\"team_snapshot\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/history?outcome=victory - list valid: fixtures filtered by outcome",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{historyUrl}}/api/history?run_id={{runId}}&outcome=victory",
+              "protocol": "",
+              "host": [
+                "{{historyUrl}}"
+              ],
+              "path": [
+                "api",
+                "history?run_id={{runId}}&outcome=victory"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Only victories\", () => {expect(res.getStatus()).to.equal(200); var b = res.getBody(); expect(b.total_items).to.equal(1); expect(b.items[0].outcome).to.equal(\"victory\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/history/{{encounterId1}} - valid: stored fixture with turn log",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{historyUrl}}/api/history/{{encounterId1}}",
+              "protocol": "",
+              "host": [
+                "{{historyUrl}}"
+              ],
+              "path": [
+                "api",
+                "history",
+                "{{encounterId1}}"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Full record with turn log\", () => {expect(res.getStatus()).to.equal(200); var b = res.getBody(); expect(b.encounter_id).to.equal(bru.getVar(\"encounterId1\")); expect(b.outcome).to.equal(\"victory\"); expect(b.team_snapshot).to.have.lengthOf(1); expect(b.turns).to.have.lengthOf(1); expect(b.turns[0].events[0].amount).to.equal(7); expect(b.rng_seed).to.equal(\"-4512345678901234567\"); expect(b.reward.monster_id).to.equal(51);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/history/{{encounterId1}} - invalid: record of another player",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{ownerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{historyUrl}}/api/history/{{encounterId1}}",
+              "protocol": "",
+              "host": [
+                "{{historyUrl}}"
+              ],
+              "path": [
+                "api",
+                "history",
+                "{{encounterId1}}"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"404 NOT_FOUND, never 403 (P-11)\", () => {expect(res.getStatus()).to.equal(404); expect(res.getBody().error).to.equal(\"NOT_FOUND\");});"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "auth": {
+        "type": "noauth"
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "authUrl",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "setupUsername",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "playersUrl",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "playerToken",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "starter1",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "starter2",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "starter3",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "teamsUrl",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "owned1",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "owned2",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "owned3",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "encountersUrl",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "teamId",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "historyUrl",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "runId",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "battleOutcome",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "encounterId",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "process.env.TESTS_CLIENT_SECRET",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "serviceToken",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "encounterId1",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "playerId",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "ownedId",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "rewardOwnedId",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "encounterId2",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "encounterId3",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "otherRunId",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "ownerToken",
+      "value": "",
+      "type": "default"
+    }
+  ]
+}

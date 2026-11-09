@@ -15,5 +15,5 @@ auth:bearer {
 }
 
 tests {
-  test("Archived monster readable by owner", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody().owned_id).to.equal(bru.getVar("owned1"));});
+  test("Owned monster readable by owner", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody().owned_id).to.equal(bru.getVar("owned1"));});
 }

@@ -1,0 +1,25 @@
+meta {
+  name: GET /api/monsters/{{starter1}} - catalogue detail of a pool monster
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{monstersUrl}}/api/monsters/{{starter1}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+tests {
+  test("Starters are common catalogue monsters", () => {
+    expect(res.getStatus()).to.equal(200);
+    var b = res.getBody();
+    expect(b.monster_id).to.equal(bru.getVar("starter1"));
+    expect(b.rarity).to.equal("common");
+    expect(b).to.include.keys("name", "element", "image_url");
+  });
+}

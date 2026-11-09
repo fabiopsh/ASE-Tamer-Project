@@ -1,0 +1,19 @@
+meta {
+  name: GET /api/runs/{{runId}} - valid: own run
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{encountersUrl}}/api/runs/{{runId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+tests {
+  test("Run detail of the player", () => {expect(res.getStatus()).to.equal(200); var b = res.getBody(); expect(b.run_id).to.equal(bru.getVar("runId")); expect(b.status).to.equal("active"); expect(b.stage).to.equal(1);});
+}

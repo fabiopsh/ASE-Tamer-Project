@@ -15,7 +15,7 @@ body:json {
 }
 
 script:pre-request {
-  bru.setVar("setupUsername", "e_" + Math.random().toString(16).slice(2, 12));
+  bru.setVar("setupUsername", "t_" + Math.random().toString(16).slice(2, 12));
 }
 
 tests {

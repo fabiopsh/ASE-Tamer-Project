@@ -1,0 +1,634 @@
+{
+  "info": {
+    "name": "Monster Tamers - services-auth",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "internal",
+      "item": [
+        {
+          "name": "POST /internal/auth/token - valid: client credentials",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "{{authUrl}}/internal/auth/token",
+              "protocol": "",
+              "host": [
+                "{{authUrl}}"
+              ],
+              "path": [
+                "internal",
+                "auth",
+                "token"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "client_credentials",
+                  "disabled": false,
+                  "type": "default",
+                  "description": ""
+                },
+                {
+                  "key": "client_id",
+                  "value": "tests",
+                  "disabled": false,
+                  "type": "default",
+                  "description": ""
+                },
+                {
+                  "key": "client_secret",
+                  "value": "{{process.env.TESTS_CLIENT_SECRET}}",
+                  "disabled": false,
+                  "type": "default",
+                  "description": ""
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"200 service token\", function () {",
+                  "  expect(res.getStatus()).to.equal(200);",
+                  "  const body = res.getBody();",
+                  "  expect(body.token_type).to.equal(\"Bearer\");",
+                  "  expect(body.scope).to.equal(\"service\");",
+                  "  expect(body.expires_in).to.equal(300);",
+                  "  bru.setVar(\"serviceToken\", body.access_token);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /internal/auth/token - invalid: wrong client secret",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "{{authUrl}}/internal/auth/token",
+              "protocol": "",
+              "host": [
+                "{{authUrl}}"
+              ],
+              "path": [
+                "internal",
+                "auth",
+                "token"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "client_credentials",
+                  "disabled": false,
+                  "type": "default",
+                  "description": ""
+                },
+                {
+                  "key": "client_id",
+                  "value": "tests",
+                  "disabled": false,
+                  "type": "default",
+                  "description": ""
+                },
+                {
+                  "key": "client_secret",
+                  "value": "wrong-secret",
+                  "disabled": false,
+                  "type": "default",
+                  "description": ""
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"401 invalid_client\", function () {",
+                  "  expect(res.getStatus()).to.equal(401);",
+                  "  expect(res.getBody().error).to.equal(\"invalid_client\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "auth": {
+        "type": "noauth"
+      }
+    },
+    {
+      "name": "public",
+      "item": [
+        {
+          "name": "POST /api/auth/register - valid",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "{{authUrl}}/api/auth/register",
+              "protocol": "",
+              "host": [
+                "{{authUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{authUsername}}\",\n  \"password\": \"pikachu123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "bru.setVar(\"authUsername\", \"Br_\" + Math.random().toString(16).slice(2, 12));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"201 with player_id and normalised username\", function () {",
+                  "  expect(res.getStatus()).to.equal(201);",
+                  "  expect(res.getBody().player_id).to.match(/^[0-9a-f-]{36}$/);",
+                  "  expect(res.getBody().username).to.equal(bru.getVar(\"authUsername\").toLowerCase());",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/auth/register - invalid: duplicate username (other case)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "{{authUrl}}/api/auth/register",
+              "protocol": "",
+              "host": [
+                "{{authUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{authUsernameUpper}}\",\n  \"password\": \"pikachu123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "bru.setVar(\"authUsernameUpper\", bru.getVar(\"authUsername\").toUpperCase());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"409 USERNAME_TAKEN\", function () {",
+                  "  expect(res.getStatus()).to.equal(409);",
+                  "  expect(res.getBody().error).to.equal(\"USERNAME_TAKEN\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/auth/register - invalid: short password",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "{{authUrl}}/api/auth/register",
+              "protocol": "",
+              "host": [
+                "{{authUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"short_pw_user\",\n  \"password\": \"1234567\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"400 VALIDATION_ERROR on password\", function () {",
+                  "  expect(res.getStatus()).to.equal(400);",
+                  "  expect(res.getBody().error).to.equal(\"VALIDATION_ERROR\");",
+                  "  expect(res.getBody().details.map((d) => d.field)).to.include(\"password\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/auth/token - valid: password grant",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "{{authUrl}}/api/auth/token",
+              "protocol": "",
+              "host": [
+                "{{authUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "token"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "password",
+                  "disabled": false,
+                  "type": "default",
+                  "description": ""
+                },
+                {
+                  "key": "username",
+                  "value": "{{authUsername}}",
+                  "disabled": false,
+                  "type": "default",
+                  "description": ""
+                },
+                {
+                  "key": "password",
+                  "value": "pikachu123",
+                  "disabled": false,
+                  "type": "default",
+                  "description": ""
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"200 Bearer token, not cacheable\", function () {",
+                  "  expect(res.getStatus()).to.equal(200);",
+                  "  expect(res.getHeader(\"cache-control\")).to.equal(\"no-store\");",
+                  "  const body = res.getBody();",
+                  "  expect(body.token_type).to.equal(\"Bearer\");",
+                  "  expect(body.scope).to.equal(\"player\");",
+                  "  expect(body.expires_in).to.be.above(0);",
+                  "  expect(body.access_token.split(\".\")).to.have.lengthOf(3);",
+                  "  bru.setVar(\"playerToken\", body.access_token);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/auth/token - invalid: wrong password",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "{{authUrl}}/api/auth/token",
+              "protocol": "",
+              "host": [
+                "{{authUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "token"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "password",
+                  "disabled": false,
+                  "type": "default",
+                  "description": ""
+                },
+                {
+                  "key": "username",
+                  "value": "{{authUsername}}",
+                  "disabled": false,
+                  "type": "default",
+                  "description": ""
+                },
+                {
+                  "key": "password",
+                  "value": "wrong-password",
+                  "disabled": false,
+                  "type": "default",
+                  "description": ""
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"400 invalid_grant\", function () {",
+                  "  expect(res.getStatus()).to.equal(400);",
+                  "  expect(res.getBody().error).to.equal(\"invalid_grant\");",
+                  "  bru.setVar(\"wrongPasswordDescription\", res.getBody().error_description);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/auth/token - invalid: unknown user (same error as wrong password)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "{{authUrl}}/api/auth/token",
+              "protocol": "",
+              "host": [
+                "{{authUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "token"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "password",
+                  "disabled": false,
+                  "type": "default",
+                  "description": ""
+                },
+                {
+                  "key": "username",
+                  "value": "nobody_{{$randomInt}}",
+                  "disabled": false,
+                  "type": "default",
+                  "description": ""
+                },
+                {
+                  "key": "password",
+                  "value": "pikachu123",
+                  "disabled": false,
+                  "type": "default",
+                  "description": ""
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"400 invalid_grant, indistinguishable from a wrong password\", function () {",
+                  "  expect(res.getStatus()).to.equal(400);",
+                  "  expect(res.getBody().error).to.equal(\"invalid_grant\");",
+                  "  expect(res.getBody().error_description).to.equal(\"Invalid username or password.\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/auth/token - invalid: unsupported grant",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "{{authUrl}}/api/auth/token",
+              "protocol": "",
+              "host": [
+                "{{authUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "token"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "authorization_code",
+                  "disabled": false,
+                  "type": "default",
+                  "description": ""
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"400 unsupported_grant_type\", function () {",
+                  "  expect(res.getStatus()).to.equal(400);",
+                  "  expect(res.getBody().error).to.equal(\"unsupported_grant_type\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "auth": {
+        "type": "noauth"
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "authUrl",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "process.env.TESTS_CLIENT_SECRET",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "authUsername",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "authUsernameUpper",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "$randomInt",
+      "value": "",
+      "type": "default"
+    }
+  ]
+}

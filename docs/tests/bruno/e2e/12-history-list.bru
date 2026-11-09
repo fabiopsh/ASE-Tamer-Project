@@ -1,0 +1,24 @@
+meta {
+  name: GET /api/history - the battle is recorded
+  type: http
+  seq: 12
+}
+
+get {
+  url: {{historyUrl}}/api/history?run_id={{runId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+tests {
+  test("History lists the finished encounter", () => {
+    expect(res.getStatus()).to.equal(200);
+    var item = res.getBody().items.find(i => i.encounter_id === bru.getVar("encounterId"));
+    expect(item).to.not.equal(undefined);
+    expect(item.outcome).to.equal(bru.getVar("outcome"));
+  });
+}

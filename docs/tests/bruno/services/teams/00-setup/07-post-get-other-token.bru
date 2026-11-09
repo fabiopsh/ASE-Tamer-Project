@@ -1,0 +1,21 @@
+meta {
+  name: POST /api/auth/token - get other player token
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{authUrl}}/api/auth/token
+  body: formUrlEncoded
+  auth: none
+}
+
+body:form-urlencoded {
+  grant_type: password
+  username: {{otherUsername}}
+  password: pikachu123
+}
+
+tests {
+  test("Player token issued", () => {expect(res.getStatus()).to.equal(200); bru.setVar("otherToken", res.getBody().access_token);});
+}

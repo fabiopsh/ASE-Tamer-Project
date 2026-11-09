@@ -1,0 +1,28 @@
+meta {
+  name: GET /api/history - valid: own records of the run
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{historyUrl}}/api/history?run_id={{runId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+tests {
+  test("The finished battle is listed as a summary", () => {
+    expect(res.getStatus()).to.equal(200);
+    var b = res.getBody();
+    expect(b.total_items).to.equal(1);
+    expect(b.items[0].encounter_id).to.equal(bru.getVar("encounterId"));
+    expect(b.items[0].outcome).to.equal(bru.getVar("battleOutcome"));
+    expect(b.items[0]).to.include.keys("outcome", "template", "wild", "xp_gained", "started_at", "ended_at");
+    expect(b.items[0]).to.not.have.property("turns");
+    expect(b.items[0]).to.not.have.property("team_snapshot");
+  });
+}

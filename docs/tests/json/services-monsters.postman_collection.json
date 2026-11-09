@@ -1,0 +1,2656 @@
+{
+  "info": {
+    "name": "Monster Tamers - services-monsters",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "00-setup",
+      "item": [
+        {
+          "name": "POST /api/auth/register - register player",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "{{authUrl}}/api/auth/register",
+              "protocol": "",
+              "host": [
+                "{{authUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"username\":\"{{setupUsername}}\",\"password\":\"pikachu123\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "bru.setVar(\"setupUsername\", \"t_\" + Math.random().toString(16).slice(2, 12));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Account registered\", () => {expect(res.getStatus()).to.equal(201); bru.setVar(\"playerId\", res.getBody().player_id);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/auth/token - get player token",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "{{authUrl}}/api/auth/token",
+              "protocol": "",
+              "host": [
+                "{{authUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "token"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "password",
+                  "disabled": false,
+                  "type": "default",
+                  "description": ""
+                },
+                {
+                  "key": "username",
+                  "value": "{{setupUsername}}",
+                  "disabled": false,
+                  "type": "default",
+                  "description": ""
+                },
+                {
+                  "key": "password",
+                  "value": "pikachu123",
+                  "disabled": false,
+                  "type": "default",
+                  "description": ""
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Player token issued\", () => {expect(res.getStatus()).to.equal(200); bru.setVar(\"playerToken\", res.getBody().access_token);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/players/me/starters - starter pool",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{playersUrl}}/api/players/me/starters",
+              "protocol": "",
+              "host": [
+                "{{playersUrl}}"
+              ],
+              "path": [
+                "api",
+                "players",
+                "me",
+                "starters"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Ten starter ids\", () => {expect(res.getStatus()).to.equal(200); var pool = res.getBody().pool; expect(pool).to.have.lengthOf(10); bru.setVar(\"starterPool\", JSON.stringify(pool)); bru.setVar(\"starter1\", pool[0]); bru.setVar(\"starter2\", pool[1]); bru.setVar(\"starter3\", pool[2]);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/players/me/starters - choose starters",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{playersUrl}}/api/players/me/starters",
+              "protocol": "",
+              "host": [
+                "{{playersUrl}}"
+              ],
+              "path": [
+                "api",
+                "players",
+                "me",
+                "starters"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"monster_ids\":[{{starter1}},{{starter2}},{{starter3}}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Starters granted and run opened\", () => {expect(res.getStatus()).to.equal(201); var b = res.getBody(); bru.setVar(\"runId\", b.run_id); bru.setVar(\"owned1\", b.starters[0].owned_id); bru.setVar(\"owned2\", b.starters[1].owned_id); bru.setVar(\"owned3\", b.starters[2].owned_id);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/auth/register - register other player",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "{{authUrl}}/api/auth/register",
+              "protocol": "",
+              "host": [
+                "{{authUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"username\":\"{{otherUsername}}\",\"password\":\"pikachu123\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "bru.setVar(\"otherUsername\", \"t_\" + Math.random().toString(16).slice(2, 12));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Account registered\", () => {expect(res.getStatus()).to.equal(201); bru.setVar(\"otherPlayerId\", res.getBody().player_id);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/auth/token - get other player token",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "{{authUrl}}/api/auth/token",
+              "protocol": "",
+              "host": [
+                "{{authUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "token"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "password",
+                  "disabled": false,
+                  "type": "default",
+                  "description": ""
+                },
+                {
+                  "key": "username",
+                  "value": "{{otherUsername}}",
+                  "disabled": false,
+                  "type": "default",
+                  "description": ""
+                },
+                {
+                  "key": "password",
+                  "value": "pikachu123",
+                  "disabled": false,
+                  "type": "default",
+                  "description": ""
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Player token issued\", () => {expect(res.getStatus()).to.equal(200); bru.setVar(\"otherToken\", res.getBody().access_token);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/players/me/starters - other player's pool",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{otherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{playersUrl}}/api/players/me/starters",
+              "protocol": "",
+              "host": [
+                "{{playersUrl}}"
+              ],
+              "path": [
+                "api",
+                "players",
+                "me",
+                "starters"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Ten starter ids\", () => {expect(res.getStatus()).to.equal(200); var pool = res.getBody().pool; expect(pool).to.have.lengthOf(10); bru.setVar(\"starterPool\", JSON.stringify(pool)); bru.setVar(\"otherStarter1\", pool[0]); bru.setVar(\"otherStarter2\", pool[1]); bru.setVar(\"otherStarter3\", pool[2]);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/players/me/starters - other player chooses starters",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{otherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{playersUrl}}/api/players/me/starters",
+              "protocol": "",
+              "host": [
+                "{{playersUrl}}"
+              ],
+              "path": [
+                "api",
+                "players",
+                "me",
+                "starters"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"monster_ids\":[{{otherStarter1}},{{otherStarter2}},{{otherStarter3}}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Starters granted and run opened\", () => {expect(res.getStatus()).to.equal(201); var b = res.getBody(); bru.setVar(\"otherRunId\", b.run_id); bru.setVar(\"otherOwned1\", b.starters[0].owned_id); bru.setVar(\"otherOwned2\", b.starters[1].owned_id); bru.setVar(\"otherOwned3\", b.starters[2].owned_id);});"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "auth": {
+        "type": "noauth"
+      }
+    },
+    {
+      "name": "public",
+      "item": [
+        {
+          "name": "GET /api/monsters?element=dream&rarity=common - catalogue valid",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{monstersUrl}}/api/monsters?element=dream&rarity=common",
+              "protocol": "",
+              "host": [
+                "{{monstersUrl}}"
+              ],
+              "path": [
+                "api",
+                "monsters?element=dream&rarity=common"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Paginated filtered catalogue\", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody().items).to.be.an(\"array\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/monsters?rarity=imaginary - catalogue invalid filter",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{monstersUrl}}/api/monsters?rarity=imaginary",
+              "protocol": "",
+              "host": [
+                "{{monstersUrl}}"
+              ],
+              "path": [
+                "api",
+                "monsters?rarity=imaginary"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Unknown rarity rejected\", () => {expect(res.getStatus()).to.equal(400); expect(res.getBody().error).to.equal(\"VALIDATION_ERROR\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/monsters/1 - monster valid",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{monstersUrl}}/api/monsters/1",
+              "protocol": "",
+              "host": [
+                "{{monstersUrl}}"
+              ],
+              "path": [
+                "api",
+                "monsters",
+                "1"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Monster details and ability\", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody().monster_id).to.equal(1); expect(res.getBody().ability).to.have.property(\"ability_id\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/monsters/9999 - monster missing",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{monstersUrl}}/api/monsters/9999",
+              "protocol": "",
+              "host": [
+                "{{monstersUrl}}"
+              ],
+              "path": [
+                "api",
+                "monsters",
+                "9999"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"404 unknown monster\", () => {expect(res.getStatus()).to.equal(404); expect(res.getBody().error).to.equal(\"NOT_FOUND\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/abilities - abilities valid",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{monstersUrl}}/api/abilities",
+              "protocol": "",
+              "host": [
+                "{{monstersUrl}}"
+              ],
+              "path": [
+                "api",
+                "abilities"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"28 abilities\", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody()).to.have.lengthOf(28);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/abilities - abilities unauthorized",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "{{monstersUrl}}/api/abilities",
+              "protocol": "",
+              "host": [
+                "{{monstersUrl}}"
+              ],
+              "path": [
+                "api",
+                "abilities"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"401 without player token\", () => {expect(res.getStatus()).to.equal(401);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/abilities/1 - ability valid",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{monstersUrl}}/api/abilities/1",
+              "protocol": "",
+              "host": [
+                "{{monstersUrl}}"
+              ],
+              "path": [
+                "api",
+                "abilities",
+                "1"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Ability detail\", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody().ability_id).to.equal(1);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/abilities/9999 - ability missing",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{monstersUrl}}/api/abilities/9999",
+              "protocol": "",
+              "host": [
+                "{{monstersUrl}}"
+              ],
+              "path": [
+                "api",
+                "abilities",
+                "9999"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"404 unknown ability\", () => {expect(res.getStatus()).to.equal(404);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/elements - elements valid",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{monstersUrl}}/api/elements",
+              "protocol": "",
+              "host": [
+                "{{monstersUrl}}"
+              ],
+              "path": [
+                "api",
+                "elements"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Seven element cycle\", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody().cycle).to.have.lengthOf(7);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/elements - elements unauthorized",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "{{monstersUrl}}/api/elements",
+              "protocol": "",
+              "host": [
+                "{{monstersUrl}}"
+              ],
+              "path": [
+                "api",
+                "elements"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"401 without token\", () => {expect(res.getStatus()).to.equal(401);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /images/monsters/001.png - sprite valid",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "{{monstersUrl}}/images/monsters/001.png",
+              "protocol": "",
+              "host": [
+                "{{monstersUrl}}"
+              ],
+              "path": [
+                "images",
+                "monsters",
+                "001.png"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Sprite is public and cacheable\", () => {expect(res.getStatus()).to.equal(200); expect(res.getHeader(\"cache-control\")).to.contain(\"max-age\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /images/monsters/999.png - sprite missing",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "{{monstersUrl}}/images/monsters/999.png",
+              "protocol": "",
+              "host": [
+                "{{monstersUrl}}"
+              ],
+              "path": [
+                "images",
+                "monsters",
+                "999.png"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"404 for absent sprite\", () => {expect(res.getStatus()).to.equal(404);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/collection?run_id={{runId}} - collection valid",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{monstersUrl}}/api/collection?run_id={{runId}}",
+              "protocol": "",
+              "host": [
+                "{{monstersUrl}}"
+              ],
+              "path": [
+                "api",
+                "collection?run_id={{runId}}"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Three starters in the current run\", () => {expect(res.getStatus()).to.equal(200); var b = res.getBody(); expect(b.items).to.have.lengthOf(3); b.items.forEach(i => {expect(i.run_id).to.equal(bru.getVar(\"runId\")); expect(i).to.include.keys(\"owned_id\", \"monster_id\", \"level\");});});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/collection?page=-1 - collection invalid page",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{monstersUrl}}/api/collection?page=-1",
+              "protocol": "",
+              "host": [
+                "{{monstersUrl}}"
+              ],
+              "path": [
+                "api",
+                "collection?page=-1"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"400 invalid page\", () => {expect(res.getStatus()).to.equal(400);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/collection/{{owned1}} - instance valid",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{monstersUrl}}/api/collection/{{owned1}}",
+              "protocol": "",
+              "host": [
+                "{{monstersUrl}}"
+              ],
+              "path": [
+                "api",
+                "collection",
+                "{{owned1}}"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Owned monster readable by owner\", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody().owned_id).to.equal(bru.getVar(\"owned1\"));});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/collection/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee - instance missing",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{monstersUrl}}/api/collection/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+              "protocol": "",
+              "host": [
+                "{{monstersUrl}}"
+              ],
+              "path": [
+                "api",
+                "collection",
+                "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"404 missing or foreign instance\", () => {expect(res.getStatus()).to.equal(404);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/collection/{{otherOwned1}} - invalid: monster of another player",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{monstersUrl}}/api/collection/{{otherOwned1}}",
+              "protocol": "",
+              "host": [
+                "{{monstersUrl}}"
+              ],
+              "path": [
+                "api",
+                "collection",
+                "{{otherOwned1}}"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"404 NOT_FOUND, never 403 (P-11)\", () => {expect(res.getStatus()).to.equal(404); expect(res.getBody().error).to.equal(\"NOT_FOUND\");});"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "auth": {
+        "type": "noauth"
+      }
+    },
+    {
+      "name": "internal",
+      "item": [
+        {
+          "name": "00-setup",
+          "item": [
+            {
+              "name": "POST /api/auth/register - register player",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "auth": {
+                  "type": "noauth"
+                },
+                "description": "",
+                "url": {
+                  "raw": "{{authUrl}}/api/auth/register",
+                  "protocol": "",
+                  "host": [
+                    "{{authUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "register"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"username\":\"{{setupUsername}}\",\"password\":\"pikachu123\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "bru.setVar(\"setupUsername\", \"t_\" + Math.random().toString(16).slice(2, 12));"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "// Tests",
+                      "test(\"Account registered\", () => {expect(res.getStatus()).to.equal(201); bru.setVar(\"playerId\", res.getBody().player_id);});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "POST /api/auth/token - get player token",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "auth": {
+                  "type": "noauth"
+                },
+                "description": "",
+                "url": {
+                  "raw": "{{authUrl}}/api/auth/token",
+                  "protocol": "",
+                  "host": [
+                    "{{authUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "token"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "grant_type",
+                      "value": "password",
+                      "disabled": false,
+                      "type": "default",
+                      "description": ""
+                    },
+                    {
+                      "key": "username",
+                      "value": "{{setupUsername}}",
+                      "disabled": false,
+                      "type": "default",
+                      "description": ""
+                    },
+                    {
+                      "key": "password",
+                      "value": "pikachu123",
+                      "disabled": false,
+                      "type": "default",
+                      "description": ""
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "// Tests",
+                      "test(\"Player token issued\", () => {expect(res.getStatus()).to.equal(200); bru.setVar(\"playerToken\", res.getBody().access_token);});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "GET /api/players/me - profile and run",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{playerToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "description": "",
+                "url": {
+                  "raw": "{{playersUrl}}/api/players/me",
+                  "protocol": "",
+                  "host": [
+                    "{{playersUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "players",
+                    "me"
+                  ],
+                  "query": [],
+                  "variable": []
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "// Tests",
+                      "test(\"Profile has run id\", () => {expect(res.getStatus()).to.equal(200); bru.setVar(\"runId\", res.getBody().current_run_id);});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "GET /api/players/me/starters - starter pool",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{playerToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "description": "",
+                "url": {
+                  "raw": "{{playersUrl}}/api/players/me/starters",
+                  "protocol": "",
+                  "host": [
+                    "{{playersUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "players",
+                    "me",
+                    "starters"
+                  ],
+                  "query": [],
+                  "variable": []
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "// Tests",
+                      "test(\"Ten starter ids\", () => {expect(res.getStatus()).to.equal(200); var pool = res.getBody().pool; expect(pool).to.have.lengthOf(10); bru.setVar(\"starterPool\", JSON.stringify(pool)); bru.setVar(\"starter1\", pool[0]); bru.setVar(\"starter2\", pool[1]); bru.setVar(\"starter3\", pool[2]);});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "POST /internal/auth/token - get service token",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "auth": {
+                  "type": "noauth"
+                },
+                "description": "",
+                "url": {
+                  "raw": "{{authUrl}}/internal/auth/token",
+                  "protocol": "",
+                  "host": [
+                    "{{authUrl}}"
+                  ],
+                  "path": [
+                    "internal",
+                    "auth",
+                    "token"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "grant_type",
+                      "value": "client_credentials",
+                      "disabled": false,
+                      "type": "default",
+                      "description": ""
+                    },
+                    {
+                      "key": "client_id",
+                      "value": "tests",
+                      "disabled": false,
+                      "type": "default",
+                      "description": ""
+                    },
+                    {
+                      "key": "client_secret",
+                      "value": "{{process.env.TESTS_CLIENT_SECRET}}",
+                      "disabled": false,
+                      "type": "default",
+                      "description": ""
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "// Tests",
+                      "test(\"Service token issued\", () => {expect(res.getStatus()).to.equal(200); bru.setVar(\"serviceToken\", res.getBody().access_token);});"
+                    ]
+                  }
+                }
+              ]
+            }
+          ],
+          "auth": {
+            "type": "noauth"
+          }
+        },
+        {
+          "name": "GET /internal/monsters?rarity=common - candidates common",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{serviceToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{monstersUrl}}/internal/monsters?rarity=common",
+              "protocol": "",
+              "host": [
+                "{{monstersUrl}}"
+              ],
+              "path": [
+                "internal",
+                "monsters?rarity=common"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Only common monster ids\", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody()).to.have.lengthOf(60);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /internal/monsters?rarity=common - candidates wrong role",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{monstersUrl}}/internal/monsters?rarity=common",
+              "protocol": "",
+              "host": [
+                "{{monstersUrl}}"
+              ],
+              "path": [
+                "internal",
+                "monsters?rarity=common"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Player cannot use internal endpoint\", () => {expect(res.getStatus()).to.equal(403);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /internal/monsters/1/stats?level=4 - stats valid",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{serviceToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{monstersUrl}}/internal/monsters/1/stats?level=4",
+              "protocol": "",
+              "host": [
+                "{{monstersUrl}}"
+              ],
+              "path": [
+                "internal",
+                "monsters",
+                "1",
+                "stats?level=4"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Effective stats returned\", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody().level).to.equal(4); expect(res.getBody().stats).to.have.property(\"hp\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /internal/monsters/1/stats?level=51 - stats invalid level",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{serviceToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{monstersUrl}}/internal/monsters/1/stats?level=51",
+              "protocol": "",
+              "host": [
+                "{{monstersUrl}}"
+              ],
+              "path": [
+                "internal",
+                "monsters",
+                "1",
+                "stats?level=51"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Invalid level rejected\", () => {expect(res.getStatus()).to.equal(400); expect(res.getBody().error).to.equal(\"VALIDATION_ERROR\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /internal/collections/{{playerId}}/starters - starters valid",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{serviceToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{monstersUrl}}/internal/collections/{{playerId}}/starters",
+              "protocol": "",
+              "host": [
+                "{{monstersUrl}}"
+              ],
+              "path": [
+                "internal",
+                "collections",
+                "{{playerId}}",
+                "starters"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"run_id\":\"{{runId}}\",\"monster_ids\":[{{starter1}},{{starter2}},{{starter3}}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Creates three starters\", () => {expect(res.getStatus()).to.equal(201); expect(res.getBody()).to.have.lengthOf(3); bru.setVar(\"owned1\",res.getBody()[0].owned_id); bru.setVar(\"owned2\",res.getBody()[1].owned_id); bru.setVar(\"owned3\",res.getBody()[2].owned_id);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /internal/collections/{{playerId}}/starters - starters idempotent",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{serviceToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{monstersUrl}}/internal/collections/{{playerId}}/starters",
+              "protocol": "",
+              "host": [
+                "{{monstersUrl}}"
+              ],
+              "path": [
+                "internal",
+                "collections",
+                "{{playerId}}",
+                "starters"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"run_id\":\"{{runId}}\",\"monster_ids\":[{{starter1}},{{starter2}},{{starter3}}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Repeated starter grant returns same ids\", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody()[0].owned_id).to.equal(bru.getVar(\"owned1\"));});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /internal/collections/{{playerId}}/monsters - reward valid",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{serviceToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{monstersUrl}}/internal/collections/{{playerId}}/monsters",
+              "protocol": "",
+              "host": [
+                "{{monstersUrl}}"
+              ],
+              "path": [
+                "internal",
+                "collections",
+                "{{playerId}}",
+                "monsters"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"run_id\":\"{{runId}}\",\"monster_id\":1,\"level\":7,\"encounter_id\":\"{{encounterId}}\",\"source\":\"encounter\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "bru.setVar(\"encounterId\", \"xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx\".replace(/[xy]/g, c => {let r = Math.floor(Math.random() * 16); return (c === \"x\" ? r : (r & 3 | 8)).toString(16);}));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Creates a level 7 reward\", () => {expect(res.getStatus()).to.equal(201); expect(res.getBody().level).to.equal(7); bru.setVar(\"rewardId\",res.getBody().owned_id);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /internal/collections/{{playerId}}/monsters - reward idempotent",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{serviceToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{monstersUrl}}/internal/collections/{{playerId}}/monsters",
+              "protocol": "",
+              "host": [
+                "{{monstersUrl}}"
+              ],
+              "path": [
+                "internal",
+                "collections",
+                "{{playerId}}",
+                "monsters"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"run_id\":\"{{runId}}\",\"monster_id\":1,\"level\":7,\"encounter_id\":\"{{encounterId}}\",\"source\":\"encounter\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Repeated reward yields same monster\", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody().owned_id).to.equal(bru.getVar(\"rewardId\"));});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /internal/collections/{{playerId}}/xp - xp valid",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{serviceToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{monstersUrl}}/internal/collections/{{playerId}}/xp",
+              "protocol": "",
+              "host": [
+                "{{monstersUrl}}"
+              ],
+              "path": [
+                "internal",
+                "collections",
+                "{{playerId}}",
+                "xp"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"encounter_id\":\"{{xpEncounterId}}\",\"owned_ids\":[\"{{owned1}}\",\"{{owned2}}\"],\"xp\":100}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "bru.setVar(\"xpEncounterId\", \"xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx\".replace(/[xy]/g, c => {let r = Math.floor(Math.random() * 16); return (c === \"x\" ? r : (r & 3 | 8)).toString(16);}));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Grants XP exactly once\", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody()).to.have.lengthOf(2); expect(res.getBody()[0].level_after).to.be.above(1);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /internal/collections/{{playerId}}/xp - xp idempotent",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{serviceToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{monstersUrl}}/internal/collections/{{playerId}}/xp",
+              "protocol": "",
+              "host": [
+                "{{monstersUrl}}"
+              ],
+              "path": [
+                "internal",
+                "collections",
+                "{{playerId}}",
+                "xp"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"encounter_id\":\"{{xpEncounterId}}\",\"owned_ids\":[\"{{owned1}}\",\"{{owned2}}\"],\"xp\":100}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Repeat does not level twice\", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody()[0].level_before).to.equal(res.getBody()[0].level_after);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /internal/collections/{{playerId}}/instances?ids={{owned1}},{{owned2}} - instances valid",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{serviceToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{monstersUrl}}/internal/collections/{{playerId}}/instances?ids={{owned1}},{{owned2}}",
+              "protocol": "",
+              "host": [
+                "{{monstersUrl}}"
+              ],
+              "path": [
+                "internal",
+                "collections",
+                "{{playerId}}",
+                "instances?ids={{owned1}},{{owned2}}"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Returns full owned instance stats\", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody()).to.have.lengthOf(2); expect(res.getBody()[0].stats).to.have.property(\"attack\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /internal/collections/{{playerId}}/instances?ids={{owned1}} - instances wrong role",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{monstersUrl}}/internal/collections/{{playerId}}/instances?ids={{owned1}}",
+              "protocol": "",
+              "host": [
+                "{{monstersUrl}}"
+              ],
+              "path": [
+                "internal",
+                "collections",
+                "{{playerId}}",
+                "instances?ids={{owned1}}"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Only services can list instances internally\", () => {expect(res.getStatus()).to.equal(403);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /internal/collections/{{playerId}}/archive - archive valid",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{serviceToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{monstersUrl}}/internal/collections/{{playerId}}/archive",
+              "protocol": "",
+              "host": [
+                "{{monstersUrl}}"
+              ],
+              "path": [
+                "internal",
+                "collections",
+                "{{playerId}}",
+                "archive"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"run_id\":\"{{runId}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Archives active run\", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody().count).to.be.above(0);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /internal/collections/{{playerId}}/archive - archive idempotent",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{serviceToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{monstersUrl}}/internal/collections/{{playerId}}/archive",
+              "protocol": "",
+              "host": [
+                "{{monstersUrl}}"
+              ],
+              "path": [
+                "internal",
+                "collections",
+                "{{playerId}}",
+                "archive"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"run_id\":\"{{runId}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Archive repeated changes nothing\", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody().count).to.equal(0);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /internal/collections/{{playerId}}/starters - invalid",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{serviceToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{monstersUrl}}/internal/collections/{{playerId}}/starters",
+              "protocol": "",
+              "host": [
+                "{{monstersUrl}}"
+              ],
+              "path": [
+                "internal",
+                "collections",
+                "{{playerId}}",
+                "starters"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"run_id\":\"aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee\",\"monster_ids\":[{{starter1}},{{starter2}}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Invalid request is rejected\", () => {expect(res.getStatus()).to.equal(400); expect(res.getBody().error).to.equal(\"INVALID_COLLECTION_OPERATION\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /internal/collections/{{playerId}}/monsters - invalid",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{serviceToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{monstersUrl}}/internal/collections/{{playerId}}/monsters",
+              "protocol": "",
+              "host": [
+                "{{monstersUrl}}"
+              ],
+              "path": [
+                "internal",
+                "collections",
+                "{{playerId}}",
+                "monsters"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"run_id\":\"{{runId}}\",\"monster_id\":1,\"level\":7,\"encounter_id\":\"aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee\",\"source\":\"invalid\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Invalid request is rejected\", () => {expect(res.getStatus()).to.equal(400); expect(res.getBody().error).to.equal(\"INVALID_COLLECTION_OPERATION\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /internal/collections/{{playerId}}/xp - invalid",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{serviceToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{monstersUrl}}/internal/collections/{{playerId}}/xp",
+              "protocol": "",
+              "host": [
+                "{{monstersUrl}}"
+              ],
+              "path": [
+                "internal",
+                "collections",
+                "{{playerId}}",
+                "xp"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"encounter_id\":\"aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee\",\"owned_ids\":[\"{{owned1}}\"],\"xp\":-1}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Invalid request is rejected\", () => {expect(res.getStatus()).to.equal(400); expect(res.getBody().error).to.equal(\"INVALID_COLLECTION_OPERATION\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /internal/collections/{{playerId}}/archive - invalid",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{monstersUrl}}/internal/collections/{{playerId}}/archive",
+              "protocol": "",
+              "host": [
+                "{{monstersUrl}}"
+              ],
+              "path": [
+                "internal",
+                "collections",
+                "{{playerId}}",
+                "archive"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"run_id\":\"{{runId}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Invalid request is rejected\", () => {expect(res.getStatus()).to.equal(403); expect(res.getBody().error).to.equal(\"FORBIDDEN\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/collection?run_id={{runId}} - valid: archived run stays readable",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{monstersUrl}}/api/collection?run_id={{runId}}",
+              "protocol": "",
+              "host": [
+                "{{monstersUrl}}"
+              ],
+              "path": [
+                "api",
+                "collection?run_id={{runId}}"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Three starters and the reward, all archived\", () => {",
+                  "  expect(res.getStatus()).to.equal(200);",
+                  "  var items = res.getBody().items;",
+                  "  expect(items).to.have.lengthOf(4);",
+                  "  items.forEach(i => expect(i.status).to.equal(\"archived\"));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "auth": {
+        "type": "noauth"
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "authUrl",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "setupUsername",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "playersUrl",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "playerToken",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "starter1",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "starter2",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "starter3",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "otherUsername",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "otherToken",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "otherStarter1",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "otherStarter2",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "otherStarter3",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "monstersUrl",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "runId",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "owned1",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "otherOwned1",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "process.env.TESTS_CLIENT_SECRET",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "serviceToken",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "playerId",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "encounterId",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "xpEncounterId",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "owned2",
+      "value": "",
+      "type": "default"
+    }
+  ]
+}

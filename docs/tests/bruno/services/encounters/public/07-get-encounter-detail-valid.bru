@@ -1,0 +1,19 @@
+meta {
+  name: GET /api/encounters/11 - valid: available template
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{encountersUrl}}/api/encounters/11
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+tests {
+  test("Template detail", () => {expect(res.getStatus()).to.equal(200); var b = res.getBody(); expect(b.template_id).to.equal(11); expect(b.is_boss).to.equal(false); expect(b).to.include.keys("element", "level_min", "level_max", "rarity_weights");});
+}

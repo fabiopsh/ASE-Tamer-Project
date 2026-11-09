@@ -1,0 +1,19 @@
+meta {
+  name: GET /api/collection/{{otherOwned1}} - invalid: monster of another player
+  type: http
+  seq: 17
+}
+
+get {
+  url: {{monstersUrl}}/api/collection/{{otherOwned1}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+tests {
+  test("404 NOT_FOUND, never 403 (P-11)", () => {expect(res.getStatus()).to.equal(404); expect(res.getBody().error).to.equal("NOT_FOUND");});
+}

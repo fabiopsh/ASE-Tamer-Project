@@ -17,5 +17,5 @@ body:form-urlencoded {
 }
 
 tests {
-  test("Player token issued", () => {expect(res.getStatus()).to.equal(200); bru.setVar("playerToken", res.getBody().access_token);});
+  test("Player token issued", () => {expect(res.getStatus()).to.equal(200); bru.setVar("playerToken", res.getBody().access_token); bru.setVar("ownerToken", res.getBody().access_token);});
 }

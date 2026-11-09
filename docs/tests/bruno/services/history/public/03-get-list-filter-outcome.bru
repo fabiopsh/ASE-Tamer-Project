@@ -1,0 +1,24 @@
+meta {
+  name: GET /api/history?outcome= - valid: filtered by outcome
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{historyUrl}}/api/history?run_id={{runId}}&outcome={{battleOutcome}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+tests {
+  test("Only records with that outcome", () => {
+    expect(res.getStatus()).to.equal(200);
+    var b = res.getBody();
+    expect(b.total_items).to.equal(1);
+    b.items.forEach(i => expect(i.outcome).to.equal(bru.getVar("battleOutcome")));
+  });
+}

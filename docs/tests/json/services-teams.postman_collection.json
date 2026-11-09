@@ -1,0 +1,2094 @@
+{
+  "info": {
+    "name": "Monster Tamers - services-teams",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "00-setup",
+      "item": [
+        {
+          "name": "POST /api/auth/register - register player",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "{{authUrl}}/api/auth/register",
+              "protocol": "",
+              "host": [
+                "{{authUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"username\":\"{{setupUsername}}\",\"password\":\"pikachu123\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "bru.setVar(\"setupUsername\", \"t_\" + Math.random().toString(16).slice(2, 12));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Account registered\", () => {expect(res.getStatus()).to.equal(201); bru.setVar(\"playerId\", res.getBody().player_id);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/auth/token - get player token",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "{{authUrl}}/api/auth/token",
+              "protocol": "",
+              "host": [
+                "{{authUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "token"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "password",
+                  "disabled": false,
+                  "type": "default",
+                  "description": ""
+                },
+                {
+                  "key": "username",
+                  "value": "{{setupUsername}}",
+                  "disabled": false,
+                  "type": "default",
+                  "description": ""
+                },
+                {
+                  "key": "password",
+                  "value": "pikachu123",
+                  "disabled": false,
+                  "type": "default",
+                  "description": ""
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Player token issued\", () => {expect(res.getStatus()).to.equal(200); bru.setVar(\"playerToken\", res.getBody().access_token);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/players/me/starters - starter pool",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{playersUrl}}/api/players/me/starters",
+              "protocol": "",
+              "host": [
+                "{{playersUrl}}"
+              ],
+              "path": [
+                "api",
+                "players",
+                "me",
+                "starters"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Ten starter ids\", () => {expect(res.getStatus()).to.equal(200); var pool = res.getBody().pool; expect(pool).to.have.lengthOf(10); bru.setVar(\"starterPool\", JSON.stringify(pool)); bru.setVar(\"starter1\", pool[0]); bru.setVar(\"starter2\", pool[1]); bru.setVar(\"starter3\", pool[2]);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/players/me/starters - choose starters",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{playersUrl}}/api/players/me/starters",
+              "protocol": "",
+              "host": [
+                "{{playersUrl}}"
+              ],
+              "path": [
+                "api",
+                "players",
+                "me",
+                "starters"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"monster_ids\":[{{starter1}},{{starter2}},{{starter3}}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Starters granted and run opened\", () => {expect(res.getStatus()).to.equal(201); var b = res.getBody(); bru.setVar(\"runId\", b.run_id); bru.setVar(\"owned1\", b.starters[0].owned_id); bru.setVar(\"owned2\", b.starters[1].owned_id); bru.setVar(\"owned3\", b.starters[2].owned_id);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/teams - create test team",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{teamsUrl}}/api/teams",
+              "protocol": "",
+              "host": [
+                "{{teamsUrl}}"
+              ],
+              "path": [
+                "api",
+                "teams"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\":\"Main\",\"members\":[\"{{owned1}}\",\"{{owned2}}\"]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Team saved\", () => {expect(res.getStatus()).to.equal(201); bru.setVar(\"teamId\", res.getBody().team_id);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/auth/register - register other player",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "{{authUrl}}/api/auth/register",
+              "protocol": "",
+              "host": [
+                "{{authUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"username\":\"{{otherUsername}}\",\"password\":\"pikachu123\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "bru.setVar(\"otherUsername\", \"t_\" + Math.random().toString(16).slice(2, 12));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Account registered\", () => {expect(res.getStatus()).to.equal(201); bru.setVar(\"otherPlayerId\", res.getBody().player_id);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/auth/token - get other player token",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "{{authUrl}}/api/auth/token",
+              "protocol": "",
+              "host": [
+                "{{authUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "token"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "password",
+                  "disabled": false,
+                  "type": "default",
+                  "description": ""
+                },
+                {
+                  "key": "username",
+                  "value": "{{otherUsername}}",
+                  "disabled": false,
+                  "type": "default",
+                  "description": ""
+                },
+                {
+                  "key": "password",
+                  "value": "pikachu123",
+                  "disabled": false,
+                  "type": "default",
+                  "description": ""
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Player token issued\", () => {expect(res.getStatus()).to.equal(200); bru.setVar(\"otherToken\", res.getBody().access_token);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/players/me/starters - other player's pool",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{otherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{playersUrl}}/api/players/me/starters",
+              "protocol": "",
+              "host": [
+                "{{playersUrl}}"
+              ],
+              "path": [
+                "api",
+                "players",
+                "me",
+                "starters"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Ten starter ids\", () => {expect(res.getStatus()).to.equal(200); var pool = res.getBody().pool; expect(pool).to.have.lengthOf(10); bru.setVar(\"starterPool\", JSON.stringify(pool)); bru.setVar(\"otherStarter1\", pool[0]); bru.setVar(\"otherStarter2\", pool[1]); bru.setVar(\"otherStarter3\", pool[2]);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/players/me/starters - other player chooses starters",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{otherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{playersUrl}}/api/players/me/starters",
+              "protocol": "",
+              "host": [
+                "{{playersUrl}}"
+              ],
+              "path": [
+                "api",
+                "players",
+                "me",
+                "starters"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"monster_ids\":[{{otherStarter1}},{{otherStarter2}},{{otherStarter3}}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Starters granted and run opened\", () => {expect(res.getStatus()).to.equal(201); var b = res.getBody(); bru.setVar(\"otherRunId\", b.run_id); bru.setVar(\"otherOwned1\", b.starters[0].owned_id); bru.setVar(\"otherOwned2\", b.starters[1].owned_id); bru.setVar(\"otherOwned3\", b.starters[2].owned_id);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/teams - other player creates a team",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{otherToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{teamsUrl}}/api/teams",
+              "protocol": "",
+              "host": [
+                "{{teamsUrl}}"
+              ],
+              "path": [
+                "api",
+                "teams"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\":\"Other\",\"members\":[\"{{otherOwned1}}\"]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Team saved\", () => {expect(res.getStatus()).to.equal(201); bru.setVar(\"foreignTeamId\", res.getBody().team_id);});"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "auth": {
+        "type": "noauth"
+      }
+    },
+    {
+      "name": "public",
+      "item": [
+        {
+          "name": "GET /api/teams - list valid",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{teamsUrl}}/api/teams",
+              "protocol": "",
+              "host": [
+                "{{teamsUrl}}"
+              ],
+              "path": [
+                "api",
+                "teams"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Lists own teams\", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody()).to.have.lengthOf(1);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/teams - list unauthorized",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "{{teamsUrl}}/api/teams",
+              "protocol": "",
+              "host": [
+                "{{teamsUrl}}"
+              ],
+              "path": [
+                "api",
+                "teams"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"401 without token\", () => {expect(res.getStatus()).to.equal(401);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/teams/validate - validate valid",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{teamsUrl}}/api/teams/validate",
+              "protocol": "",
+              "host": [
+                "{{teamsUrl}}"
+              ],
+              "path": [
+                "api",
+                "teams",
+                "validate"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"members\":[\"{{owned1}}\",\"{{owned2}}\"]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Valid team\", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody().valid).to.equal(true);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/teams/validate - validate invalid duplicate",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{teamsUrl}}/api/teams/validate",
+              "protocol": "",
+              "host": [
+                "{{teamsUrl}}"
+              ],
+              "path": [
+                "api",
+                "teams",
+                "validate"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"members\":[\"{{owned1}}\",\"{{owned1}}\"]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Invalid without saving\", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody().valid).to.equal(false); expect(res.getBody().errors.some(e => e.code === \"DUPLICATE_MEMBER\")).to.equal(true);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/teams - create valid",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{teamsUrl}}/api/teams",
+              "protocol": "",
+              "host": [
+                "{{teamsUrl}}"
+              ],
+              "path": [
+                "api",
+                "teams"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\":\"Second\",\"members\":[\"{{owned2}}\",\"{{owned3}}\"]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Second team created\", () => {expect(res.getStatus()).to.equal(201); bru.setVar(\"secondTeamId\",res.getBody().team_id);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/teams - create invalid size",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{teamsUrl}}/api/teams",
+              "protocol": "",
+              "host": [
+                "{{teamsUrl}}"
+              ],
+              "path": [
+                "api",
+                "teams"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\":\"Too many\",\"members\":[\"{{owned1}}\",\"{{owned2}}\",\"{{owned3}}\",\"{{owned1}}\"]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"400 TEAM_INVALID with rule code\", () => {expect(res.getStatus()).to.equal(400); expect(res.getBody().error).to.equal(\"TEAM_INVALID\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/teams/{{teamId}} - get valid",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{teamsUrl}}/api/teams/{{teamId}}",
+              "protocol": "",
+              "host": [
+                "{{teamsUrl}}"
+              ],
+              "path": [
+                "api",
+                "teams",
+                "{{teamId}}"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Ordered members returned\", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody().members[0].position).to.equal(1);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/teams/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee - get missing",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{teamsUrl}}/api/teams/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+              "protocol": "",
+              "host": [
+                "{{teamsUrl}}"
+              ],
+              "path": [
+                "api",
+                "teams",
+                "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"404 for missing or foreign team\", () => {expect(res.getStatus()).to.equal(404);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PUT /api/teams/{{teamId}} - update valid",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{teamsUrl}}/api/teams/{{teamId}}",
+              "protocol": "",
+              "host": [
+                "{{teamsUrl}}"
+              ],
+              "path": [
+                "api",
+                "teams",
+                "{{teamId}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\":\"Reordered\",\"members\":[\"{{owned2}}\",\"{{owned1}}\"]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"PUT changes member order\", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody().members[0].owned_id).to.equal(bru.getVar(\"owned2\"));});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PUT /api/teams/{{foreignTeamId}} - update invalid foreign",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{teamsUrl}}/api/teams/{{foreignTeamId}}",
+              "protocol": "",
+              "host": [
+                "{{teamsUrl}}"
+              ],
+              "path": [
+                "api",
+                "teams",
+                "{{foreignTeamId}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\":\"No\",\"members\":[\"{{owned1}}\"]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"404 for foreign team\", () => {expect(res.getStatus()).to.equal(404);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE /api/teams/{{secondTeamId}} - delete valid",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{teamsUrl}}/api/teams/{{secondTeamId}}",
+              "protocol": "",
+              "host": [
+                "{{teamsUrl}}"
+              ],
+              "path": [
+                "api",
+                "teams",
+                "{{secondTeamId}}"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"204 on delete\", () => {expect(res.getStatus()).to.equal(204);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE /api/teams/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee - delete missing",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{teamsUrl}}/api/teams/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+              "protocol": "",
+              "host": [
+                "{{teamsUrl}}"
+              ],
+              "path": [
+                "api",
+                "teams",
+                "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"404 on missing team\", () => {expect(res.getStatus()).to.equal(404);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/teams - invalid: monster of another player",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{teamsUrl}}/api/teams",
+              "protocol": "",
+              "host": [
+                "{{teamsUrl}}"
+              ],
+              "path": [
+                "api",
+                "teams"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\":\"Stolen\",\"members\":[\"{{owned1}}\",\"{{otherOwned1}}\"]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"400 TEAM_INVALID with NOT_OWNED\", () => {expect(res.getStatus()).to.equal(400); var b = res.getBody(); expect(b.error).to.equal(\"TEAM_INVALID\"); expect(b.details.some(d => d.code === \"NOT_OWNED\")).to.equal(true);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/teams/{{foreignTeamId}} - invalid: team of another player",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{teamsUrl}}/api/teams/{{foreignTeamId}}",
+              "protocol": "",
+              "host": [
+                "{{teamsUrl}}"
+              ],
+              "path": [
+                "api",
+                "teams",
+                "{{foreignTeamId}}"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"404 NOT_FOUND, never 403 (P-11)\", () => {expect(res.getStatus()).to.equal(404); expect(res.getBody().error).to.equal(\"NOT_FOUND\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/teams - valid: fill up to five teams",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{teamsUrl}}/api/teams",
+              "protocol": "",
+              "host": [
+                "{{teamsUrl}}"
+              ],
+              "path": [
+                "api",
+                "teams"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\":\"Filler\",\"members\":[\"{{owned3}}\"]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// After 11-delete the player owns one team; this request repeats until there are five",
+                  "bru.setVar(\"fillerCreated\", (bru.getVar(\"fillerCreated\") || 0) + 1);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Team created while under the limit\", () => {",
+                  "  expect(res.getStatus()).to.equal(201);",
+                  "  if (bru.getVar(\"fillerCreated\") < 4) {",
+                  "    bru.setNextRequest(\"POST /api/teams - valid: fill up to five teams\");",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/teams - invalid: sixth team in the run",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{teamsUrl}}/api/teams",
+              "protocol": "",
+              "host": [
+                "{{teamsUrl}}"
+              ],
+              "path": [
+                "api",
+                "teams"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\":\"Sixth\",\"members\":[\"{{owned1}}\"]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"400 TEAM_INVALID with TEAM_LIMIT\", () => {expect(res.getStatus()).to.equal(400); var b = res.getBody(); expect(b.error).to.equal(\"TEAM_INVALID\"); expect(b.details.some(d => d.code === \"TEAM_LIMIT\")).to.equal(true);});"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "auth": {
+        "type": "noauth"
+      }
+    },
+    {
+      "name": "internal",
+      "item": [
+        {
+          "name": "00-setup",
+          "item": [
+            {
+              "name": "POST /api/auth/register - register player",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "auth": {
+                  "type": "noauth"
+                },
+                "description": "",
+                "url": {
+                  "raw": "{{authUrl}}/api/auth/register",
+                  "protocol": "",
+                  "host": [
+                    "{{authUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "register"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"username\":\"{{setupUsername}}\",\"password\":\"pikachu123\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "bru.setVar(\"setupUsername\", \"t_\" + Math.random().toString(16).slice(2, 12));"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "// Tests",
+                      "test(\"Account registered\", () => {expect(res.getStatus()).to.equal(201); bru.setVar(\"playerId\", res.getBody().player_id);});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "POST /api/auth/token - get player token",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "auth": {
+                  "type": "noauth"
+                },
+                "description": "",
+                "url": {
+                  "raw": "{{authUrl}}/api/auth/token",
+                  "protocol": "",
+                  "host": [
+                    "{{authUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "token"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "grant_type",
+                      "value": "password",
+                      "disabled": false,
+                      "type": "default",
+                      "description": ""
+                    },
+                    {
+                      "key": "username",
+                      "value": "{{setupUsername}}",
+                      "disabled": false,
+                      "type": "default",
+                      "description": ""
+                    },
+                    {
+                      "key": "password",
+                      "value": "pikachu123",
+                      "disabled": false,
+                      "type": "default",
+                      "description": ""
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "// Tests",
+                      "test(\"Player token issued\", () => {expect(res.getStatus()).to.equal(200); bru.setVar(\"playerToken\", res.getBody().access_token);});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "GET /api/players/me/starters - starter pool",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{playerToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "description": "",
+                "url": {
+                  "raw": "{{playersUrl}}/api/players/me/starters",
+                  "protocol": "",
+                  "host": [
+                    "{{playersUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "players",
+                    "me",
+                    "starters"
+                  ],
+                  "query": [],
+                  "variable": []
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "// Tests",
+                      "test(\"Ten starter ids\", () => {expect(res.getStatus()).to.equal(200); var pool = res.getBody().pool; expect(pool).to.have.lengthOf(10); bru.setVar(\"starterPool\", JSON.stringify(pool)); bru.setVar(\"starter1\", pool[0]); bru.setVar(\"starter2\", pool[1]); bru.setVar(\"starter3\", pool[2]);});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "POST /api/players/me/starters - choose starters",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{playerToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "description": "",
+                "url": {
+                  "raw": "{{playersUrl}}/api/players/me/starters",
+                  "protocol": "",
+                  "host": [
+                    "{{playersUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "players",
+                    "me",
+                    "starters"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"monster_ids\":[{{starter1}},{{starter2}},{{starter3}}]}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "// Tests",
+                      "test(\"Starters granted and run opened\", () => {expect(res.getStatus()).to.equal(201); var b = res.getBody(); bru.setVar(\"runId\", b.run_id); bru.setVar(\"owned1\", b.starters[0].owned_id); bru.setVar(\"owned2\", b.starters[1].owned_id); bru.setVar(\"owned3\", b.starters[2].owned_id);});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "POST /api/teams - create test team",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{playerToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "description": "",
+                "url": {
+                  "raw": "{{teamsUrl}}/api/teams",
+                  "protocol": "",
+                  "host": [
+                    "{{teamsUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "teams"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"name\":\"Main\",\"members\":[\"{{owned1}}\",\"{{owned2}}\"]}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "// Tests",
+                      "test(\"Team saved\", () => {expect(res.getStatus()).to.equal(201); bru.setVar(\"teamId\", res.getBody().team_id);});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "POST /internal/auth/token - get service token",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "auth": {
+                  "type": "noauth"
+                },
+                "description": "",
+                "url": {
+                  "raw": "{{authUrl}}/internal/auth/token",
+                  "protocol": "",
+                  "host": [
+                    "{{authUrl}}"
+                  ],
+                  "path": [
+                    "internal",
+                    "auth",
+                    "token"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "grant_type",
+                      "value": "client_credentials",
+                      "disabled": false,
+                      "type": "default",
+                      "description": ""
+                    },
+                    {
+                      "key": "client_id",
+                      "value": "tests",
+                      "disabled": false,
+                      "type": "default",
+                      "description": ""
+                    },
+                    {
+                      "key": "client_secret",
+                      "value": "{{process.env.TESTS_CLIENT_SECRET}}",
+                      "disabled": false,
+                      "type": "default",
+                      "description": ""
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "// Tests",
+                      "test(\"Service token issued\", () => {expect(res.getStatus()).to.equal(200); bru.setVar(\"serviceToken\", res.getBody().access_token);});"
+                    ]
+                  }
+                }
+              ]
+            }
+          ],
+          "auth": {
+            "type": "noauth"
+          }
+        },
+        {
+          "name": "GET /internal/teams/{{teamId}}?player_id={{playerId}} - team revalidated",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{serviceToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{teamsUrl}}/internal/teams/{{teamId}}?player_id={{playerId}}",
+              "protocol": "",
+              "host": [
+                "{{teamsUrl}}"
+              ],
+              "path": [
+                "internal",
+                "teams",
+                "{{teamId}}?player_id={{playerId}}"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Full stats for encounters\", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody().members[0].stats).to.have.property(\"hp\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /internal/teams/{{teamId}}?player_id={{playerId}} - team wrong role",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{teamsUrl}}/internal/teams/{{teamId}}?player_id={{playerId}}",
+              "protocol": "",
+              "host": [
+                "{{teamsUrl}}"
+              ],
+              "path": [
+                "internal",
+                "teams",
+                "{{teamId}}?player_id={{playerId}}"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Only services may revalidate\", () => {expect(res.getStatus()).to.equal(403);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /internal/teams/{{playerId}}/reset - reset unrelated run",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{serviceToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{teamsUrl}}/internal/teams/{{playerId}}/reset",
+              "protocol": "",
+              "host": [
+                "{{teamsUrl}}"
+              ],
+              "path": [
+                "internal",
+                "teams",
+                "{{playerId}}",
+                "reset"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"run_id\":\"aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Unrelated reset is a no-op\", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody().count).to.equal(0);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /internal/teams/{{playerId}}/reset - reset wrong role",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{teamsUrl}}/internal/teams/{{playerId}}/reset",
+              "protocol": "",
+              "host": [
+                "{{teamsUrl}}"
+              ],
+              "path": [
+                "internal",
+                "teams",
+                "{{playerId}}",
+                "reset"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"run_id\":\"{{runId}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Forbidden internal reset\", () => {expect(res.getStatus()).to.equal(403);});"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "auth": {
+        "type": "noauth"
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "authUrl",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "setupUsername",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "playersUrl",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "playerToken",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "starter1",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "starter2",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "starter3",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "teamsUrl",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "owned1",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "owned2",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "otherUsername",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "otherToken",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "otherStarter1",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "otherStarter2",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "otherStarter3",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "otherOwned1",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "owned3",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "teamId",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "foreignTeamId",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "secondTeamId",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "process.env.TESTS_CLIENT_SECRET",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "playerId",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "serviceToken",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "runId",
+      "value": "",
+      "type": "default"
+    }
+  ]
+}

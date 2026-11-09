@@ -81,16 +81,33 @@ Unit and service tests (they need Docker, which starts a throw-away PostgreSQL):
 mvn -f backend/pom.xml verify
 ```
 
-API tests with [Bruno](https://www.usebruno.com/) against the running containers:
+#### Running the API tests
+
+API tests with [Bruno](https://www.usebruno.com/) against the running containers (Node.js 20+ needed):
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.test.yml up -d --build --wait
 scripts/test-env.sh                        # copies the CA and the test client secret (gitignored)
 cd docs/tests/bruno
-npx @usebruno/cli@4.3.0 run services -r --env component --cacert ../../../.test-secrets/ca.crt
+npm ci                                     # Bruno CLI, pinned version
+npm run test:component                     # each service on its own port (9001…9006)
+npm run test:integration                   # the public requests through the gateway (8443)
+npm run test:e2e                           # core loop through the gateway
 ```
 
-See [docs/plan/10-testing.md](docs/plan/10-testing.md) for the integration and end-to-end runs.
+`npm test` runs all three. The exported collections (JSON) are in [docs/tests/json/](docs/tests/json/),
+regenerated with `npm run export`. Details, layout and the coverage matrix:
+[docs/tests/bruno/README.md](docs/tests/bruno/README.md).
+
+Performance tests with [Locust](https://locust.io/), against the gateway only (same test stack):
+
+```bash
+pip install -r docs/locust/requirements.txt
+CA_PATH=.test-secrets/ca.crt locust -f docs/locust/locustfile.py --host https://localhost:8443 \
+    --headless -u 50 -r 5 -t 3m --csv docs/locust/results/run
+```
+
+Results and their analysis: [docs/locust/README.md](docs/locust/README.md).
 
 ### 5. Stop and reset
 

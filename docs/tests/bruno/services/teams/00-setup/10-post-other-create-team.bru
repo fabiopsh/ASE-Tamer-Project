@@ -1,0 +1,23 @@
+meta {
+  name: POST /api/teams - other player creates a team
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{teamsUrl}}/api/teams
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{otherToken}}
+}
+
+body:json {
+  {"name":"Other","members":["{{otherOwned1}}"]}
+}
+
+tests {
+  test("Team saved", () => {expect(res.getStatus()).to.equal(201); bru.setVar("foreignTeamId", res.getBody().team_id);});
+}

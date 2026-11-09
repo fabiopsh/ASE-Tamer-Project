@@ -1,0 +1,33 @@
+meta {
+  name: POST /api/teams - valid: fill up to five teams
+  type: http
+  seq: 15
+}
+
+post {
+  url: {{teamsUrl}}/api/teams
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+body:json {
+  {"name":"Filler","members":["{{owned3}}"]}
+}
+
+script:pre-request {
+  // After 11-delete the player owns one team; this request repeats until there are five
+  bru.setVar("fillerCreated", (bru.getVar("fillerCreated") || 0) + 1);
+}
+
+tests {
+  test("Team created while under the limit", () => {
+    expect(res.getStatus()).to.equal(201);
+    if (bru.getVar("fillerCreated") < 4) {
+      bru.setNextRequest("POST /api/teams - valid: fill up to five teams");
+    }
+  });
+}

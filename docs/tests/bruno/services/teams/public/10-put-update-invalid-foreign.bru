@@ -1,11 +1,11 @@
 meta {
-  name: PUT /api/teams/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee - update invalid foreign
+  name: PUT /api/teams/{{foreignTeamId}} - update invalid foreign
   type: http
   seq: 10
 }
 
 put {
-  url: {{teamsUrl}}/api/teams/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee
+  url: {{teamsUrl}}/api/teams/{{foreignTeamId}}
   body: json
   auth: bearer
 }

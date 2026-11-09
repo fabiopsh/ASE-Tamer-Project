@@ -1,0 +1,23 @@
+meta {
+  name: GET /api/collection - three starters owned
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{monstersUrl}}/api/collection
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+tests {
+  test("Collection holds the three starters", () => {
+    expect(res.getStatus()).to.equal(200);
+    var ids = res.getBody().items.map(i => i.owned_id).sort();
+    expect(ids).to.eql([bru.getVar("owned1"), bru.getVar("owned2"), bru.getVar("owned3")].sort());
+  });
+}

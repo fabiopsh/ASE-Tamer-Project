@@ -15,5 +15,5 @@ auth:bearer {
 }
 
 tests {
-  test("Archived collection remains readable", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody().items).to.have.lengthOf(4);});
+  test("Three starters in the current run", () => {expect(res.getStatus()).to.equal(200); var b = res.getBody(); expect(b.items).to.have.lengthOf(3); b.items.forEach(i => {expect(i.run_id).to.equal(bru.getVar("runId")); expect(i).to.include.keys("owned_id", "monster_id", "level");});});
 }

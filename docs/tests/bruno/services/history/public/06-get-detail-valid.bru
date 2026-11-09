@@ -1,0 +1,29 @@
+meta {
+  name: GET /api/history/{{encounterId}} - valid: full record of the battle
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{historyUrl}}/api/history/{{encounterId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+tests {
+  test("Full record with team snapshot and turn log", () => {
+    expect(res.getStatus()).to.equal(200);
+    var b = res.getBody();
+    expect(b.encounter_id).to.equal(bru.getVar("encounterId"));
+    expect(b.outcome).to.equal(bru.getVar("battleOutcome"));
+    expect(b.template.template_id).to.equal(11);
+    expect(b.team_snapshot).to.have.lengthOf(3);
+    expect(b.turns.length).to.equal(bru.getVar("fleeRounds"));
+    expect(b.reward).to.equal(null);
+    expect(b).to.include.keys("rng_seed", "engine_version", "started_at", "ended_at");
+  });
+}

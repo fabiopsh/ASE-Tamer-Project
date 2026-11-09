@@ -1,0 +1,1395 @@
+{
+  "info": {
+    "name": "Monster Tamers - services-players",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "00-setup",
+      "item": [
+        {
+          "name": "POST /api/auth/register - register player",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "{{authUrl}}/api/auth/register",
+              "protocol": "",
+              "host": [
+                "{{authUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"username\":\"{{setupUsername}}\",\"password\":\"pikachu123\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "bru.setVar(\"setupUsername\", \"t_\" + Math.random().toString(16).slice(2, 12));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Account registered\", () => {expect(res.getStatus()).to.equal(201); bru.setVar(\"playerId\", res.getBody().player_id);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/auth/token - get player token",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "{{authUrl}}/api/auth/token",
+              "protocol": "",
+              "host": [
+                "{{authUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "token"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "password",
+                  "disabled": false,
+                  "type": "default",
+                  "description": ""
+                },
+                {
+                  "key": "username",
+                  "value": "{{setupUsername}}",
+                  "disabled": false,
+                  "type": "default",
+                  "description": ""
+                },
+                {
+                  "key": "password",
+                  "value": "pikachu123",
+                  "disabled": false,
+                  "type": "default",
+                  "description": ""
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Player token issued\", () => {expect(res.getStatus()).to.equal(200); bru.setVar(\"playerToken\", res.getBody().access_token);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/players/me - profile and run",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{playersUrl}}/api/players/me",
+              "protocol": "",
+              "host": [
+                "{{playersUrl}}"
+              ],
+              "path": [
+                "api",
+                "players",
+                "me"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Profile has run id\", () => {expect(res.getStatus()).to.equal(200); bru.setVar(\"runId\", res.getBody().current_run_id);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/players/me/starters - starter pool",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{playersUrl}}/api/players/me/starters",
+              "protocol": "",
+              "host": [
+                "{{playersUrl}}"
+              ],
+              "path": [
+                "api",
+                "players",
+                "me",
+                "starters"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Ten starter ids\", () => {expect(res.getStatus()).to.equal(200); var pool = res.getBody().pool; expect(pool).to.have.lengthOf(10); bru.setVar(\"starterPool\", JSON.stringify(pool)); bru.setVar(\"starter1\", pool[0]); bru.setVar(\"starter2\", pool[1]); bru.setVar(\"starter3\", pool[2]);});"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "auth": {
+        "type": "noauth"
+      }
+    },
+    {
+      "name": "public",
+      "item": [
+        {
+          "name": "GET /api/players/me - profile valid",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{playersUrl}}/api/players/me",
+              "protocol": "",
+              "host": [
+                "{{playersUrl}}"
+              ],
+              "path": [
+                "api",
+                "players",
+                "me"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Profile scoped to token\", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody().player_id).to.equal(bru.getVar(\"playerId\"));});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/players/me - profile unauthorized",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "{{playersUrl}}/api/players/me",
+              "protocol": "",
+              "host": [
+                "{{playersUrl}}"
+              ],
+              "path": [
+                "api",
+                "players",
+                "me"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"401 without token\", () => {expect(res.getStatus()).to.equal(401);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/players/me/starters - pool valid",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{playersUrl}}/api/players/me/starters",
+              "protocol": "",
+              "host": [
+                "{{playersUrl}}"
+              ],
+              "path": [
+                "api",
+                "players",
+                "me",
+                "starters"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Pool of ten commons\", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody().pool).to.have.lengthOf(10);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/players/me/starters - pool unauthorized",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "{{playersUrl}}/api/players/me/starters",
+              "protocol": "",
+              "host": [
+                "{{playersUrl}}"
+              ],
+              "path": [
+                "api",
+                "players",
+                "me",
+                "starters"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"401 without token\", () => {expect(res.getStatus()).to.equal(401);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/players/me/starters - choose invalid duplicate",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{playersUrl}}/api/players/me/starters",
+              "protocol": "",
+              "host": [
+                "{{playersUrl}}"
+              ],
+              "path": [
+                "api",
+                "players",
+                "me",
+                "starters"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"monster_ids\":[{{starter1}},{{starter1}},{{starter3}}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Duplicate rejected\", () => {expect(res.getStatus()).to.equal(400); expect(res.getBody().error).to.equal(\"INVALID_STARTERS\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/players/me/starters - invalid: two starters",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{playersUrl}}/api/players/me/starters",
+              "protocol": "",
+              "host": [
+                "{{playersUrl}}"
+              ],
+              "path": [
+                "api",
+                "players",
+                "me",
+                "starters"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"monster_ids\":[{{starter1}},{{starter2}}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Exactly three starters required\", () => {expect(res.getStatus()).to.equal(400); expect(res.getBody().error).to.equal(\"INVALID_STARTERS\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/players/me/starters - invalid: starter outside the pool",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{playersUrl}}/api/players/me/starters",
+              "protocol": "",
+              "host": [
+                "{{playersUrl}}"
+              ],
+              "path": [
+                "api",
+                "players",
+                "me",
+                "starters"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"monster_ids\":[{{starter1}},{{starter2}},{{outsider}}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "var pool = JSON.parse(bru.getVar(\"starterPool\"));",
+                  "var outsider = 1;",
+                  "while (pool.includes(outsider)) { outsider++; }",
+                  "bru.setVar(\"outsider\", outsider);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"400 INVALID_STARTERS\", () => {expect(res.getStatus()).to.equal(400); expect(res.getBody().error).to.equal(\"INVALID_STARTERS\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/players/me/starters - choose valid",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{playersUrl}}/api/players/me/starters",
+              "protocol": "",
+              "host": [
+                "{{playersUrl}}"
+              ],
+              "path": [
+                "api",
+                "players",
+                "me",
+                "starters"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"monster_ids\":[{{starter1}},{{starter2}},{{starter3}}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Three starters granted and run opened (requires EN-1)\", () => {expect(res.getStatus()).to.equal(201); expect(res.getBody().starters).to.have.lengthOf(3);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/players/me/starters - choose invalid second",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{playersUrl}}/api/players/me/starters",
+              "protocol": "",
+              "host": [
+                "{{playersUrl}}"
+              ],
+              "path": [
+                "api",
+                "players",
+                "me",
+                "starters"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"monster_ids\":[{{starter1}},{{starter2}},{{starter3}}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Repeat is rejected\", () => {expect(res.getStatus()).to.equal(409); expect(res.getBody().error).to.equal(\"STARTERS_ALREADY_CHOSEN\");});"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "auth": {
+        "type": "noauth"
+      }
+    },
+    {
+      "name": "internal",
+      "item": [
+        {
+          "name": "00-setup",
+          "item": [
+            {
+              "name": "POST /api/auth/register - register player",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "auth": {
+                  "type": "noauth"
+                },
+                "description": "",
+                "url": {
+                  "raw": "{{authUrl}}/api/auth/register",
+                  "protocol": "",
+                  "host": [
+                    "{{authUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "register"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"username\":\"{{setupUsername}}\",\"password\":\"pikachu123\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "bru.setVar(\"setupUsername\", \"t_\" + Math.random().toString(16).slice(2, 12));"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "// Tests",
+                      "test(\"Account registered\", () => {expect(res.getStatus()).to.equal(201); bru.setVar(\"playerId\", res.getBody().player_id);});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "POST /api/auth/token - get player token",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "auth": {
+                  "type": "noauth"
+                },
+                "description": "",
+                "url": {
+                  "raw": "{{authUrl}}/api/auth/token",
+                  "protocol": "",
+                  "host": [
+                    "{{authUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "token"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "grant_type",
+                      "value": "password",
+                      "disabled": false,
+                      "type": "default",
+                      "description": ""
+                    },
+                    {
+                      "key": "username",
+                      "value": "{{setupUsername}}",
+                      "disabled": false,
+                      "type": "default",
+                      "description": ""
+                    },
+                    {
+                      "key": "password",
+                      "value": "pikachu123",
+                      "disabled": false,
+                      "type": "default",
+                      "description": ""
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "// Tests",
+                      "test(\"Player token issued\", () => {expect(res.getStatus()).to.equal(200); bru.setVar(\"playerToken\", res.getBody().access_token);});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "GET /api/players/me - profile and run",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{playerToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "description": "",
+                "url": {
+                  "raw": "{{playersUrl}}/api/players/me",
+                  "protocol": "",
+                  "host": [
+                    "{{playersUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "players",
+                    "me"
+                  ],
+                  "query": [],
+                  "variable": []
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "// Tests",
+                      "test(\"Profile has run id\", () => {expect(res.getStatus()).to.equal(200); bru.setVar(\"runId\", res.getBody().current_run_id);});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "GET /api/players/me/starters - starter pool",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{playerToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "description": "",
+                "url": {
+                  "raw": "{{playersUrl}}/api/players/me/starters",
+                  "protocol": "",
+                  "host": [
+                    "{{playersUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "players",
+                    "me",
+                    "starters"
+                  ],
+                  "query": [],
+                  "variable": []
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "// Tests",
+                      "test(\"Ten starter ids\", () => {expect(res.getStatus()).to.equal(200); var pool = res.getBody().pool; expect(pool).to.have.lengthOf(10); bru.setVar(\"starterPool\", JSON.stringify(pool)); bru.setVar(\"starter1\", pool[0]); bru.setVar(\"starter2\", pool[1]); bru.setVar(\"starter3\", pool[2]);});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "POST /internal/auth/token - get service token",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "auth": {
+                  "type": "noauth"
+                },
+                "description": "",
+                "url": {
+                  "raw": "{{authUrl}}/internal/auth/token",
+                  "protocol": "",
+                  "host": [
+                    "{{authUrl}}"
+                  ],
+                  "path": [
+                    "internal",
+                    "auth",
+                    "token"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "grant_type",
+                      "value": "client_credentials",
+                      "disabled": false,
+                      "type": "default",
+                      "description": ""
+                    },
+                    {
+                      "key": "client_id",
+                      "value": "tests",
+                      "disabled": false,
+                      "type": "default",
+                      "description": ""
+                    },
+                    {
+                      "key": "client_secret",
+                      "value": "{{process.env.TESTS_CLIENT_SECRET}}",
+                      "disabled": false,
+                      "type": "default",
+                      "description": ""
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "// Tests",
+                      "test(\"Service token issued\", () => {expect(res.getStatus()).to.equal(200); bru.setVar(\"serviceToken\", res.getBody().access_token);});"
+                    ]
+                  }
+                }
+              ]
+            }
+          ],
+          "auth": {
+            "type": "noauth"
+          }
+        },
+        {
+          "name": "POST /internal/players - create existing",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{serviceToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{playersUrl}}/internal/players",
+              "protocol": "",
+              "host": [
+                "{{playersUrl}}"
+              ],
+              "path": [
+                "internal",
+                "players"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"player_id\":\"{{playerId}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Idempotent profile creation\", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody().player_id).to.equal(bru.getVar(\"playerId\"));});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /internal/players - create player token forbidden",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{playersUrl}}/internal/players",
+              "protocol": "",
+              "host": [
+                "{{playersUrl}}"
+              ],
+              "path": [
+                "internal",
+                "players"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"player_id\":\"{{playerId}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Forbidden for players\", () => {expect(res.getStatus()).to.equal(403); expect(res.getBody().error).to.equal(\"FORBIDDEN\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /internal/players/{{playerId}}/new-run - new run",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{serviceToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{playersUrl}}/internal/players/{{playerId}}/new-run",
+              "protocol": "",
+              "host": [
+                "{{playersUrl}}"
+              ],
+              "path": [
+                "internal",
+                "players",
+                "{{playerId}}",
+                "new-run"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"ended_run_id\":\"{{runId}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"New run id generated\", () => {expect(res.getStatus()).to.equal(200); bru.setVar(\"oldRunId\", bru.getVar(\"runId\")); bru.setVar(\"runId\", res.getBody().current_run_id); expect(res.getBody().current_run_id).to.not.equal(bru.getVar(\"oldRunId\"));});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /internal/players/{{playerId}}/new-run - new run retried",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{serviceToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{playersUrl}}/internal/players/{{playerId}}/new-run",
+              "protocol": "",
+              "host": [
+                "{{playersUrl}}"
+              ],
+              "path": [
+                "internal",
+                "players",
+                "{{playerId}}",
+                "new-run"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"ended_run_id\":\"{{oldRunId}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Repeated reset does nothing\", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody().current_run_id).to.equal(bru.getVar(\"runId\"));});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /internal/players/{{playerId}}/new-run - new run wrong role",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{playersUrl}}/internal/players/{{playerId}}/new-run",
+              "protocol": "",
+              "host": [
+                "{{playersUrl}}"
+              ],
+              "path": [
+                "internal",
+                "players",
+                "{{playerId}}",
+                "new-run"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"ended_run_id\":\"{{oldRunId}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Player cannot call internal reset\", () => {expect(res.getStatus()).to.equal(403);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/players/me/starters - new run pool",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{playersUrl}}/api/players/me/starters",
+              "protocol": "",
+              "host": [
+                "{{playersUrl}}"
+              ],
+              "path": [
+                "api",
+                "players",
+                "me",
+                "starters"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"New run gives new persistent pool\", () => {expect(res.getStatus()).to.equal(200); var pool = res.getBody().pool; expect(res.getBody().run_id).to.equal(bru.getVar(\"runId\")); bru.setVar(\"starter1\", pool[0]); bru.setVar(\"starter2\", pool[1]); bru.setVar(\"starter3\", pool[2]);});"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "auth": {
+        "type": "noauth"
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "authUrl",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "setupUsername",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "playersUrl",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "playerToken",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "starter1",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "starter3",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "starter2",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "outsider",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "process.env.TESTS_CLIENT_SECRET",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "serviceToken",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "playerId",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "runId",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "oldRunId",
+      "value": "",
+      "type": "default"
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+meta {
+  name: GET /api/teams/{{foreignTeamId}} - invalid: team of another player
+  type: http
+  seq: 14
+}
+
+get {
+  url: {{teamsUrl}}/api/teams/{{foreignTeamId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+tests {
+  test("404 NOT_FOUND, never 403 (P-11)", () => {expect(res.getStatus()).to.equal(404); expect(res.getBody().error).to.equal("NOT_FOUND");});
+}

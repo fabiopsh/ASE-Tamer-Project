@@ -1,0 +1,23 @@
+meta {
+  name: POST /api/players/me/starters - other player chooses starters
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{playersUrl}}/api/players/me/starters
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{otherToken}}
+}
+
+body:json {
+  {"monster_ids":[{{otherStarter1}},{{otherStarter2}},{{otherStarter3}}]}
+}
+
+tests {
+  test("Starters granted and run opened", () => {expect(res.getStatus()).to.equal(201); var b = res.getBody(); bru.setVar("otherRunId", b.run_id); bru.setVar("otherOwned1", b.starters[0].owned_id); bru.setVar("otherOwned2", b.starters[1].owned_id); bru.setVar("otherOwned3", b.starters[2].owned_id);});
+}

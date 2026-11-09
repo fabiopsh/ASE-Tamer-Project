@@ -1,0 +1,23 @@
+meta {
+  name: GET /api/collection - invalid: forged token
+  type: http
+  seq: 17
+}
+
+get {
+  url: {{monstersUrl}}/api/collection
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{forgedToken}}
+}
+
+script:pre-request {
+  bru.setVar("forgedToken", "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ4In0.c2lnbmF0dXJl");
+}
+
+tests {
+  test("401 UNAUTHORIZED", () => {expect(res.getStatus()).to.equal(401);});
+}

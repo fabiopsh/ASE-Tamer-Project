@@ -1,0 +1,25 @@
+meta {
+  name: GET /api/encounters - available encounters
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{encountersUrl}}/api/encounters
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+tests {
+  test("Stage 1 encounters, no boss yet", () => {
+    expect(res.getStatus()).to.equal(200);
+    var t = res.getBody();
+    expect(t.length).to.be.above(0);
+    t.forEach(x => {expect(x.stage).to.equal(1); expect(x.is_boss).to.equal(false);});
+    bru.setVar("templateId", t[0].template_id);
+  });
+}

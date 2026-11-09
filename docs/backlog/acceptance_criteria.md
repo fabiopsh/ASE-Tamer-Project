@@ -42,9 +42,9 @@ Test references:
 
 | # | Criterion | Tests |
 |---|---|---|
-| 1 | **Given** I have a player profile, **when** I sign in again and request `/api/players/me`, **then** I receive my same `player_id`, `current_run_id`, and starter-choice state. | Bruno `services/players/public/01-get-profile-valid`; `services/players/00-setup/04-get-profile-and-run` |
+| 1 | **Given** I have a player profile, **when** I sign in again and request `/api/players/me`, **then** I receive my same `player_id`, `current_run_id`, and starter-choice state. | Bruno `services/players/public/01-get-profile-valid`; `services/players/00-setup/03-get-profile-and-run` |
 | 2 | **Given** I am not authenticated, **when** I request my profile, **then** the backend returns 401. | Bruno `services/players/public/02-get-profile-unauthorized` |
-| 3 | **Given** I have chosen starters, **when** I consult my collection or return after a restart, **then** the saved instances and run remain available through the owning services. | Bruno `services/monsters/public/13-get-collection-valid`; integration test to be completed after EN-1/HI-1 |
+| 3 | **Given** I have chosen starters, **when** I consult my collection or return after a restart, **then** the saved instances and run remain available through the owning services. | Bruno `services/monsters/public/13-get-collection-valid`; e2e `e2e/06-collection`, `e2e/14-collection-after-battle` |
 
 ## US-06 — Receive a starter collection
 
@@ -53,9 +53,9 @@ Test references:
 | # | Criterion | Tests |
 |---|---|---|
 | 1 | **Given** I registered, **when** I request the starter pool twice, **then** the same 10 distinct common species are offered for the current run. | `PoolGeneratorTest#picksTenDistinctCommonsWithSeededRandom`; Bruno `services/players/public/03-get-pool-valid` |
-| 2 | **Given** I have not chosen starters, **when** I choose three distinct offered species, **then** each is added once at level 1 and my run is opened. | Bruno `services/players/public/06-post-choose-valid` (requires EN-1), `services/monsters/internal/05-post-starters-valid` |
-| 3 | **Given** I choose fewer than three, duplicates, or an outside species, **when** I submit, **then** I receive `400 INVALID_STARTERS`, with no collection change. | Bruno `services/players/public/05-post-choose-invalid-duplicate` |
-| 4 | **Given** I already chose starters, **when** I submit again, **then** I receive `409 STARTERS_ALREADY_CHOSEN`; a repeated internal grant must not add more instances. | Bruno `services/players/public/07-post-choose-invalid-second`, `services/monsters/internal/06-post-starters-idempotent` |
+| 2 | **Given** I have not chosen starters, **when** I choose three distinct offered species, **then** each is added once at level 1 and my run is opened. | Bruno `services/players/public/08-post-choose-valid` (requires EN-1), `services/monsters/internal/05-post-starters-valid` |
+| 3 | **Given** I choose fewer than three, duplicates, or an outside species, **when** I submit, **then** I receive `400 INVALID_STARTERS`, with no collection change. | Bruno `services/players/public/05-post-choose-invalid-duplicate`, `06-post-choose-invalid-two`, `07-post-choose-invalid-outside-pool` |
+| 4 | **Given** I already chose starters, **when** I submit again, **then** I receive `409 STARTERS_ALREADY_CHOSEN`; a repeated internal grant must not add more instances. | Bruno `services/players/public/09-post-choose-invalid-second`, `services/monsters/internal/06-post-starters-idempotent` |
 
 ## US-07 — Choose initial monsters (optional)
 
@@ -63,7 +63,7 @@ Test references:
 
 | # | Criterion | Tests |
 |---|---|---|
-| 1 | **Given** a persistent pool of ten common species, **when** I select three different listed species, **then** exactly those three become my starters. | Bruno `services/players/public/06-post-choose-valid` (requires EN-1) |
+| 1 | **Given** a persistent pool of ten common species, **when** I select three different listed species, **then** exactly those three become my starters. | Bruno `services/players/public/08-post-choose-valid` (requires EN-1) |
 | 2 | **Given** I have finished a run, **when** its id is sent for a new-run reset, **then** the next run has a new id and a new stable pool; retrying with the old id is a no-op. | Bruno `services/players/internal/03-post-new-run`, `04-post-new-run-retried` |
 
 ## US-09 — View my collection
@@ -72,9 +72,9 @@ Test references:
 
 | # | Criterion | Tests |
 |---|---|---|
-| 1 | **Given** I own active monsters, **when** I request `/api/collection`, **then** I receive a paginated list of my own active instances only. | Bruno `services/monsters/public/13-get-collection-valid` (with `run_id` for the archived-run variant) |
-| 2 | **Given** a run has been archived, **when** I request `/api/collection?run_id=<my-run-id>`, **then** its old instances remain viewable. | Bruno `services/monsters/internal/13-post-archive-valid`, `services/monsters/public/13-get-collection-valid` |
-| 3 | **Given** an instance does not exist or is owned by another player, **when** I request it, **then** I receive 404. | Bruno `services/monsters/public/16-get-instance-missing` |
+| 1 | **Given** I own active monsters, **when** I request `/api/collection`, **then** I receive a paginated list of my own active instances only. | Bruno `services/monsters/public/13-get-collection-valid`, `17-get-instance-invalid-foreign` |
+| 2 | **Given** a run has been archived, **when** I request `/api/collection?run_id=<my-run-id>`, **then** its old instances remain viewable. | Bruno `services/monsters/internal/13-post-archive-valid`, `19-get-collection-archived-valid` |
+| 3 | **Given** an instance does not exist or is owned by another player, **when** I request it, **then** I receive 404. | Bruno `services/monsters/public/16-get-instance-missing`, `17-get-instance-invalid-foreign` |
 
 ## US-10 — Browse the global catalogue
 
@@ -111,9 +111,9 @@ Test references:
 
 | # | Criterion | Tests |
 |---|---|---|
-| 1 | **Given** active monsters owned by me, **when** I create a team with 1–3 distinct instances, **then** it is saved with the order I selected. | Bruno `services/teams/00-setup/07-post-create-test-team`, `services/teams/public/05-post-create-valid` |
+| 1 | **Given** active monsters owned by me, **when** I create a team with 1–3 distinct instances, **then** it is saved with the order I selected. | Bruno `services/teams/00-setup/05-post-create-test-team`, `services/teams/public/05-post-create-valid` |
 | 2 | **Given** four selected instances, **when** I create a team, **then** I receive `400 TEAM_INVALID` with `TEAM_SIZE`, and nothing is saved. | `TeamValidatorTest#sizeAndDuplicateAndOwnershipErrorsAreCollected`; Bruno `services/teams/public/06-post-create-invalid-size` |
-| 3 | **Given** five teams already saved for the run, **when** I create a sixth, **then** `TEAM_INVALID` reports `TEAM_LIMIT`. | `TeamValidatorTest#validatesNameAndTeamLimit` |
+| 3 | **Given** five teams already saved for the run, **when** I create a sixth, **then** `TEAM_INVALID` reports `TEAM_LIMIT`. | `TeamValidatorTest#validatesNameAndTeamLimit`; Bruno `services/teams/public/15-post-create-fill-to-limit`, `16-post-create-invalid-sixth-team` |
 
 ## US-15 — Modify a team
 
@@ -122,7 +122,7 @@ Test references:
 | # | Criterion | Tests |
 |---|---|---|
 | 1 | **Given** a team I own, **when** I replace its name or member order, **then** GET reflects the new composition in the same team. | Bruno `services/teams/public/09-put-update-valid`, `07-get-get-valid` |
-| 2 | **Given** a missing or foreign team, **when** I attempt to update or delete it, **then** the service returns 404 without revealing ownership. | Bruno `services/teams/public/10-put-update-invalid-foreign`, `12-delete-delete-missing` |
+| 2 | **Given** a missing or foreign team, **when** I attempt to update or delete it, **then** the service returns 404 without revealing ownership. | Bruno `services/teams/public/10-put-update-invalid-foreign`, `12-delete-delete-missing`, `14-get-get-invalid-foreign` |
 
 ## US-16 — Validate a team
 
@@ -131,7 +131,7 @@ Test references:
 | # | Criterion | Tests |
 |---|---|---|
 | 1 | **Given** one to three distinct active owned monsters from the same run, **when** I validate them, **then** I receive `200 {valid:true,errors:[]}` without saving anything. | `TeamValidatorTest#validOwnedActiveMembersInOrder`; Bruno `services/teams/public/03-post-validate-valid` |
-| 2 | **Given** a duplicate, a foreign id, an archived monster, or mixed-run instances, **when** I validate, **then** `valid:false` identifies each applicable rule. | `TeamValidatorTest#sizeAndDuplicateAndOwnershipErrorsAreCollected`, `#rejectsArchivedAndMixedRunMembers`; Bruno `services/teams/public/04-post-validate-invalid-duplicate` |
+| 2 | **Given** a duplicate, a foreign id, an archived monster, or mixed-run instances, **when** I validate, **then** `valid:false` identifies each applicable rule. | `TeamValidatorTest#sizeAndDuplicateAndOwnershipErrorsAreCollected`, `#rejectsArchivedAndMixedRunMembers`; Bruno `services/teams/public/04-post-validate-invalid-duplicate`, `13-post-create-invalid-foreign-monster` |
 | 3 | **Given** a previously saved team becomes invalid after a run change, **when** encounters requests it internally, **then** teams rejects it with `409 TEAM_INVALID`. | Bruno `services/teams/internal/01-get-team-revalidated` (valid counterpart); negative integration test when EN-1 is available |
 
 ## US-17 — Browse encounters
@@ -140,10 +140,10 @@ Test references:
 
 | # | Criterion | Tests |
 |---|---|---|
-| 1 | **Given** a new run at stage 1, **when** I list the encounters, **then** I see the three normal templates of stage 1 with name, element, level range and rarity weights, and no boss. | `RunRulesTest#stageOneShowsOnlyItsNormalTemplates`, `RunsApiTest#encountersOfStageOne`; Bruno `services/encounters/public/05-get-encounters-valid` |
-| 2 | **Given** two wins in the current stage, **when** I list the encounters, **then** the stage boss is also available; before that, opening the boss template gives 404. | `RunRulesTest#bossUnlocksAfterTwoWins`, `RunsApiTest#encountersOfStageOne`; Bruno `services/encounters/public/06-get-encounter-boss-locked` |
+| 1 | **Given** a new run at stage 1, **when** I list the encounters, **then** I see the three normal templates of stage 1 with name, element, level range and rarity weights, and no boss. | `RunRulesTest#stageOneShowsOnlyItsNormalTemplates`, `RunsApiTest#encountersOfStageOne`; Bruno `services/encounters/public/06-get-encounters-valid` |
+| 2 | **Given** two wins in the current stage, **when** I list the encounters, **then** the stage boss is also available; before that, opening the boss template gives 404. | `RunRulesTest#bossUnlocksAfterTwoWins`, `RunsApiTest#encountersOfStageOne`; Bruno `services/encounters/public/08-get-encounter-boss-locked` |
 | 3 | **Given** I beat the boss of a stage, **when** I list the encounters, **then** the normal templates of the next stage are added, those of the cleared stages stay playable, and the beaten boss is not offered again. | `RunRulesTest#afterTheBossTheNextStageOpensAndClearedStagesStayPlayable`, `#bossAlreadyBeatenIsNotOfferedAgain`, `BattleApiTest#bossVictoryMovesToTheNextStage` |
-| 4 | **Given** no active run, **when** I list the encounters, **then** I receive `409 NO_ACTIVE_RUN`; my runs and run details are visible only to me (another player's run gives 404). | `RunsApiTest#withoutActiveRun`, `#runsAreScopedAndPaginated`; Bruno `services/encounters/public/04-get-run-detail-missing` |
+| 4 | **Given** no active run, **when** I list the encounters, **then** I receive `409 NO_ACTIVE_RUN`; my runs and run details are visible only to me (another player's run gives 404). | `RunsApiTest#withoutActiveRun`, `#runsAreScopedAndPaginated`; Bruno `services/encounters/public/05-get-run-detail-missing` |
 | 5 | **Given** players opens my run after the starters, **when** the call is retried, **then** the same run is returned (`200`) and a second active run is refused (`409`). | `RunsApiTest#openRunIsIdempotent`; Bruno `services/encounters/internal/01-post-open-run-idempotent`, `02-post-open-run-invalid-second-active` |
 
 ## US-18 — Start an encounter
@@ -152,10 +152,10 @@ Test references:
 
 | # | Criterion | Tests |
 |---|---|---|
-| 1 | **Given** an available template and a valid saved team, **when** I start a battle, **then** I receive `201` with the wild monster (level in the template range, full HP, sprite), my team in order with the first member active, and no result. | `BattleApiTest#startReturnsTheInitialState`; Bruno `services/encounters/public/09-post-battle-valid` |
-| 2 | **Given** a battle in progress, **when** I start another one, **then** I receive `409 BATTLE_IN_PROGRESS`. | `BattleApiTest#secondStartIs409`; Bruno `services/encounters/public/10-post-battle-invalid-twice` |
-| 3 | **Given** a team that teams rejects or that belongs to another run, **when** I start a battle, **then** I receive `409 TEAM_INVALID`; an unknown team gives 404. | `BattleApiTest#invalidOrMissingTeam`, `#teamOfAnotherRunIsInvalid` |
-| 4 | **Given** a template that is not available (stage not reached, boss locked), **when** I start a battle, **then** I receive 404. | `BattleApiTest#unavailableTemplatesAre404`; Bruno `services/encounters/public/08-post-battle-invalid-template` |
+| 1 | **Given** an available template and a valid saved team, **when** I start a battle, **then** I receive `201` with the wild monster (level in the template range, full HP, sprite), my team in order with the first member active, and no result. | `BattleApiTest#startReturnsTheInitialState`; Bruno `services/encounters/public/13-post-battle-valid` |
+| 2 | **Given** a battle in progress, **when** I start another one, **then** I receive `409 BATTLE_IN_PROGRESS`. | `BattleApiTest#secondStartIs409`; Bruno `services/encounters/public/14-post-battle-invalid-twice` |
+| 3 | **Given** a team that teams rejects or that belongs to another run, **when** I start a battle, **then** I receive `409 TEAM_INVALID`; an unknown team gives 404. | `BattleApiTest#invalidOrMissingTeam`, `#teamOfAnotherRunIsInvalid`; Bruno `services/encounters/public/12-post-battle-invalid-team` |
+| 4 | **Given** a template that is not available (stage not reached, boss locked), **when** I start a battle, **then** I receive 404. | `BattleApiTest#unavailableTemplatesAre404`; Bruno `services/encounters/public/11-post-battle-invalid-template` |
 | 5 | **Given** a normal template, **when** the wild monster is chosen, **then** it is never one of the 8 boss species. | `WildSelectorTest`, `BattleApiTest#startReturnsTheInitialState` |
 
 ## US-19 — Resolve an encounter
@@ -164,9 +164,9 @@ Test references:
 
 | # | Criterion | Tests |
 |---|---|---|
-| 1 | **Given** a battle in progress, **when** I send `attack`, **then** the response contains the round events computed by the server and the updated HP. | `BattleApiTest#validActionsResolveRounds`; Bruno `services/encounters/public/14-post-action-attack-valid` |
+| 1 | **Given** a battle in progress, **when** I send `attack`, **then** the response contains the round events computed by the server and the updated HP. | `BattleApiTest#validActionsResolveRounds`; Bruno `services/encounters/public/18-post-action-attack-valid` |
 | 2 | **Given** a battle in progress, **when** the wild monster's HP reaches 0, **then** the outcome is `victory`; **when** all my team is KO, **then** the outcome is `defeat`, the run is `lost` and it is reset (collection archived, teams removed, new starter pool). | `BattleApiTest#victoryGrantsRewardXpAndHistoryWithTheSameEncounterId`, `#defeatLosesTheRunAndResetsIt`, `BattleTest#victoryIsPossible`, `#defeatIsPossible` |
-| 3 | **Given** any state, **when** I try to send an outcome or HP values, **then** the request is rejected (400) because only actions are accepted. | `BattleApiTest#invalidActionsAreRejected`; Bruno `services/encounters/public/12-post-action-invalid-outcome-field` |
+| 3 | **Given** any state, **when** I try to send an outcome or HP values, **then** the request is rejected (400) because only actions are accepted. | `BattleApiTest#invalidActionsAreRejected`; Bruno `services/encounters/public/16-post-action-invalid-outcome-field` |
 | 4 | **Given** a victory, **when** the battle ends, **then** the wild monster joins my collection at its level, every team member gets the XP, and the record is stored in history, all with the same `encounter_id`; if monsters is down the reward is shown as pending and granted at my next request. | `BattleApiTest#victoryGrantsRewardXpAndHistoryWithTheSameEncounterId`, `#rewardServiceDownMeansPendingRewardRetriedOnNextRequest` |
 | 5 | **Given** I beat a stage boss, **when** the battle ends, **then** the run moves to the next stage; beating the stage-8 boss wins the run and `POST /api/runs` lets me choose new starters. | `RunRulesTest#stageEightBossWinsTheRun`, `BattleApiTest#bossVictoryMovesToTheNextStage`, `#stageEightBossWinsTheRunAndANewRunCanStart` |
 | 6 | **Given** a battle left idle for more than 30 minutes, or lost because the service restarted, **when** I make my next request, **then** it is closed as `expired` or `interrupted` without reward and my run continues. | `BattleApiTest#idleBattleExpires`, `#battleMissingFromMemoryIsClosedAsInterrupted` |
@@ -189,8 +189,8 @@ Test references:
 |---|---|---|
 | 1 | **Given** a battle in progress, **when** I flee successfully, **then** the battle ends as `fled`, I get no reward and my run continues. | `BattleTest#fleeSuccessAndFailure`; `BattleApiTest#validActionsResolveRounds` |
 | 2 | **Given** a battle in progress, **when** the flee fails, **then** the wild monster attacks and the battle continues. | `BattleTest#fleeSuccessAndFailure` |
-| 3 | **Given** an active run, **when** I abandon it, **then** any battle is recorded as `abandoned`, the run is `abandoned`, my collection is archived and I must choose new starters. | `BattleApiTest#abandonClosesTheBattleAndResetsTheRun`, `#abandonWithoutBattle`; Bruno `services/encounters/public/15-post-abandon-valid`, `18-get-run-current-missing` |
-| 4 | **Given** no active run, **when** I abandon, **then** I receive `409 NO_ACTIVE_RUN`. | `BattleApiTest#abandonClosesTheBattleAndResetsTheRun`; Bruno `services/encounters/public/17-post-abandon-invalid-no-run` |
+| 3 | **Given** an active run, **when** I abandon it, **then** any battle is recorded as `abandoned`, the run is `abandoned`, my collection is archived and I must choose new starters. | `BattleApiTest#abandonClosesTheBattleAndResetsTheRun`, `#abandonWithoutBattle`; Bruno `services/encounters/public/19-post-abandon-valid`, `22-get-run-current-missing` |
+| 4 | **Given** no active run, **when** I abandon, **then** I receive `409 NO_ACTIVE_RUN`. | `BattleApiTest#abandonClosesTheBattleAndResetsTheRun`; Bruno `services/encounters/public/21-post-abandon-invalid-no-run` |
 
 ## US-22 — Choose encounter actions
 
@@ -199,8 +199,8 @@ Test references:
 | # | Criterion | Tests |
 |---|---|---|
 | 1 | **Given** a battle in progress, **when** I choose `attack`, `switch` to a living member or `flee`, **then** the round is resolved with that action (a switched-in monster does not attack in that round). | `BattleApiTest#validActionsResolveRounds`, `BattleTest#switchedInMonsterDoesNotAttack` |
-| 2 | **Given** a battle in progress, **when** I switch to the active member, to a knocked-out member or to a slot outside my team, or send `slot` with a non-switch action, **then** I receive `400 INVALID_ACTION` and nothing changes. | `BattleApiTest#invalidActionsAreRejected`; Bruno `services/encounters/public/13-post-action-invalid-switch-active` |
-| 3 | **Given** no battle in progress, **when** I send an action, **then** I receive 404. | `BattleApiTest#invalidActionsAreRejected`; Bruno `services/encounters/public/16-get-battle-current-missing` |
+| 2 | **Given** a battle in progress, **when** I switch to the active member, to a knocked-out member or to a slot outside my team, or send `slot` with a non-switch action, **then** I receive `400 INVALID_ACTION` and nothing changes. | `BattleApiTest#invalidActionsAreRejected`; Bruno `services/encounters/public/17-post-action-invalid-switch-active` |
+| 3 | **Given** no battle in progress, **when** I send an action, **then** I receive 404. | `BattleApiTest#invalidActionsAreRejected`; Bruno `services/encounters/public/10-post-action-invalid-no-battle`, `20-get-battle-current-missing` |
 
 ## US-23 — View my previous encounters
 
@@ -224,5 +224,5 @@ Test references:
 | # | Criterion | Tests |
 |---|---|---|
 | 1 | **Given** a finished encounter, **when** I open it, **then** I see team, wild monster, outcome, reward, XP and every round's events. | `HistoryResourceTest#detailReturnsFullRecord`, `#storedJsonIsReturnedUntouched`; Bruno `services/history/public/06-get-detail-valid` |
-| 2 | **Given** an encounter of another player (or an id that does not exist), **when** I open its id, **then** I receive 404 `NOT_FOUND`, without revealing whether it exists. | `HistoryResourceTest#foreignOrMissingRecordIs404`; Bruno `services/history/public/07-get-detail-missing` |
+| 2 | **Given** an encounter of another player (or an id that does not exist), **when** I open its id, **then** I receive 404 `NOT_FOUND`, without revealing whether it exists. | `HistoryResourceTest#foreignOrMissingRecordIs404`; Bruno `services/history/public/07-get-detail-missing`, `services/history/internal/11-get-detail-invalid-foreign` |
 | 3 | **Given** no token, **when** I open an encounter, **then** I receive 401 `UNAUTHORIZED`. | `HistoryResourceTest#publicEndpointsWithoutTokenAre401`; Bruno `services/history/public/08-get-detail-unauthorized` |

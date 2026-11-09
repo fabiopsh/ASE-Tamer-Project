@@ -1,0 +1,23 @@
+meta {
+  name: POST /api/auth/register - register other player
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{authUrl}}/api/auth/register
+  body: json
+  auth: none
+}
+
+body:json {
+  {"username":"{{otherUsername}}","password":"pikachu123"}
+}
+
+script:pre-request {
+  bru.setVar("otherUsername", "t_" + Math.random().toString(16).slice(2, 12));
+}
+
+tests {
+  test("Account registered", () => {expect(res.getStatus()).to.equal(201); bru.setVar("otherPlayerId", res.getBody().player_id);});
+}
