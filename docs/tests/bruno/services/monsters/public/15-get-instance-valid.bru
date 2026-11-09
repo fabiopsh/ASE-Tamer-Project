@@ -1,0 +1,19 @@
+meta {
+  name: GET /api/collection/{{owned1}} - instance valid
+  type: http
+  seq: 15
+}
+
+get {
+  url: {{monstersUrl}}/api/collection/{{owned1}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+tests {
+  test("Archived monster readable by owner", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody().owned_id).to.equal(bru.getVar("owned1"));});
+}

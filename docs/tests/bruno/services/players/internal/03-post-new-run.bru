@@ -1,0 +1,23 @@
+meta {
+  name: POST /internal/players/{{playerId}}/new-run - new run
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{playersUrl}}/internal/players/{{playerId}}/new-run
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{serviceToken}}
+}
+
+body:json {
+  {"ended_run_id":"{{runId}}"}
+}
+
+tests {
+  test("New run id generated", () => {expect(res.getStatus()).to.equal(200); bru.setVar("oldRunId", bru.getVar("runId")); bru.setVar("runId", res.getBody().current_run_id); expect(res.getBody().current_run_id).to.not.equal(bru.getVar("oldRunId"));});
+}

@@ -1,0 +1,23 @@
+meta {
+  name: POST /internal/collections/{{playerId}}/xp - xp idempotent
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{monstersUrl}}/internal/collections/{{playerId}}/xp
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{serviceToken}}
+}
+
+body:json {
+  {"encounter_id":"{{xpEncounterId}}","owned_ids":["{{owned1}}","{{owned2}}"],"xp":100}
+}
+
+tests {
+  test("Repeat does not level twice", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody()[0].level_before).to.equal(res.getBody()[0].level_after);});
+}

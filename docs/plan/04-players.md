@@ -118,3 +118,9 @@ CREATE TABLE players (
 ## P2
 
 - [ ] US-04 (optional): `PATCH /api/players/me` with `display_name` (3–30 chars, `^[A-Za-z0-9 _-]+$`) and `avatar` (one of a fixed list); tests and AC.
+
+---
+
+## Implementation notes (09/11/2026)
+
+The P1 implementation corresponding to this document has been added to the service code, with database migration, API resources, service/domain code, unit tests and Bruno source requests. See [implementation handoff](IMPLEMENTATION_HANDOFF_04_06.md) for exact contracts and the verification still required on a Maven/Docker-enabled development machine. P2 tasks are not included in this change.

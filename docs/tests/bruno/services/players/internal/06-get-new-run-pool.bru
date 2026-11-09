@@ -1,0 +1,19 @@
+meta {
+  name: GET /api/players/me/starters - new run pool
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{playersUrl}}/api/players/me/starters
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+tests {
+  test("New run gives new persistent pool", () => {expect(res.getStatus()).to.equal(200); var pool = res.getBody().pool; expect(res.getBody().run_id).to.equal(bru.getVar("runId")); bru.setVar("starter1", pool[0]); bru.setVar("starter2", pool[1]); bru.setVar("starter3", pool[2]);});
+}

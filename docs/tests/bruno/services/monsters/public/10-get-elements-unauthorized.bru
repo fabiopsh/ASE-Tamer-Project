@@ -1,0 +1,15 @@
+meta {
+  name: GET /api/elements - elements unauthorized
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{monstersUrl}}/api/elements
+  body: none
+  auth: none
+}
+
+tests {
+  test("401 without token", () => {expect(res.getStatus()).to.equal(401);});
+}

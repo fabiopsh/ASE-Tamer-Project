@@ -135,3 +135,7 @@ With 3 people, merge B and D: infrastructure first, then monsters/teams.
 - Acceptance criteria of the covered user stories are written in Given/When/Then in [`docs/backlog/acceptance_criteria.md`](../backlog/acceptance_criteria.md) (created by DOC-1).
 - No secret, key or certificate committed.
 - Conventions in [01-conventions.md](01-conventions.md) respected.
+
+## Implementation handoff (09/11/2026)
+
+The P1 implementation of `04-players`, `05-monsters` and `06-teams` has been added (PL-1, MO-1/2, TE-1), including API code, Flyway migrations, unit tests, Bruno source collections and acceptance criteria. See [IMPLEMENTATION_HANDOFF_04_06.md](IMPLEMENTATION_HANDOFF_04_06.md) for contracts expected by `07-encounters`, validation performed, and the pending full Maven/Docker verification.

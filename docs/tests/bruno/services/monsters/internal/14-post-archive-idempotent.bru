@@ -1,0 +1,23 @@
+meta {
+  name: POST /internal/collections/{{playerId}}/archive - archive idempotent
+  type: http
+  seq: 14
+}
+
+post {
+  url: {{monstersUrl}}/internal/collections/{{playerId}}/archive
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{serviceToken}}
+}
+
+body:json {
+  {"run_id":"{{runId}}"}
+}
+
+tests {
+  test("Archive repeated changes nothing", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody().count).to.equal(0);});
+}

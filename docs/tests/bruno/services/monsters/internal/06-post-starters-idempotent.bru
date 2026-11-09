@@ -1,0 +1,23 @@
+meta {
+  name: POST /internal/collections/{{playerId}}/starters - starters idempotent
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{monstersUrl}}/internal/collections/{{playerId}}/starters
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{serviceToken}}
+}
+
+body:json {
+  {"run_id":"{{runId}}","monster_ids":[{{starter1}},{{starter2}},{{starter3}}]}
+}
+
+tests {
+  test("Repeated starter grant returns same ids", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody()[0].owned_id).to.equal(bru.getVar("owned1"));});
+}

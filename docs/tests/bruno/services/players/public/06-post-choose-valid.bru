@@ -1,0 +1,23 @@
+meta {
+  name: POST /api/players/me/starters - choose valid
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{playersUrl}}/api/players/me/starters
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+body:json {
+  {"monster_ids":[{{starter1}},{{starter2}},{{starter3}}]}
+}
+
+tests {
+  test("Three starters granted and run opened (requires EN-1)", () => {expect(res.getStatus()).to.equal(201); expect(res.getBody().starters).to.have.lengthOf(3);});
+}

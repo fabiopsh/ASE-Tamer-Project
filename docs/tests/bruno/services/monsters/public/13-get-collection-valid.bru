@@ -1,0 +1,19 @@
+meta {
+  name: GET /api/collection?run_id={{runId}} - collection valid
+  type: http
+  seq: 13
+}
+
+get {
+  url: {{monstersUrl}}/api/collection?run_id={{runId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+tests {
+  test("Archived collection remains readable", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody().items).to.have.lengthOf(4);});
+}

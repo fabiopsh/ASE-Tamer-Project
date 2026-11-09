@@ -1,0 +1,23 @@
+meta {
+  name: PUT /api/teams/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee - update invalid foreign
+  type: http
+  seq: 10
+}
+
+put {
+  url: {{teamsUrl}}/api/teams/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+body:json {
+  {"name":"No","members":["{{owned1}}"]}
+}
+
+tests {
+  test("404 for foreign team", () => {expect(res.getStatus()).to.equal(404);});
+}

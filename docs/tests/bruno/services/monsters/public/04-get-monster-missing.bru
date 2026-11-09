@@ -1,0 +1,19 @@
+meta {
+  name: GET /api/monsters/9999 - monster missing
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{monstersUrl}}/api/monsters/9999
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+tests {
+  test("404 unknown monster", () => {expect(res.getStatus()).to.equal(404); expect(res.getBody().error).to.equal("NOT_FOUND");});
+}

@@ -203,3 +203,9 @@ CREATE TABLE xp_grants (                        -- idempotency of /xp
 ## P2
 
 - [ ] US-13 (optional, "improve or customize my monsters"): levelling already covers "improve"; optionally add nickname per instance (`PATCH /api/collection/{owned_id} {nickname}`), document as implemented green story.
+
+---
+
+## Implementation notes (09/11/2026)
+
+The P1 implementation corresponding to this document has been added to the service code, with database migration, API resources, service/domain code, unit tests and Bruno source requests. See [implementation handoff](IMPLEMENTATION_HANDOFF_04_06.md) for exact contracts and the verification still required on a Maven/Docker-enabled development machine. P2 tasks are not included in this change.

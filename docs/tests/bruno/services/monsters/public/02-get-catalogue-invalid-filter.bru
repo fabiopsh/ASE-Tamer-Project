@@ -1,0 +1,19 @@
+meta {
+  name: GET /api/monsters?rarity=imaginary - catalogue invalid filter
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{monstersUrl}}/api/monsters?rarity=imaginary
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+tests {
+  test("Unknown rarity rejected", () => {expect(res.getStatus()).to.equal(400); expect(res.getBody().error).to.equal("VALIDATION_ERROR");});
+}

@@ -1,0 +1,19 @@
+meta {
+  name: GET /internal/teams/{{teamId}}?player_id={{playerId}} - team wrong role
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{teamsUrl}}/internal/teams/{{teamId}}?player_id={{playerId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+tests {
+  test("Only services may revalidate", () => {expect(res.getStatus()).to.equal(403);});
+}

@@ -1,0 +1,23 @@
+meta {
+  name: POST /api/players/me/starters - choose invalid second
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{playersUrl}}/api/players/me/starters
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+body:json {
+  {"monster_ids":[{{starter1}},{{starter2}},{{starter3}}]}
+}
+
+tests {
+  test("Repeat is rejected", () => {expect(res.getStatus()).to.equal(409); expect(res.getBody().error).to.equal("STARTERS_ALREADY_CHOSEN");});
+}

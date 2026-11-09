@@ -1,0 +1,23 @@
+meta {
+  name: POST /api/teams/validate - validate invalid duplicate
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{teamsUrl}}/api/teams/validate
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+body:json {
+  {"members":["{{owned1}}","{{owned1}}"]}
+}
+
+tests {
+  test("Invalid without saving", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody().valid).to.equal(false); expect(res.getBody().errors.some(e => e.code === "DUPLICATE_MEMBER")).to.equal(true);});
+}

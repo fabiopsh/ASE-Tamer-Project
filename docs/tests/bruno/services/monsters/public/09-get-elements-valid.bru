@@ -1,0 +1,19 @@
+meta {
+  name: GET /api/elements - elements valid
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{monstersUrl}}/api/elements
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+tests {
+  test("Seven element cycle", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody().cycle).to.have.lengthOf(7);});
+}

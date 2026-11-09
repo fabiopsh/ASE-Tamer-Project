@@ -1,0 +1,23 @@
+meta {
+  name: POST /internal/teams/{{playerId}}/reset - reset wrong role
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{teamsUrl}}/internal/teams/{{playerId}}/reset
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+body:json {
+  {"run_id":"{{runId}}"}
+}
+
+tests {
+  test("Forbidden internal reset", () => {expect(res.getStatus()).to.equal(403);});
+}

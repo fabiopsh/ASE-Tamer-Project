@@ -1,0 +1,19 @@
+meta {
+  name: GET /api/collection/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee - instance missing
+  type: http
+  seq: 16
+}
+
+get {
+  url: {{monstersUrl}}/api/collection/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+tests {
+  test("404 missing or foreign instance", () => {expect(res.getStatus()).to.equal(404);});
+}

@@ -1,0 +1,23 @@
+meta {
+  name: POST /internal/collections/{{playerId}}/monsters - invalid
+  type: http
+  seq: 16
+}
+
+post {
+  url: {{monstersUrl}}/internal/collections/{{playerId}}/monsters
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{serviceToken}}
+}
+
+body:json {
+  {"run_id":"{{runId}}","monster_id":1,"level":7,"encounter_id":"aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee","source":"invalid"}
+}
+
+tests {
+  test("Invalid request is rejected", () => {expect(res.getStatus()).to.equal(400); expect(res.getBody().error).to.equal("INVALID_COLLECTION_OPERATION");});
+}

@@ -1,0 +1,23 @@
+meta {
+  name: POST /internal/collections/{{playerId}}/archive - invalid
+  type: http
+  seq: 18
+}
+
+post {
+  url: {{monstersUrl}}/internal/collections/{{playerId}}/archive
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+body:json {
+  {"run_id":"{{runId}}"}
+}
+
+tests {
+  test("Invalid request is rejected", () => {expect(res.getStatus()).to.equal(403); expect(res.getBody().error).to.equal("FORBIDDEN");});
+}

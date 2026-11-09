@@ -1,0 +1,23 @@
+meta {
+  name: POST /internal/collections/{{playerId}}/archive - archive valid
+  type: http
+  seq: 13
+}
+
+post {
+  url: {{monstersUrl}}/internal/collections/{{playerId}}/archive
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{serviceToken}}
+}
+
+body:json {
+  {"run_id":"{{runId}}"}
+}
+
+tests {
+  test("Archives active run", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody().count).to.be.above(0);});
+}

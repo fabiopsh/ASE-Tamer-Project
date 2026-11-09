@@ -1,0 +1,27 @@
+meta {
+  name: POST /internal/collections/{{playerId}}/monsters - reward valid
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{monstersUrl}}/internal/collections/{{playerId}}/monsters
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{serviceToken}}
+}
+
+body:json {
+  {"run_id":"{{runId}}","monster_id":1,"level":7,"encounter_id":"{{encounterId}}","source":"encounter"}
+}
+
+script:pre-request {
+  bru.setVar("encounterId", "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => {let r = Math.floor(Math.random() * 16); return (c === "x" ? r : (r & 3 | 8)).toString(16);}));
+}
+
+tests {
+  test("Creates a level 7 reward", () => {expect(res.getStatus()).to.equal(201); expect(res.getBody().level).to.equal(7); bru.setVar("rewardId",res.getBody().owned_id);});
+}

@@ -1,0 +1,23 @@
+meta {
+  name: POST /internal/teams/{{playerId}}/reset - reset unrelated run
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{teamsUrl}}/internal/teams/{{playerId}}/reset
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{serviceToken}}
+}
+
+body:json {
+  {"run_id":"aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee"}
+}
+
+tests {
+  test("Unrelated reset is a no-op", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody().count).to.equal(0);});
+}

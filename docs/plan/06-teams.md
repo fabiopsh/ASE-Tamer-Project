@@ -104,3 +104,9 @@ CREATE TABLE team_slots (
 > - **Given** I own monster A, **when** I validate `[A, A]`, **then** I get `DUPLICATE_MEMBER`.
 > - **Given** monster X belongs to another player, **when** I validate `[X]`, **then** I get `NOT_OWNED`.
 > - **Given** a valid selection, **when** I validate it and then create it, **then** both succeed.
+
+---
+
+## Implementation notes (09/11/2026)
+
+The P1 implementation corresponding to this document has been added to the service code, with database migration, API resources, service/domain code, unit tests and Bruno source requests. See [implementation handoff](IMPLEMENTATION_HANDOFF_04_06.md) for exact contracts and the verification still required on a Maven/Docker-enabled development machine. P2 tasks are not included in this change.

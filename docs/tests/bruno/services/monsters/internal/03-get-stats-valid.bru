@@ -1,0 +1,19 @@
+meta {
+  name: GET /internal/monsters/1/stats?level=4 - stats valid
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{monstersUrl}}/internal/monsters/1/stats?level=4
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{serviceToken}}
+}
+
+tests {
+  test("Effective stats returned", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody().level).to.equal(4); expect(res.getBody().stats).to.have.property("hp");});
+}

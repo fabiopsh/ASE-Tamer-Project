@@ -1,0 +1,23 @@
+meta {
+  name: POST /internal/collections/{{playerId}}/xp - invalid
+  type: http
+  seq: 17
+}
+
+post {
+  url: {{monstersUrl}}/internal/collections/{{playerId}}/xp
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{serviceToken}}
+}
+
+body:json {
+  {"encounter_id":"aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee","owned_ids":["{{owned1}}"],"xp":-1}
+}
+
+tests {
+  test("Invalid request is rejected", () => {expect(res.getStatus()).to.equal(400); expect(res.getBody().error).to.equal("INVALID_COLLECTION_OPERATION");});
+}

@@ -1,0 +1,19 @@
+meta {
+  name: GET /api/monsters/1 - monster valid
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{monstersUrl}}/api/monsters/1
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+tests {
+  test("Monster details and ability", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody().monster_id).to.equal(1); expect(res.getBody().ability).to.have.property("ability_id");});
+}

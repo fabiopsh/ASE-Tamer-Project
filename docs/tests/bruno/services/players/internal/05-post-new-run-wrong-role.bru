@@ -1,0 +1,23 @@
+meta {
+  name: POST /internal/players/{{playerId}}/new-run - new run wrong role
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{playersUrl}}/internal/players/{{playerId}}/new-run
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+body:json {
+  {"ended_run_id":"{{oldRunId}}"}
+}
+
+tests {
+  test("Player cannot call internal reset", () => {expect(res.getStatus()).to.equal(403);});
+}

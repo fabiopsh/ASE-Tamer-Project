@@ -1,0 +1,19 @@
+meta {
+  name: GET /internal/teams/{{teamId}}?player_id={{playerId}} - team revalidated
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{teamsUrl}}/internal/teams/{{teamId}}?player_id={{playerId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{serviceToken}}
+}
+
+tests {
+  test("Full stats for encounters", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody().members[0].stats).to.have.property("hp");});
+}

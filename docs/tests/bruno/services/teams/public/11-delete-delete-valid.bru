@@ -1,0 +1,19 @@
+meta {
+  name: DELETE /api/teams/{{secondTeamId}} - delete valid
+  type: http
+  seq: 11
+}
+
+delete {
+  url: {{teamsUrl}}/api/teams/{{secondTeamId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+tests {
+  test("204 on delete", () => {expect(res.getStatus()).to.equal(204);});
+}

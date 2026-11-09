@@ -1,0 +1,23 @@
+meta {
+  name: POST /api/teams/validate - validate valid
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{teamsUrl}}/api/teams/validate
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+body:json {
+  {"members":["{{owned1}}","{{owned2}}"]}
+}
+
+tests {
+  test("Valid team", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody().valid).to.equal(true);});
+}
