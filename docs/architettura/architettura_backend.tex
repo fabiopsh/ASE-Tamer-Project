@@ -21,6 +21,7 @@
 \usepackage{fancyhdr}
 \usepackage[font=small,labelfont=bf,labelsep=period]{caption}
 \usepackage{adjustbox}
+\usepackage{needspace}
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,positioning,shapes.geometric,fit,calc}
 \usepackage{url}
@@ -126,8 +127,8 @@
 % ---------------------------------------------------------------------
 %  Dati del documento
 % ---------------------------------------------------------------------
-\newcommand{\versione}{1.0}
-\newcommand{\datadoc}{15 ottobre 2026}
+\newcommand{\versione}{1.1}
+\newcommand{\datadoc}{9 novembre 2026 (prima versione: 15 ottobre 2026)}
 \newcommand{\gruppo}{Nome del gruppo e membri da inserire}
 
 \hypersetup{
@@ -184,7 +185,7 @@ Il backend è un'applicazione distribuita composta da \textbf{sei servizi Quarku
 
 Il gioco è strutturato come un \textbf{roguelike a run}: il giocatore sceglie tre mostri iniziali, affronta encounter interattivi a turni in otto stage di difficoltà crescente e vince la run battendo il boss finale. Una sconfitta azzera la run; account, storico e run passate restano consultabili.
 
-Il documento copre, nell'ordine: requisiti e vincoli (Sezione~\ref{sec:requisiti}), regole di gioco (Sezione~\ref{sec:gioco}), architettura generale (Sezione~\ref{sec:architettura}), dettaglio dei servizi con API e dati (Sezione~\ref{sec:servizi}), flussi principali (Sezione~\ref{sec:flussi}), consistenza dei dati (Sezione~\ref{sec:dati}), sicurezza (Sezione~\ref{sec:sicurezza}), deployment e test (Sezione~\ref{sec:deploy}), registro delle decisioni con le alternative scartate (Sezione~\ref{sec:decisioni}) e punti aperti (Sezione~\ref{sec:aperti}).
+Il documento copre, nell'ordine: requisiti e vincoli (Sezione~\ref{sec:requisiti}), regole di gioco (Sezione~\ref{sec:gioco}), architettura generale (Sezione~\ref{sec:architettura}), dettaglio dei servizi con API e dati (Sezione~\ref{sec:servizi}), flussi principali (Sezione~\ref{sec:flussi}), consistenza dei dati (Sezione~\ref{sec:dati}), sicurezza (Sezione~\ref{sec:sicurezza}), deployment e test (Sezione~\ref{sec:deploy}), registro delle decisioni con le alternative scartate (Sezione~\ref{sec:decisioni}), modifiche introdotte dal piano di implementazione (Sezione~\ref{sec:aggiornamento}) e punti aperti (Sezione~\ref{sec:aperti}).
 
 \tableofcontents
 \clearpage
@@ -1201,6 +1202,73 @@ L'introduzione delle run modifica alcune decisioni del documento dell'area gioca
 \end{tabularx}
 
 % =====================================================================
+\section{Piano di implementazione (aggiornamento del 9/11)}\label{sec:aggiornamento}
+% =====================================================================
+
+Il piano di implementazione (\code{docs/plan/}, 6 novembre 2026) ha modificato alcune scelte di questo documento. Dove le sezioni precedenti e questa sezione non coincidono, vale questa sezione.
+
+\subsection{Modifiche rispetto a questo documento}
+
+\begin{xltabular}{\linewidth}{@{}L{6.2cm}Y@{}}
+  \toprule
+  Questo documento (15/10) & Piano di implementazione (06/11) \\
+  \midrule
+  \endhead
+  POST \ep{/api/auth/login} (JSON) & POST \ep{/api/auth/token}, endpoint OAuth2 (form-urlencoded, \code{grant_type=password}; \code{refresh_token} in P2) \\
+  POST \ep{/internal/auth/service-token} & POST \ep{/internal/auth/token} con \code{grant_type=client_credentials} \\
+  Nginx serve anche il frontend statico su \ep{/} & Il frontend gira fuori da compose (Vite); Nginx fa solo da proxy per l'API, con CORS \\
+  HTTPS terminato su Nginx & HTTPS su ogni collegamento: client$\to$gateway, gateway$\to$servizio, servizio$\to$servizio, servizio$\to$PostgreSQL \\
+  Violazione di ownership $\to$ 403 (AC di US-05) & $\to$ \textbf{404}, senza rivelare se la risorsa esiste \\
+  Body di POST \ep{/internal/players} non specificato & \texttt{\{player\_id\}}; il nome visualizzato di default lo genera \code{players} \\
+  Nessun endpoint interno per filtrare il catalogo & GET \texttt{/internal/monsters?rarity=\&element=} \\
+  US-20 senza endpoint & Risposta finale dell'azione di battaglia + GET \ep{/api/history/{id}} \\
+  Esiti: \code{victory}, \code{defeat}, \code{fled}, \code{expired}, \code{interrupted} & + \code{abandoned} (battaglia chiusa dall'abbandono della run) \\
+  Catalogo solo con autenticazione (D11) & Vale per gli endpoint JSON; le immagini dei mostri sono pubbliche (P-16) \\
+  \bottomrule
+\end{xltabular}
+
+\needspace{8\baselineskip}
+\subsection{Registro delle decisioni del piano (P-01…P-21)}
+
+\begin{xltabular}{\linewidth}{@{}L{0.9cm}L{3.6cm}Y@{}}
+  \toprule
+  ID & Tema & Decisione \\
+  \midrule
+  \endhead
+  P-01 & Ambito & Prototipo P1 (10/11) e consegna finale P2 (15/12) in un unico piano \\
+  P-02 & Lingua & Codice, API, OpenAPI e piano in inglese; i documenti italiani precedenti restano \\
+  P-03 & Frontend & Vite + React (TypeScript), fuori da Docker Compose \\
+  P-04 & Segreti & Generati al primo avvio dal container \code{init-secrets} (password dei database, certificati, chiavi JWT, segreti dei client); nulla di segreto nel repository \\
+  P-05 & Login & Endpoint OAuth2 POST \ep{/api/auth/token}; i servizi usano \code{client_credentials} su \ep{/internal/auth/token} \\
+  P-06 & TLS & HTTPS ovunque già in P1: una CA locale, un certificato per container \\
+  P-07 & Porta del gateway & \code{https://localhost:8443} \\
+  P-08 & Stage & Tutti gli 8 stage già in P1 \\
+  P-09 & Abilità & Effetti semplici in P1, complessi in P2 \\
+  P-10 & Fuga e abbandono & Entrambi in P1: la fuga è un'azione di battaglia, l'abbandono riusa il reset della sconfitta \\
+  P-11 & Risorse altrui & Sempre 404, mai 403 \\
+  P-12 & Bruno & Collection di component test per tutti e 6 i servizi, più integration ed e2e \\
+  P-13 & Accesso per i test & \code{docker-compose.test.yml} espone i servizi su localhost solo per i test \\
+  P-14 & Cifratura a riposo (P2) & Username cifrato (AES-GCM) con indice HMAC; refresh token salvati solo come hash SHA-256 \\
+  P-15 & Strumenti di sicurezza (P2) & Semgrep (SAST) e Trivy (dipendenze e immagini); in CI dal 09/11 \\
+  P-16 & Immagini & Gli sprite dei mostri sono pubblici: \texttt{<img src>} non può inviare un bearer token \\
+  P-17 & Token nel frontend & \code{localStorage}, con CSP e nessun HTML grezzo renderizzato \\
+  P-18 & CI in P1 & GitHub Actions con build e test da P1; scansioni di sicurezza in P2 \\
+  P-19 & Nome visualizzato di default & \texttt{Tamer-<prime 6 cifre esadecimali del player\_id>}; lo username non viene copiato in \code{players} \\
+  P-20 & Robustezza della battaglia in P1 & Recupero pigro: una battaglia sparita dalla memoria viene chiusa come \code{interrupted}, una inattiva come \code{expired}, al successivo accesso del giocatore; sweep periodico in P2 \\
+  P-21 & Boss & I boss di stage non compaiono negli incontri selvatici: si ottengono solo battendoli \\
+  \bottomrule
+\end{xltabular}
+
+\subsection{Altre scelte fatte durante l'implementazione}
+
+\begin{itemize}
+  \item Moltiplicatore degli HP dei boss $\times 1{,}5$ (vedi \code{docs/plan/07-encounters.md}, \emph{Tuned constants}).
+  \item Outbox nel servizio \code{encounters}: se un servizio non risponde, ricompensa, XP e record dello storico restano in sospeso e vengono ritentati al successivo accesso del giocatore alla run (idempotenti per \code{encounter_id}).
+  \item Gateway: invia ai servizi \texttt{Host: <nome del servizio>}, non l'header \code{Host} del client (CI-2).
+  \item Immagini Docker: PostgreSQL derivato senza \code{gosu} (\code{infra/postgres}), Jackson 2.22.4 sopra il BOM di Quarkus (CI-2, vedi \code{docs/security/}).
+\end{itemize}
+
+% =====================================================================
 \section{Limiti noti e punti aperti}\label{sec:aperti}
 % =====================================================================
 
@@ -1219,7 +1287,6 @@ L'introduzione delle run modifica alcune decisioni del documento dell'area gioca
   \item Definizione dei 32 template degli encounter e scelta dei boss degli stage 1–7.
   \item Dettaglio degli effetti \code{copy_ability}, \code{invert_advantage} e \code{random_boost}.
   \item Analisi di sicurezza completa per la consegna finale.
-  \item Frontend: tecnologia e schermate.
 \end{itemize}
 
 % =====================================================================

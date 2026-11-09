@@ -93,6 +93,6 @@ Plus the root `README.md` with **Get Started** (install, build, run backend, run
 |---|---|
 | DOC-1 AC | Added US-05, US-25 (P1 part, P2 rows marked "not implemented yet") and US-28; US-03 gained the "run lost or abandoned" criterion. US-12 and the 404 rule were already updated. |
 | DOC-1 OpenAPI | 7 specs in `docs/openapi/` (6 services + gateway: 31 public operations, no `/internal/*`). Valid with `@redocly/cli lint --extends=minimal`; remaining warnings are missing tag descriptions. `scripts/export-openapi.sh` runs Maven from `backend/` (not `-f <path>`): the Quarkus plugin rejects an absolute path with an apostrophe. |
-| DOC-1 architecture | Section 10 of `architettura_backend.md` (Italian): changes table, decision log P-01…P-21, other implementation choices. The `.tex`/`.pdf` are still the 15/10 version. |
+| DOC-1 architecture | Section 10 of `architettura_backend.md` (Italian): changes table, decision log P-01…P-21, other implementation choices. Same content added to the `.tex` as section 11 (version 1.1); PDF rebuilt with `tectonic -X compile architettura_backend.tex`. |
 | Still to do (people) | Get Started on a fresh clone by someone who did not write it; CI green; tag `v0.1-prototype`; send the link; collect feedback. |
 
