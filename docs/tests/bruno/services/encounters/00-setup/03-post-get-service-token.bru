@@ -1,0 +1,21 @@
+meta {
+  name: POST /internal/auth/token - get service token
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{authUrl}}/internal/auth/token
+  body: formUrlEncoded
+  auth: none
+}
+
+body:form-urlencoded {
+  grant_type: client_credentials
+  client_id: tests
+  client_secret: {{process.env.TESTS_CLIENT_SECRET}}
+}
+
+tests {
+  test("Service token issued", () => {expect(res.getStatus()).to.equal(200); bru.setVar("serviceToken", res.getBody().access_token);});
+}

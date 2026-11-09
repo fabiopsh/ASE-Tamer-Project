@@ -336,3 +336,26 @@ At the start of every run/battle request of a player:
 - **EN-5** — `quarkus-scheduler` job every minute: expire idle battles, retry pending `battle_completions`, resume `reset_pending` runs.
 - **EN-6** — Balance pass with the simulation including abilities; update constants and this document.
 - **EN-7** — Remove the players ↔ encounters call cycle if the smells analysis flags it (option: `encounters` creates the run lazily by reading `GET /internal/players/{pid}` instead of `players` calling `/internal/runs`).
+
+## Tuned constants
+
+Measured on 2026-11-09 with `BalanceSimulation` (engine v1, P2 abilities no-op, player always attacks, 1000 battles per template, levels of the stage's normal range).
+
+| Constant | Plan | Tuned | Why |
+|---|---|---|---|
+| Boss HP multiplier | × 2.5 | **× 1.5** (same as normal wild) | With × 2.5 every boss from stage 3 on was won 0–15% of the time; the boss is already harder through level (+2) and rarity. |
+
+Every other formula is unchanged. Win rates with the tuned value (%):
+
+| Stage | Commons-only team (plan's sim): normal templates / boss | Team drawn with the stage's rarity weights: normal / boss |
+|---|---|---|
+| 1 | 96.8, 98.6, 97.5 / 45.7 | 97.4, 98.6, 97.6 / 48.9 |
+| 2 | 90.8, 93.8, 87.3 / 66.6 | 91.7, 94.6, 88.5 / 76.0 |
+| 3 | 88.0, 85.6, 83.7 / 12.3 | 92.8, 88.4, 91.8 / 37.4 |
+| 4 | 77.3, 84.1, 74.6 / 7.5 | 87.2, 89.6, 83.8 / 38.5 |
+| 5 | 79.1, 74.4, 76.9 / 9.3 | 90.5, 90.3, 87.4 / 49.5 |
+| 6 | 68.7, 71.8, 60.0 / 0.5 | 87.0, 87.1, 81.8 / 23.3 |
+| 7 | 69.6, 70.4, 66.5 / 0.0 | 90.3, 94.4, 87.1 / 2.2 |
+| 8 | 70.7, 48.3, 56.5 / 0.0 | 95.9, 79.9, 89.0 / 57.0 |
+
+Open points, not decided here: with a commons-only team the late bosses stay out of reach whatever the multiplier, because legendary stats grow faster than common ones; a team that captured rares (the `mixed` mode, `BalanceSimulation <seedDir> 1000 mixed`) is closer to the target. Quietus (stage 7, Absolute Quiet `weaken` 35 `always`) and Morpheon (stage 6) remain outliers; the levers are their boss level in the template seed or the ability value in the monsters seed.

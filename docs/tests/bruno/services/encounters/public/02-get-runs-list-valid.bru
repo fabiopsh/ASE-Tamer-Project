@@ -1,0 +1,19 @@
+meta {
+  name: GET /api/runs - list
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{encountersUrl}}/api/runs
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+tests {
+  test("Page with the run", () => {expect(res.getStatus()).to.equal(200); var b = res.getBody(); expect(b.items).to.have.lengthOf(1); expect(b.page).to.equal(0); expect(b.total_items).to.equal(1);});
+}

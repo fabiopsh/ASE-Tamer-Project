@@ -133,3 +133,96 @@ Test references:
 | 1 | **Given** one to three distinct active owned monsters from the same run, **when** I validate them, **then** I receive `200 {valid:true,errors:[]}` without saving anything. | `TeamValidatorTest#validOwnedActiveMembersInOrder`; Bruno `services/teams/public/03-post-validate-valid` |
 | 2 | **Given** a duplicate, a foreign id, an archived monster, or mixed-run instances, **when** I validate, **then** `valid:false` identifies each applicable rule. | `TeamValidatorTest#sizeAndDuplicateAndOwnershipErrorsAreCollected`, `#rejectsArchivedAndMixedRunMembers`; Bruno `services/teams/public/04-post-validate-invalid-duplicate` |
 | 3 | **Given** a previously saved team becomes invalid after a run change, **when** encounters requests it internally, **then** teams rejects it with `409 TEAM_INVALID`. | Bruno `services/teams/internal/01-get-team-revalidated` (valid counterpart); negative integration test when EN-1 is available |
+
+## US-17 — Browse encounters
+
+**Dependencies:** US-06 (a run is opened when the starters are chosen) · **Service:** encounters · **Phase:** P1
+
+| # | Criterion | Tests |
+|---|---|---|
+| 1 | **Given** a new run at stage 1, **when** I list the encounters, **then** I see the three normal templates of stage 1 with name, element, level range and rarity weights, and no boss. | `RunRulesTest#stageOneShowsOnlyItsNormalTemplates`, `RunsApiTest#encountersOfStageOne`; Bruno `services/encounters/public/05-get-encounters-valid` |
+| 2 | **Given** two wins in the current stage, **when** I list the encounters, **then** the stage boss is also available; before that, opening the boss template gives 404. | `RunRulesTest#bossUnlocksAfterTwoWins`, `RunsApiTest#encountersOfStageOne`; Bruno `services/encounters/public/06-get-encounter-boss-locked` |
+| 3 | **Given** I beat the boss of a stage, **when** I list the encounters, **then** the normal templates of the next stage are added, those of the cleared stages stay playable, and the beaten boss is not offered again. | `RunRulesTest#afterTheBossTheNextStageOpensAndClearedStagesStayPlayable`, `#bossAlreadyBeatenIsNotOfferedAgain`, `BattleApiTest#bossVictoryMovesToTheNextStage` |
+| 4 | **Given** no active run, **when** I list the encounters, **then** I receive `409 NO_ACTIVE_RUN`; my runs and run details are visible only to me (another player's run gives 404). | `RunsApiTest#withoutActiveRun`, `#runsAreScopedAndPaginated`; Bruno `services/encounters/public/04-get-run-detail-missing` |
+| 5 | **Given** players opens my run after the starters, **when** the call is retried, **then** the same run is returned (`200`) and a second active run is refused (`409`). | `RunsApiTest#openRunIsIdempotent`; Bruno `services/encounters/internal/01-post-open-run-idempotent`, `02-post-open-run-invalid-second-active` |
+
+## US-18 — Start an encounter
+
+**Dependencies:** US-17, US-14 · **Service:** encounters (calls teams, monsters) · **Phase:** P1
+
+| # | Criterion | Tests |
+|---|---|---|
+| 1 | **Given** an available template and a valid saved team, **when** I start a battle, **then** I receive `201` with the wild monster (level in the template range, full HP, sprite), my team in order with the first member active, and no result. | `BattleApiTest#startReturnsTheInitialState`; Bruno `services/encounters/public/09-post-battle-valid` |
+| 2 | **Given** a battle in progress, **when** I start another one, **then** I receive `409 BATTLE_IN_PROGRESS`. | `BattleApiTest#secondStartIs409`; Bruno `services/encounters/public/10-post-battle-invalid-twice` |
+| 3 | **Given** a team that teams rejects or that belongs to another run, **when** I start a battle, **then** I receive `409 TEAM_INVALID`; an unknown team gives 404. | `BattleApiTest#invalidOrMissingTeam`, `#teamOfAnotherRunIsInvalid` |
+| 4 | **Given** a template that is not available (stage not reached, boss locked), **when** I start a battle, **then** I receive 404. | `BattleApiTest#unavailableTemplatesAre404`; Bruno `services/encounters/public/08-post-battle-invalid-template` |
+| 5 | **Given** a normal template, **when** the wild monster is chosen, **then** it is never one of the 8 boss species. | `WildSelectorTest`, `BattleApiTest#startReturnsTheInitialState` |
+
+## US-19 — Resolve an encounter
+
+**Dependencies:** US-18 · **Service:** encounters · **Phase:** P1
+
+| # | Criterion | Tests |
+|---|---|---|
+| 1 | **Given** a battle in progress, **when** I send `attack`, **then** the response contains the round events computed by the server and the updated HP. | `BattleApiTest#validActionsResolveRounds`; Bruno `services/encounters/public/14-post-action-attack-valid` |
+| 2 | **Given** a battle in progress, **when** the wild monster's HP reaches 0, **then** the outcome is `victory`; **when** all my team is KO, **then** the outcome is `defeat`, the run is `lost` and it is reset (collection archived, teams removed, new starter pool). | `BattleApiTest#victoryGrantsRewardXpAndHistoryWithTheSameEncounterId`, `#defeatLosesTheRunAndResetsIt`, `BattleTest#victoryIsPossible`, `#defeatIsPossible` |
+| 3 | **Given** any state, **when** I try to send an outcome or HP values, **then** the request is rejected (400) because only actions are accepted. | `BattleApiTest#invalidActionsAreRejected`; Bruno `services/encounters/public/12-post-action-invalid-outcome-field` |
+| 4 | **Given** a victory, **when** the battle ends, **then** the wild monster joins my collection at its level, every team member gets the XP, and the record is stored in history, all with the same `encounter_id`; if monsters is down the reward is shown as pending and granted at my next request. | `BattleApiTest#victoryGrantsRewardXpAndHistoryWithTheSameEncounterId`, `#rewardServiceDownMeansPendingRewardRetriedOnNextRequest` |
+| 5 | **Given** I beat a stage boss, **when** the battle ends, **then** the run moves to the next stage; beating the stage-8 boss wins the run and `POST /api/runs` lets me choose new starters. | `RunRulesTest#stageEightBossWinsTheRun`, `BattleApiTest#bossVictoryMovesToTheNextStage`, `#stageEightBossWinsTheRunAndANewRunCanStart` |
+| 6 | **Given** a battle left idle for more than 30 minutes, or lost because the service restarted, **when** I make my next request, **then** it is closed as `expired` or `interrupted` without reward and my run continues. | `BattleApiTest#idleBattleExpires`, `#battleMissingFromMemoryIsClosedAsInterrupted` |
+| 7 | **Given** the run reset fails because a service is down, **when** I make my next request, **then** the reset is resumed; until it succeeds, starting a battle gives `409 RESET_PENDING`. | `BattleApiTest#failedResetIsResumedLater` |
+
+## US-20 — View encounter result details
+
+**Dependencies:** US-19 · **Service:** encounters (the same detail is stored in history, US-24) · **Phase:** P1
+
+| # | Criterion | Tests |
+|---|---|---|
+| 1 | **Given** my last action ends the battle, **when** I read the response, **then** `status` is `finished` and `result` holds the outcome, the reward (or `null`), the XP gained, the level-ups and the run progress (stage, wins, boss availability, status). | `BattleApiTest#victoryGrantsRewardXpAndHistoryWithTheSameEncounterId`, `#defeatLosesTheRunAndResetsIt`, `#bossVictoryMovesToTheNextStage` |
+| 2 | **Given** a finished battle, **when** its record is stored, **then** it contains template, wild monster, team snapshot with stats, outcome, reward, XP, every round, seed and engine version. | `HistoryRecordBuilderTest#victoryRecordHasTheHistoryContract`, `BattleApiTest#victoryGrantsRewardXpAndHistoryWithTheSameEncounterId` |
+
+## US-21 — Leave or escape an encounter
+
+**Dependencies:** US-18 · **Service:** encounters · **Phase:** P1
+
+| # | Criterion | Tests |
+|---|---|---|
+| 1 | **Given** a battle in progress, **when** I flee successfully, **then** the battle ends as `fled`, I get no reward and my run continues. | `BattleTest#fleeSuccessAndFailure`; `BattleApiTest#validActionsResolveRounds` |
+| 2 | **Given** a battle in progress, **when** the flee fails, **then** the wild monster attacks and the battle continues. | `BattleTest#fleeSuccessAndFailure` |
+| 3 | **Given** an active run, **when** I abandon it, **then** any battle is recorded as `abandoned`, the run is `abandoned`, my collection is archived and I must choose new starters. | `BattleApiTest#abandonClosesTheBattleAndResetsTheRun`, `#abandonWithoutBattle`; Bruno `services/encounters/public/15-post-abandon-valid`, `18-get-run-current-missing` |
+| 4 | **Given** no active run, **when** I abandon, **then** I receive `409 NO_ACTIVE_RUN`. | `BattleApiTest#abandonClosesTheBattleAndResetsTheRun`; Bruno `services/encounters/public/17-post-abandon-invalid-no-run` |
+
+## US-22 — Choose encounter actions
+
+**Dependencies:** US-18 · **Service:** encounters · **Phase:** P1
+
+| # | Criterion | Tests |
+|---|---|---|
+| 1 | **Given** a battle in progress, **when** I choose `attack`, `switch` to a living member or `flee`, **then** the round is resolved with that action (a switched-in monster does not attack in that round). | `BattleApiTest#validActionsResolveRounds`, `BattleTest#switchedInMonsterDoesNotAttack` |
+| 2 | **Given** a battle in progress, **when** I switch to the active member, to a knocked-out member or to a slot outside my team, or send `slot` with a non-switch action, **then** I receive `400 INVALID_ACTION` and nothing changes. | `BattleApiTest#invalidActionsAreRejected`; Bruno `services/encounters/public/13-post-action-invalid-switch-active` |
+| 3 | **Given** no battle in progress, **when** I send an action, **then** I receive 404. | `BattleApiTest#invalidActionsAreRejected`; Bruno `services/encounters/public/16-get-battle-current-missing` |
+
+## US-23 — View my previous encounters
+
+**Dependencies:** US-19 · **Service:** history (written by encounters) · **Phase:** P1
+
+| # | Criterion | Tests |
+|---|---|---|
+| 1 | **Given** I finished 3 encounters, **when** I list my history, **then** I see 3 summaries, newest first, with outcome, wild monster and date. | `HistoryResourceTest#listIsNewestFirstSummariesOnly`; Bruno `services/history/public/01-get-list-valid` |
+| 2 | **Given** another player finished encounters, **when** I list my history, **then** I see none of theirs. | `HistoryResourceTest#playerAOnlySeesOwnRecords`, `#playerBOnlySeesOwnRecords` |
+| 3 | **Given** history across two runs, **when** I filter by `run_id` (and optionally by `outcome`), **then** I see only the matching encounters. | `HistoryResourceTest#listFiltersByRunAndOutcome`; Bruno `services/history/public/03-get-list-filter-outcome` |
+| 4 | **Given** more encounters than one page, **when** I list with `page` and `size`, **then** I receive the requested page with `total_items` and `total_pages`; a negative page, a size below 1 or above 50 gives 400 `VALIDATION_ERROR`. | `HistoryResourceTest#paginationAndOutOfRange`; Bruno `services/history/public/05-get-list-invalid-size` |
+| 5 | **Given** any state, **when** I filter by an unknown outcome or a `run_id` that is not a UUID, **then** I receive 400 `VALIDATION_ERROR`. | `HistoryResourceTest#invalidFiltersAre400`; Bruno `services/history/public/04-get-list-invalid-outcome` |
+| 6 | **Given** no token, **when** I list my history, **then** I receive 401 `UNAUTHORIZED`. | `HistoryResourceTest#publicEndpointsWithoutTokenAre401`; Bruno `services/history/public/02-get-list-unauthorized` |
+| 7 | **Given** the encounters service finishes an encounter, **when** it stores the record twice (retry), **then** the first call returns 201, the second 200, and the history holds one record. Only a service token may store (a player token gets 403). | `HistoryResourceTest#insertIsIdempotent`, `#internalEndpointWithPlayerTokenIs403`; Bruno `services/history/internal/01-post-store-valid`, `02-post-store-idempotent`, `06-post-store-wrong-role` |
+| 8 | **Given** an invalid record (unknown outcome, more than 500 rounds, missing wild monster, unknown field), **when** encounters stores it, **then** I receive 400 `VALIDATION_ERROR` and nothing is saved. | `HistoryResourceTest#invalidOutcomeInBodyIs400`, `#tooManyTurnsIs400`, `#otherInvalidBodiesAre400`; Bruno `services/history/internal/03-post-store-invalid-outcome`, `04-post-store-invalid-missing-wild`, `05-post-store-invalid-unknown-field` |
+
+## US-24 — View the details of a previous encounter
+
+**Dependencies:** US-23 · **Service:** history · **Phase:** P1
+
+| # | Criterion | Tests |
+|---|---|---|
+| 1 | **Given** a finished encounter, **when** I open it, **then** I see team, wild monster, outcome, reward, XP and every round's events. | `HistoryResourceTest#detailReturnsFullRecord`, `#storedJsonIsReturnedUntouched`; Bruno `services/history/public/06-get-detail-valid` |
+| 2 | **Given** an encounter of another player (or an id that does not exist), **when** I open its id, **then** I receive 404 `NOT_FOUND`, without revealing whether it exists. | `HistoryResourceTest#foreignOrMissingRecordIs404`; Bruno `services/history/public/07-get-detail-missing` |
+| 3 | **Given** no token, **when** I open an encounter, **then** I receive 401 `UNAUTHORIZED`. | `HistoryResourceTest#publicEndpointsWithoutTokenAre401`; Bruno `services/history/public/08-get-detail-unauthorized` |

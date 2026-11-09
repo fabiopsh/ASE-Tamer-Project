@@ -1,0 +1,15 @@
+meta {
+  name: GET /api/encounters - no token
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{encountersUrl}}/api/encounters
+  body: none
+  auth: none
+}
+
+tests {
+  test("401 UNAUTHORIZED", () => {expect(res.getStatus()).to.equal(401); expect(res.getBody().error).to.equal("UNAUTHORIZED");});
+}

@@ -1,0 +1,23 @@
+meta {
+  name: POST /internal/runs - repeat of the run opened by players
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{encountersUrl}}/internal/runs
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{serviceToken}}
+}
+
+body:json {
+  {"run_id":"{{runId}}","player_id":"{{playerId}}"}
+}
+
+tests {
+  test("Existing run returned with 200", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody().run_id).to.equal(bru.getVar("runId")); expect(res.getBody().status).to.equal("active"); expect(res.getBody().stage).to.equal(1);});
+}

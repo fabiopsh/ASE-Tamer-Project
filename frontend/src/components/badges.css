@@ -1,0 +1,81 @@
+.element-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 11px 0 8px;
+  border-radius: var(--radius-pill);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.03em;
+  color: color-mix(in srgb, var(--el) 85%, white);
+  background: color-mix(in srgb, var(--el) 16%, rgba(8, 10, 30, 0.75));
+  border: 1px solid color-mix(in srgb, var(--el) 45%, transparent);
+  white-space: nowrap;
+}
+.element-badge--sm { height: 24px; gap: 4px; padding: 0 8px 0 6px; }
+.element-badge--icon { width: 28px; padding: 0; justify-content: center; }
+.element-badge--icon.element-badge--sm { width: 24px; }
+.element-badge[data-element='chaos'] {
+  border-color: transparent;
+  background:
+    linear-gradient(rgba(30, 10, 34, 0.9), rgba(30, 10, 34, 0.9)) padding-box,
+    var(--el-chaos-gradient) border-box;
+}
+
+.rarity-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 28px;
+  padding: 0 11px 0 9px;
+  border-radius: var(--radius-pill);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--rarity);
+  background: color-mix(in srgb, var(--rarity) 12%, rgba(8, 10, 30, 0.75));
+  border: 1px solid color-mix(in srgb, var(--rarity) 40%, transparent);
+  white-space: nowrap;
+}
+.rarity-badge--sm { height: 24px; gap: 5px; padding: 0 8px 0 7px; letter-spacing: 0.04em; }
+.rarity-badge__gems { display: inline-flex; gap: 2px; }
+.rarity-badge__gem {
+  width: 7px;
+  height: 7px;
+  transform: rotate(45deg);
+  border-radius: 1.5px;
+  background: var(--rarity);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--rarity) 70%, transparent);
+}
+.rarity-badge[data-rarity='legendary'] {
+  border-color: transparent;
+  background:
+    linear-gradient(rgba(36, 26, 8, 0.92), rgba(36, 26, 8, 0.92)) padding-box,
+    var(--legendary-shine) border-box;
+  animation: shine-spin 4s linear infinite;
+  text-shadow: 0 0 10px rgba(255, 210, 122, 0.5);
+}
+
+.level-badge {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3px;
+  height: 26px;
+  padding: 0 9px;
+  line-height: 26px;
+  border-radius: var(--radius-sm);
+  background: rgba(6, 8, 26, 0.78);
+  border: 1px solid var(--border-mid);
+  font-weight: var(--weight-black);
+  font-size: var(--text-sm);
+  color: var(--text-1);
+}
+.level-badge__lv {
+  font-size: 0.72rem;
+  font-weight: var(--weight-bold);
+  color: var(--accent-2);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}

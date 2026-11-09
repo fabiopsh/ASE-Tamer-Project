@@ -1,0 +1,19 @@
+meta {
+  name: POST /api/runs/current/abandon - no active run
+  type: http
+  seq: 17
+}
+
+post {
+  url: {{encountersUrl}}/api/runs/current/abandon
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+tests {
+  test("409 NO_ACTIVE_RUN", () => {expect(res.getStatus()).to.equal(409); expect(res.getBody().error).to.equal("NO_ACTIVE_RUN");});
+}

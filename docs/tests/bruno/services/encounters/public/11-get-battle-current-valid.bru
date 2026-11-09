@@ -1,0 +1,19 @@
+meta {
+  name: GET /api/battles/current - state
+  type: http
+  seq: 11
+}
+
+get {
+  url: {{encountersUrl}}/api/battles/current
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+tests {
+  test("Same battle", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody().encounter_id).to.equal(bru.getVar("encounterId")); expect(res.getBody().status).to.equal("in_progress");});
+}

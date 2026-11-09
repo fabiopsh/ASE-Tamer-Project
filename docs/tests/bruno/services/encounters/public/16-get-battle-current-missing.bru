@@ -1,0 +1,19 @@
+meta {
+  name: GET /api/battles/current - no battle
+  type: http
+  seq: 16
+}
+
+get {
+  url: {{encountersUrl}}/api/battles/current
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+tests {
+  test("404 NOT_FOUND", () => {expect(res.getStatus()).to.equal(404);});
+}

@@ -1,0 +1,67 @@
+.mhero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+@media (min-width: 820px) {
+  .mhero { grid-template-columns: minmax(280px, 0.9fr) minmax(0, 1.1fr); }
+}
+.mhero[data-rarity='legendary'] {
+  border: 2px solid transparent;
+  background:
+    linear-gradient(var(--surface-solid), var(--surface-solid)) padding-box,
+    var(--legendary-shine) border-box;
+  animation: shine-spin 6s linear infinite;
+}
+
+.mhero__stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 300px;
+  padding: var(--space-7);
+  overflow: hidden;
+  background:
+    radial-gradient(closest-side, color-mix(in srgb, var(--el) 30%, transparent), transparent 85%),
+    linear-gradient(160deg, color-mix(in srgb, var(--el) 16%, #12153a), #0c0e2a);
+}
+.mhero__stage .sprite { width: clamp(160px, 40vw, 192px) !important; height: clamp(160px, 40vw, 192px) !important; }
+.mhero__ring {
+  position: absolute;
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--el) 40%, transparent);
+  box-shadow: 0 0 40px color-mix(in srgb, var(--el) 20%, transparent), inset 0 0 40px color-mix(in srgb, var(--el) 12%, transparent);
+}
+.mhero__ring--outer {
+  width: 320px;
+  height: 320px;
+  border-style: dashed;
+  opacity: 0.45;
+  animation: spin 60s linear infinite;
+}
+.mhero__pedestal {
+  position: absolute;
+  bottom: 18%;
+  width: 180px;
+  height: 26px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--el) 50%, transparent), transparent);
+}
+
+.mhero__info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-7);
+  min-width: 0;
+}
+@media (max-width: 560px) {
+  .mhero__info { padding: var(--space-5); }
+}
+.mhero__dex { font-weight: var(--weight-bold); color: var(--text-3); letter-spacing: 0.1em; }
+.mhero__name {
+  font-size: var(--text-3xl);
+  text-shadow: 0 0 28px color-mix(in srgb, var(--el) 45%, transparent);
+  overflow-wrap: anywhere;
+}

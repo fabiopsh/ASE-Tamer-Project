@@ -1,0 +1,19 @@
+meta {
+  name: POST /api/runs - latest run not won
+  type: http
+  seq: 19
+}
+
+post {
+  url: {{encountersUrl}}/api/runs
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+tests {
+  test("409 NEW_RUN_NOT_ALLOWED", () => {expect(res.getStatus()).to.equal(409); expect(res.getBody().error).to.equal("NEW_RUN_NOT_ALLOWED");});
+}

@@ -1,0 +1,19 @@
+meta {
+  name: GET /api/history?size=51 - list invalid: page size
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{historyUrl}}/api/history?size=51
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+tests {
+  test("400 VALIDATION_ERROR", () => {expect(res.getStatus()).to.equal(400); expect(res.getBody().error).to.equal("VALIDATION_ERROR");});
+}

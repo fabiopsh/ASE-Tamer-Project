@@ -1,0 +1,23 @@
+meta {
+  name: POST /internal/runs - player token
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{encountersUrl}}/internal/runs
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+body:json {
+  {"run_id":"{{runId}}","player_id":"{{playerId}}"}
+}
+
+tests {
+  test("403 FORBIDDEN", () => {expect(res.getStatus()).to.equal(403); expect(res.getBody().error).to.equal("FORBIDDEN");});
+}

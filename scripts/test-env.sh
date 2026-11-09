@@ -3,6 +3,8 @@
 # the secrets volume into .test-secrets/ and docs/tests/bruno/.env (both gitignored).
 # Run after: docker compose -f docker-compose.yml -f docker-compose.test.yml up -d --build --wait
 set -eu
+# Git Bash on Windows rewrites "/path" arguments; keep them as they are for docker
+export MSYS_NO_PATHCONV=1
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 PROJECT="${COMPOSE_PROJECT_NAME:-tamer}"
 read_secret() {

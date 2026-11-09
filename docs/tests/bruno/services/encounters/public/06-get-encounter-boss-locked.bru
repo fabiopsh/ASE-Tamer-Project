@@ -1,0 +1,19 @@
+meta {
+  name: GET /api/encounters/14 - boss locked
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{encountersUrl}}/api/encounters/14
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+tests {
+  test("404 before two wins", () => {expect(res.getStatus()).to.equal(404); expect(res.getBody().error).to.equal("NOT_FOUND");});
+}

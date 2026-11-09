@@ -1,0 +1,122 @@
+.starters { padding-bottom: 180px; }
+
+.starters__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-6);
+  align-items: start;
+}
+@media (min-width: 1100px) {
+  .starters__layout { grid-template-columns: minmax(0, 1fr) 360px; }
+  .starters__inspect { position: sticky; top: calc(var(--topbar-h) + var(--space-5)); }
+}
+
+.starters__pick-hint {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px dashed var(--border-strong);
+  color: var(--text-2);
+  font-weight: var(--weight-black);
+  font-size: 1.1rem;
+  line-height: 1;
+}
+.mcard--interactive:hover .starters__pick-hint { border-color: var(--accent-2); color: var(--accent-2); }
+
+.starters__inspect-hero {
+  display: grid;
+  place-items: center;
+  padding: var(--space-3) 0;
+  border-radius: var(--radius-md);
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--el) 22%, transparent), transparent);
+}
+.starters__inspect-name { font-size: var(--text-2xl); }
+
+/* ---------- fixed selection bar ---------- */
+.starters__bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: var(--z-topbar);
+  padding: var(--space-3) var(--page-gutter) calc(var(--space-3) + env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, rgba(12, 14, 40, 0.88), rgba(8, 9, 28, 0.97));
+  border-top: 1px solid var(--border-mid);
+  box-shadow: 0 -12px 40px rgba(2, 3, 14, 0.6);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+}
+.starters__bar::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -1px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(95, 214, 236, 0.7), rgba(157, 134, 255, 0.7), transparent);
+}
+.starters__bar-inner {
+  max-width: var(--page-max);
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+}
+.starters__bar-error { max-width: var(--page-max); margin: var(--space-3) auto 0; }
+
+.starters__slots { display: flex; gap: var(--space-2); }
+.starters__slot {
+  display: grid;
+  place-items: center;
+  width: 68px;
+  height: 68px;
+  border-radius: var(--radius-md);
+  border: 2px dashed var(--border-mid);
+  background: var(--surface-sunken);
+  color: var(--text-3);
+  font-weight: var(--weight-bold);
+  font-size: var(--text-lg);
+}
+.starters__slot--filled {
+  padding: 0;
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--el) 70%, transparent);
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--el) 35%, transparent), var(--surface-sunken));
+  box-shadow: 0 0 18px color-mix(in srgb, var(--el) 35%, transparent);
+  animation: pop-in var(--dur-slow) var(--ease-spring) both;
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+.starters__slot--filled:hover { transform: translateY(-2px); border-color: var(--danger); }
+
+.starters__count { display: flex; flex-direction: column; line-height: 1.1; }
+.starters__count[data-nudge] { animation: nudge 360ms var(--ease-out); }
+@keyframes nudge {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
+}
+.starters__count-value {
+  font-weight: var(--weight-black);
+  font-size: 2rem;
+  color: var(--text-1);
+}
+.starters__count-value[data-full] {
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 12px rgba(95, 214, 236, 0.45));
+}
+.starters__count-label { font-size: var(--text-sm); color: var(--text-2); font-weight: var(--weight-medium); }
+.starters__confirm { margin-left: auto; }
+
+@media (max-width: 640px) {
+  .starters { padding-bottom: 210px; }
+  .starters__bar-inner { flex-wrap: wrap; gap: var(--space-3); }
+  .starters__slot { width: 56px; height: 56px; }
+  .starters__slot--filled .sprite { width: 52px !important; height: 52px !important; }
+  .starters__count { margin-left: auto; text-align: right; }
+  .starters__confirm { width: 100%; margin-left: 0; }
+}

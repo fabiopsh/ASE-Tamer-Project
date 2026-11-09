@@ -1,0 +1,19 @@
+meta {
+  name: GET /api/encounters - stage 1
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{encountersUrl}}/api/encounters
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+tests {
+  test("Three normal templates of stage 1", () => {expect(res.getStatus()).to.equal(200); var t = res.getBody(); expect(t.map(x => x.template_id)).to.eql([11, 12, 13]); t.forEach(x => {expect(x.is_boss).to.equal(false); expect(x.level_min).to.equal(1); expect(x.level_max).to.equal(3); expect(x.rarity_weights.common).to.equal(100);});});
+}

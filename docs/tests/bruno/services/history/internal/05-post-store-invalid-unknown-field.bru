@@ -1,0 +1,23 @@
+meta {
+  name: POST /internal/history - invalid: unknown field
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{historyUrl}}/internal/history
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{serviceToken}}
+}
+
+body:json {
+  {"encounter_id":"{{encounterId3}}","hp":999}
+}
+
+tests {
+  test("400 VALIDATION_ERROR", () => {expect(res.getStatus()).to.equal(400); expect(res.getBody().error).to.equal("VALIDATION_ERROR");});
+}

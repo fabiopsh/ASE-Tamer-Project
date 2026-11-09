@@ -114,6 +114,8 @@ To regenerate only the certificates and keys, stop the stack and remove the `tam
 
 - **Port 8443 already in use**: stop the other process, or change the published port of `gateway` in `docker-compose.yml`.
 - **`volume subpath` not supported**: update Docker Desktop (Compose ≥ 2.30, Engine ≥ 26).
+- **curl on Windows says `CRYPT_E_NO_REVOCATION_CHECK` / error 60**: add `--ssl-no-revoke` to the curl command.
+- **`init-secrets` exits with 255 on Windows**: shell scripts must have LF line endings (`.gitattributes` enforces it; run `git add --renormalize .` after pulling).
 - **Certificate errors in curl or Bruno**: run `scripts/export-ca.sh` (or `scripts/test-env.sh`) again after a `down -v`, because the CA has changed.
 - **A service stays `unhealthy`**: `docker compose logs <service>`. After changing database credentials or migrations during development, reset with `docker compose down -v`.
 - **`429 Too Many Requests` on login**: the gateway allows 10 requests per minute per IP (burst 5) on `/api/auth/token` and `/api/auth/register`. The test override raises the limit.

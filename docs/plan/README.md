@@ -126,6 +126,7 @@ With 3 people, merge B and D: infrastructure first, then monsters/teams.
 | Date | Done | Notes |
 |---|---|---|
 | 06/11/2026 | INFRA-1…8, AUTH-1…6 | Implementation notes at the end of [02-infrastructure.md](02-infrastructure.md#implementation-notes-06112026) and [03-auth.md](03-auth.md#implementation-notes-06112026). Registration works end to end only after PL-1 (and MO-2). Shared Bruno setup of TEST-1 (`bruno.json`, environments, `scripts/test-env.sh`) also done |
+| 09/11/2026 | EN-1…3, HI-1, FE-1, FE-2 | Engine, encounters service, history service and the React UI. Verified end to end through the gateway with `docker compose up` (register → starters → team → battles → boss → stage 2/3 → defeat → reset → history). Notes in [07-encounters.md](07-encounters.md#tuned-constants) (boss HP ×1.5; late bosses still hard for a commons-only team) |
 
 ## Definition of done (every task)
 

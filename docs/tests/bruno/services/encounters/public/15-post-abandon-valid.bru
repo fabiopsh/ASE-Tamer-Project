@@ -1,0 +1,28 @@
+meta {
+  name: POST /api/runs/current/abandon - abandon the run
+  type: http
+  seq: 15
+}
+
+post {
+  url: {{encountersUrl}}/api/runs/current/abandon
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+tests {
+  test("Run abandoned (or already lost by a defeat in the previous round)", () => {
+    if (bru.getVar("runLost") === true) {
+      expect(res.getStatus()).to.equal(409);
+    } else {
+      expect(res.getStatus()).to.equal(200);
+      expect(res.getBody().status).to.equal("abandoned");
+      expect(res.getBody().battle_in_progress).to.equal(false);
+      expect(res.getBody().ended_at).to.not.equal(null);
+    }
+  });
+}

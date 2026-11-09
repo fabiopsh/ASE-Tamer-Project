@@ -163,7 +163,7 @@ Record the chosen versions here when INFRA-1 is done:
 | PostgreSQL image | `postgres:17.11-alpine3.24` (not 18: its data directory layout changed) |
 | nginx-unprivileged image | `nginxinc/nginx-unprivileged:1.30.6-alpine3.24` |
 | Alpine (init-secrets) | `alpine:3.24.4` |
-| Node.js | _fill in (LTS)_ |
+| Node.js | 24 LTS (frontend tested with 24.13) |
 | Bruno CLI | `@usebruno/cli@4.3.0` (run with `npx`) |
 | Locust | _fill in_ |
 

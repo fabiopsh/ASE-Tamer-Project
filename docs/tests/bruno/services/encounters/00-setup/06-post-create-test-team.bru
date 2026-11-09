@@ -1,0 +1,23 @@
+meta {
+  name: POST /api/teams - create test team
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{teamsUrl}}/api/teams
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+body:json {
+  {"name":"Main","members":["{{owned1}}","{{owned2}}","{{owned3}}"]}
+}
+
+tests {
+  test("Team saved", () => {expect(res.getStatus()).to.equal(201); bru.setVar("teamId", res.getBody().team_id);});
+}

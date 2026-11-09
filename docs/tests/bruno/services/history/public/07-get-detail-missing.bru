@@ -1,0 +1,19 @@
+meta {
+  name: GET /api/history/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee - detail invalid: missing or foreign
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{historyUrl}}/api/history/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+tests {
+  test("404 NOT_FOUND for a missing or foreign record", () => {expect(res.getStatus()).to.equal(404); expect(res.getBody().error).to.equal("NOT_FOUND");});
+}

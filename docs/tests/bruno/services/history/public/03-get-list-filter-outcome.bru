@@ -1,0 +1,19 @@
+meta {
+  name: GET /api/history?outcome=victory - list filtered by outcome
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{historyUrl}}/api/history?run_id={{runId}}&outcome=victory
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+tests {
+  test("Only victories", () => {expect(res.getStatus()).to.equal(200); var b = res.getBody(); expect(b.total_items).to.equal(1); expect(b.items[0].outcome).to.equal("victory");});
+}

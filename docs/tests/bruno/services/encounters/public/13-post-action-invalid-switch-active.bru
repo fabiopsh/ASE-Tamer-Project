@@ -1,0 +1,23 @@
+meta {
+  name: POST /api/battles/current/actions - switch to the active member
+  type: http
+  seq: 13
+}
+
+post {
+  url: {{encountersUrl}}/api/battles/current/actions
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+body:json {
+  {"type":"switch","slot":1}
+}
+
+tests {
+  test("400 INVALID_ACTION", () => {expect(res.getStatus()).to.equal(400); expect(res.getBody().error).to.equal("INVALID_ACTION");});
+}

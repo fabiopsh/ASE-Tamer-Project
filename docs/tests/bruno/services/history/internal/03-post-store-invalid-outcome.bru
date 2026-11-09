@@ -1,0 +1,23 @@
+meta {
+  name: POST /internal/history - invalid: unknown outcome
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{historyUrl}}/internal/history
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{serviceToken}}
+}
+
+body:json {
+  {"encounter_id":"{{encounterId3}}","player_id":"{{playerId}}","run_id":"{{otherRunId}}","template":{"template_id":12,"name":"Mossy Hollow","stage":1,"element":"echo","is_boss":false},"wild":{"monster_id":51,"name":"Mossling","level":2,"rarity":"common","element":"echo"},"team_snapshot":[{"position":1,"owned_id":"{{ownedId}}","monster_id":3,"name":"Emberling","level":3,"stats":{"hp":30,"attack":9}}],"outcome":"draw","reward":{"owned_id":"{{rewardOwnedId}}","monster_id":51,"level":2},"xp_gained":20,"turns":[{"turn":1,"events":[{"type":"damage","target_side":"wild","amount":7}]}],"rng_seed":"-4512345678901234567","engine_version":1,"started_at":"2026-11-06T11:00:00Z","ended_at":"2026-11-06T11:05:00Z"}
+}
+
+tests {
+  test("400 VALIDATION_ERROR", () => {expect(res.getStatus()).to.equal(400); expect(res.getBody().error).to.equal("VALIDATION_ERROR");});
+}
