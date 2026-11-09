@@ -27,6 +27,7 @@
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.version>3.39.5</quarkus.platform.version>
+        <jackson.version>2.22.4</jackson.version>
 
         <compiler-plugin.version>3.16.0</compiler-plugin.version>
         <surefire-plugin.version>3.6.1</surefire-plugin.version>
@@ -36,6 +37,16 @@
 
     <dependencyManagement>
         <dependencies>
+            <!-- CI-2 (Trivy): Jackson 2.22.2 from the Quarkus BOM has HIGH CVEs (CVE-2026-89407, -89425,
+                 -91776, -91777) fixed in 2.22.3+. Imported before the Quarkus BOM so this version wins.
+                 Remove when the Quarkus platform ships a fixed Jackson. -->
+            <dependency>
+                <groupId>com.fasterxml.jackson</groupId>
+                <artifactId>jackson-bom</artifactId>
+                <version>${jackson.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <dependency>
                 <groupId>${quarkus.platform.group-id}</groupId>
                 <artifactId>${quarkus.platform.artifact-id}</artifactId>

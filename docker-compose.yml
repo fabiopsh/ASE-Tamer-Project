@@ -96,7 +96,8 @@ services:
         condition: service_healthy
 
   auth-db:
-    image: postgres:17.11-alpine3.24
+    build: infra/postgres
+    image: tamer/postgres:dev
     user: "70:70"
     <<: *hardening
     restart: unless-stopped
@@ -165,7 +166,8 @@ services:
         condition: service_healthy
 
   players-db:
-    image: postgres:17.11-alpine3.24
+    build: infra/postgres
+    image: tamer/postgres:dev
     user: "70:70"
     <<: *hardening
     restart: unless-stopped
@@ -231,7 +233,8 @@ services:
         condition: service_healthy
 
   monsters-db:
-    image: postgres:17.11-alpine3.24
+    build: infra/postgres
+    image: tamer/postgres:dev
     user: "70:70"
     <<: *hardening
     restart: unless-stopped
@@ -299,7 +302,8 @@ services:
         condition: service_healthy
 
   teams-db:
-    image: postgres:17.11-alpine3.24
+    build: infra/postgres
+    image: tamer/postgres:dev
     user: "70:70"
     <<: *hardening
     restart: unless-stopped
@@ -370,7 +374,8 @@ services:
         condition: service_healthy
 
   encounters-db:
-    image: postgres:17.11-alpine3.24
+    build: infra/postgres
+    image: tamer/postgres:dev
     user: "70:70"
     <<: *hardening
     restart: unless-stopped
@@ -436,7 +441,8 @@ services:
         condition: service_healthy
 
   history-db:
-    image: postgres:17.11-alpine3.24
+    build: infra/postgres
+    image: tamer/postgres:dev
     user: "70:70"
     <<: *hardening
     restart: unless-stopped

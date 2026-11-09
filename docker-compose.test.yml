@@ -6,8 +6,8 @@
 services:
   gateway:
     environment:
-      AUTH_RATE_LIMIT: 6000r/m
-      AUTH_RATE_BURST: "1000"
+      LOGIN_RATE_LIMIT: 6000r/m
+      LOGIN_RATE_BURST: "1000"
 
   auth:
     ports:

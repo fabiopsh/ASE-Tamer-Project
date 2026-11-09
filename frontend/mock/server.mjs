@@ -230,7 +230,8 @@ const notFound = (message = 'Resource not found.') => apiError(404, 'NOT_FOUND',
 function cors(req, res) {
   const origin = req.headers.origin;
   if (origin && ORIGINS.has(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
+    // Dev-only mock: the origin is echoed only after the ORIGINS allow-list check above
+    res.setHeader('Access-Control-Allow-Origin', origin); // nosemgrep: javascript.express.security.cors-misconfiguration.cors-misconfiguration
     res.setHeader('Vary', 'Origin');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type, Accept');

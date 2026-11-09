@@ -254,7 +254,7 @@ tests/client.env                         test client secret (used only with the 
   | `/internal/`, `/q/`, anything else | `return 404` with JSON body `{"error":"NOT_FOUND",...}` |
 
 - [x] CORS: allowed origins `http://localhost:5173` (Vite dev) and `http://localhost:4173` (Vite preview), matched with a `map $http_origin $cors_origin { … }` so only listed origins are echoed in `Access-Control-Allow-Origin`; methods `GET, POST, PUT, PATCH, DELETE, OPTIONS`; headers `Authorization, Content-Type, X-Request-Id`; answer `OPTIONS` preflight with `204`. Never `*`.
-- [x] Rate limiting: `limit_req_zone $binary_remote_addr zone=auth:10m rate=${AUTH_RATE_LIMIT};` (default `10r/m`, burst 5, `limit_req_status 429`) on `/api/auth/token` and `/api/auth/register`. The test override raises it for Locust.
+- [x] Rate limiting: `limit_req_zone $binary_remote_addr zone=auth:10m rate=${LOGIN_RATE_LIMIT};` (default `10r/m`, burst 5, `limit_req_status 429`) on `/api/auth/token` and `/api/auth/register`. The test override raises it for Locust.
 - [x] Security headers: `Strict-Transport-Security "max-age=31536000"`, `X-Content-Type-Options nosniff`, `X-Frame-Options DENY`, `Referrer-Policy no-referrer`.
 - [x] HTTP port: none exposed (only 8443), so there is no plaintext listener at all.
 
@@ -291,7 +291,7 @@ tests/client.env                         test client secret (used only with the 
 - [x] Environment per service: `QUARKUS_PROFILE=prod`, `TAMER_<CALLEE>_URL=https://<callee>:8443` for each REST client, `TAMER_AUTH_URL` for the token endpoint.
 - [x] `user:` set for every container (`10001` init, `70:70` Postgres, `185` services; nginx-unprivileged already non-root).
 - [x] `security_opt: ["no-new-privileges:true"]` and `cap_drop: [ALL]` on every container. All of them run as non-root from the start, so no capability is needed; verify each one still starts.
-- [x] `docker-compose.test.yml` (used by TEST-1): publishes `9001–9006 → 8443` for the six services, sets `TAMER_TEST_CLIENT_ENABLED=true` on `auth`, raises `AUTH_RATE_LIMIT`.
+- [x] `docker-compose.test.yml` (used by TEST-1): publishes `9001–9006 → 8443` for the six services, sets `TAMER_TEST_CLIENT_ENABLED=true` on `auth`, raises `LOGIN_RATE_LIMIT`.
 - [x] `restart: unless-stopped` for services and DBs.
 
 **Done when**

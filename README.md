@@ -1,5 +1,7 @@
 # Monster Tamers — ASE Lab Project
 
+[![CI](https://github.com/fabiopsh/ASE-Tamer-Project/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/fabiopsh/ASE-Tamer-Project/actions/workflows/ci.yml)
+
 Advanced Software Engineering lab project (University of Pisa, A.Y. 2026/27).
 
 Monster Tamers is a browser game built on microservices. A player registers, picks three starter monsters, builds a team and fights wild monsters and stage bosses in roguelike runs. Victories grant experience and new monsters for the collection.
@@ -30,7 +32,8 @@ backend/              Maven aggregator, one Quarkus module per service
 gateway/              Nginx configuration and Dockerfile
 infra/init-secrets/   one-shot container that generates certificates, keys and passwords
 frontend/             web UI (Vite + React)
-scripts/              helper scripts (export the CA, prepare the API tests)
+scripts/              helper scripts (export the CA, prepare the API tests, security self-attack)
+.github/workflows/    CI: build, tests, Semgrep, Trivy (copy in docs/ci/ci.yml)
 docs/                 plan, architecture, backlog, OpenAPI, test collections
 docker-compose.yml    the whole backend
 docker-compose.test.yml  test override: exposes each service on localhost

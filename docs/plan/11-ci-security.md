@@ -4,7 +4,7 @@ GitHub Actions runs builds and tests from P1 (P-18); security scans are added in
 
 The requirements also ask for **a copy of the workflow YAML in `docs/`**: the CI checks that `docs/ci/ci.yml` is identical to `.github/workflows/ci.yml`.
 
-All actions are pinned to an exact version tag (or commit SHA).
+All actions are pinned to a commit SHA (the version tag is in a comment); the Semgrep and Trivy images are pinned to a version and a digest. Semgrep itself flags mutable action tags (`github-actions-mutable-action-tag`).
 
 ## CI-1 — Build and test workflow · P1
 
@@ -16,12 +16,14 @@ All actions are pinned to an exact version tag (or commit SHA).
 |---|---|
 | `backend` | `actions/checkout`, `actions/setup-java` (Temurin 21, Maven cache), `mvn -B -f backend/pom.xml verify` (Dev Services use the runner's Docker) |
 | `frontend` | `actions/checkout`, `actions/setup-node` (pinned LTS, npm cache), `npm ci`, `npm run lint`, `npm run build` in `frontend/` |
-| `compose-smoke` | `docker compose up -d --build --wait` (waits for health checks), `curl --cacert … https://localhost:8443/health`, `docker compose logs` on failure, `docker compose down -v` |
+| `compose-smoke` | `docker compose -f docker-compose.yml -f docker-compose.test.yml up -d --build --wait` (waits for health checks), `scripts/test-env.sh`, `curl --cacert … https://localhost:8443/health`, plain HTTP refused, **Bruno component + integration + e2e** (`npm test` in `docs/tests/bruno`), `docker compose logs` on failure, `docker compose down -v` |
 | `docs-sync` | `diff .github/workflows/ci.yml docs/ci/ci.yml` |
 
-- [ ] Workflow file + copy in `docs/ci/ci.yml`.
-- [ ] Branch protection on `main`: PR required, CI green required.
-- [ ] Badge in the README.
+- [x] Workflow file + copy in `docs/ci/ci.yml`.
+- [ ] Branch protection on `main`: PR required, CI green required (repository admin, GitHub settings: see below).
+- [x] Badge in the README.
+
+Branch protection (Settings → Branches → Add rule for `main`, or a ruleset): *Require a pull request before merging*, *Require status checks to pass* with `Backend build and tests`, `Frontend lint and build`, `Compose smoke and API tests`, `Workflow copy in docs/ci`, and, from P2, the four security jobs.
 
 **Done when:** a PR that breaks a test or the frontend build is red.
 
@@ -31,14 +33,16 @@ All actions are pinned to an exact version tag (or commit SHA).
 
 | Job | Tool | Configuration | Fails on |
 |---|---|---|---|
-| `sast` | Semgrep (container `semgrep/semgrep:<pinned>`) | `semgrep scan --error --config p/java --config p/typescript --config p/react --config p/dockerfile --config p/secrets --config p/owasp-top-ten` (check rule-set names in the Semgrep registry) | any finding of severity ERROR |
-| `deps` | Trivy `fs` mode (`aquasecurity/trivy-action@<pinned>`) | `scan-type: fs`, `scanners: vuln`, `severity: CRITICAL,HIGH`, `exit-code: 1` on the repo (Maven poms, `package-lock.json`, `requirements.txt`) | any CRITICAL/HIGH |
-| `images` | Trivy `image` mode, matrix over every image | build with `docker compose build`, then scan `gateway`, the six services, `init-secrets`, and the pulled `postgres` image; `severity: CRITICAL,HIGH`, `exit-code: 1` | any CRITICAL/HIGH |
-| `config` (optional) | Trivy `config` mode | Dockerfiles and compose misconfigurations | HIGH+ |
+| `sast` | Semgrep (container `semgrep/semgrep:1.182.0@sha256:…`) | `semgrep scan --config p/java --config p/typescript --config p/react --config p/dockerfile --config p/secrets --config p/owasp-top-ten --text --sarif-output --json-output`, then `jq` counts the ERROR findings (WARNINGs are reported, not blocking) | any finding of severity ERROR |
+| `deps` | Trivy `fs` mode (container `aquasec/trivy:0.76.0@sha256:…`, no third-party action) | `mvn dependency:resolve` first, then `trivy fs --offline-scan --scanners vuln --severity CRITICAL,HIGH --ignore-unfixed --exit-code 1` with `~/.m2` mounted (Maven poms, `package-lock.json`, `requirements.txt`). Without the local repository Trivy downloads every parent pom and Maven Central answers 429 | any CRITICAL/HIGH |
+| `images` | Trivy `image` mode, one job looping over `docker compose config --images` (a matrix would rebuild the images once per entry) | `docker compose build`, then scan `gateway`, the six services, `init-secrets` and `postgres`; `--severity CRITICAL,HIGH --ignore-unfixed --exit-code 1` | any CRITICAL/HIGH |
+| `config` | Trivy `config` mode | Dockerfiles and compose misconfigurations | HIGH+ |
 
-- [ ] Add the jobs to `ci.yml` (and its copy).
-- [ ] Upload SARIF results to GitHub code scanning (optional, nice in the report).
-- [ ] Triage: fix by upgrading (bump the pinned version) or switching base image; a false positive goes to `.trivyignore` / `# nosemgrep` **with a comment explaining why**, listed in the report.
+`--ignore-unfixed`: a vulnerability without a fixed version cannot be removed by upgrading; it is reported by a run without the flag and discussed in the report if relevant.
+
+- [x] Add the jobs to `ci.yml` (and its copy).
+- [ ] Upload SARIF results to GitHub code scanning: not available, the repository is private and code scanning needs GitHub Advanced Security. The Semgrep SARIF/JSON are uploaded as a workflow artifact instead.
+- [x] Triage (09/11/2026): see [docs/security/README.md](../security/README.md).
 - [ ] Re-run before each delivery; save the final clean output for the report.
 
 **Done when:** all security jobs green on `main`; images have no CRITICAL/HIGH vulnerabilities.
