@@ -1,0 +1,482 @@
+[
+  {
+    "template_id": 11,
+    "stage": 1,
+    "name": "Drowsy Meadow",
+    "element": "dream",
+    "is_boss": false,
+    "boss_monster_id": null,
+    "level_min": 1,
+    "level_max": 3,
+    "rarity_weights": {
+      "common": 100,
+      "rare": 0,
+      "legendary": 0
+    }
+  },
+  {
+    "template_id": 12,
+    "stage": 1,
+    "name": "Whispering Caves",
+    "element": "echo",
+    "is_boss": false,
+    "boss_monster_id": null,
+    "level_min": 1,
+    "level_max": 3,
+    "rarity_weights": {
+      "common": 100,
+      "rare": 0,
+      "legendary": 0
+    }
+  },
+  {
+    "template_id": 13,
+    "stage": 1,
+    "name": "Hushed Glade",
+    "element": "silence",
+    "is_boss": false,
+    "boss_monster_id": null,
+    "level_min": 1,
+    "level_max": 3,
+    "rarity_weights": {
+      "common": 100,
+      "rare": 0,
+      "legendary": 0
+    }
+  },
+  {
+    "template_id": 14,
+    "stage": 1,
+    "name": "Loomwidow's Web",
+    "element": "memory",
+    "is_boss": true,
+    "boss_monster_id": 31,
+    "level_min": 5,
+    "level_max": 5,
+    "rarity_weights": {
+      "common": 0,
+      "rare": 100,
+      "legendary": 0
+    }
+  },
+  {
+    "template_id": 21,
+    "stage": 2,
+    "name": "Faded Library",
+    "element": "memory",
+    "is_boss": false,
+    "boss_monster_id": null,
+    "level_min": 4,
+    "level_max": 6,
+    "rarity_weights": {
+      "common": 90,
+      "rare": 10,
+      "legendary": 0
+    }
+  },
+  {
+    "template_id": 22,
+    "stage": 2,
+    "name": "Clocktower Ruins",
+    "element": "time",
+    "is_boss": false,
+    "boss_monster_id": null,
+    "level_min": 4,
+    "level_max": 6,
+    "rarity_weights": {
+      "common": 90,
+      "rare": 10,
+      "legendary": 0
+    }
+  },
+  {
+    "template_id": 23,
+    "stage": 2,
+    "name": "Sunken Crater",
+    "element": "gravity",
+    "is_boss": false,
+    "boss_monster_id": null,
+    "level_min": 4,
+    "level_max": 6,
+    "rarity_weights": {
+      "common": 90,
+      "rare": 10,
+      "legendary": 0
+    }
+  },
+  {
+    "template_id": 24,
+    "stage": 2,
+    "name": "Frostveil Tundra",
+    "element": "silence",
+    "is_boss": true,
+    "boss_monster_id": 89,
+    "level_min": 8,
+    "level_max": 8,
+    "rarity_weights": {
+      "common": 0,
+      "rare": 100,
+      "legendary": 0
+    }
+  },
+  {
+    "template_id": 31,
+    "stage": 3,
+    "name": "Lucid Marsh",
+    "element": "dream",
+    "is_boss": false,
+    "boss_monster_id": null,
+    "level_min": 7,
+    "level_max": 9,
+    "rarity_weights": {
+      "common": 80,
+      "rare": 20,
+      "legendary": 0
+    }
+  },
+  {
+    "template_id": 32,
+    "stage": 3,
+    "name": "Resonant Canyon",
+    "element": "echo",
+    "is_boss": false,
+    "boss_monster_id": null,
+    "level_min": 7,
+    "level_max": 9,
+    "rarity_weights": {
+      "common": 80,
+      "rare": 20,
+      "legendary": 0
+    }
+  },
+  {
+    "template_id": 33,
+    "stage": 3,
+    "name": "Muted Snowfield",
+    "element": "silence",
+    "is_boss": false,
+    "boss_monster_id": null,
+    "level_min": 7,
+    "level_max": 9,
+    "rarity_weights": {
+      "common": 80,
+      "rare": 20,
+      "legendary": 0
+    }
+  },
+  {
+    "template_id": 34,
+    "stage": 3,
+    "name": "Nebulynx Nebula",
+    "element": "gravity",
+    "is_boss": true,
+    "boss_monster_id": 74,
+    "level_min": 11,
+    "level_max": 11,
+    "rarity_weights": {
+      "common": 0,
+      "rare": 100,
+      "legendary": 0
+    }
+  },
+  {
+    "template_id": 41,
+    "stage": 4,
+    "name": "Archive of Lost Days",
+    "element": "memory",
+    "is_boss": false,
+    "boss_monster_id": null,
+    "level_min": 10,
+    "level_max": 12,
+    "rarity_weights": {
+      "common": 70,
+      "rare": 30,
+      "legendary": 0
+    }
+  },
+  {
+    "template_id": 42,
+    "stage": 4,
+    "name": "Hourglass Dunes",
+    "element": "time",
+    "is_boss": false,
+    "boss_monster_id": null,
+    "level_min": 10,
+    "level_max": 12,
+    "rarity_weights": {
+      "common": 70,
+      "rare": 30,
+      "legendary": 0
+    }
+  },
+  {
+    "template_id": 43,
+    "stage": 4,
+    "name": "Cliffs of the Heavy Sky",
+    "element": "gravity",
+    "is_boss": false,
+    "boss_monster_id": null,
+    "level_min": 10,
+    "level_max": 12,
+    "rarity_weights": {
+      "common": 70,
+      "rare": 30,
+      "legendary": 0
+    }
+  },
+  {
+    "template_id": 44,
+    "stage": 4,
+    "name": "Amphitheatre of Choraleth",
+    "element": "echo",
+    "is_boss": true,
+    "boss_monster_id": 62,
+    "level_min": 14,
+    "level_max": 14,
+    "rarity_weights": {
+      "common": 0,
+      "rare": 0,
+      "legendary": 100
+    }
+  },
+  {
+    "template_id": 51,
+    "stage": 5,
+    "name": "Somnolent Forest",
+    "element": "dream",
+    "is_boss": false,
+    "boss_monster_id": null,
+    "level_min": 13,
+    "level_max": 15,
+    "rarity_weights": {
+      "common": 60,
+      "rare": 40,
+      "legendary": 0
+    }
+  },
+  {
+    "template_id": 52,
+    "stage": 5,
+    "name": "Stillwater Lake",
+    "element": "silence",
+    "is_boss": false,
+    "boss_monster_id": null,
+    "level_min": 13,
+    "level_max": 15,
+    "rarity_weights": {
+      "common": 60,
+      "rare": 40,
+      "legendary": 0
+    }
+  },
+  {
+    "template_id": 53,
+    "stage": 5,
+    "name": "Fractured Wastes",
+    "element": "chaos",
+    "is_boss": false,
+    "boss_monster_id": null,
+    "level_min": 13,
+    "level_max": 15,
+    "rarity_weights": {
+      "common": 60,
+      "rare": 40,
+      "legendary": 0
+    }
+  },
+  {
+    "template_id": 54,
+    "stage": 5,
+    "name": "Throne of Chronarch",
+    "element": "time",
+    "is_boss": true,
+    "boss_monster_id": 47,
+    "level_min": 17,
+    "level_max": 17,
+    "rarity_weights": {
+      "common": 0,
+      "rare": 0,
+      "legendary": 100
+    }
+  },
+  {
+    "template_id": 61,
+    "stage": 6,
+    "name": "Cathedral of Echoes",
+    "element": "echo",
+    "is_boss": false,
+    "boss_monster_id": null,
+    "level_min": 16,
+    "level_max": 18,
+    "rarity_weights": {
+      "common": 50,
+      "rare": 45,
+      "legendary": 5
+    }
+  },
+  {
+    "template_id": 62,
+    "stage": 6,
+    "name": "Hall of Reminiscence",
+    "element": "memory",
+    "is_boss": false,
+    "boss_monster_id": null,
+    "level_min": 16,
+    "level_max": 18,
+    "rarity_weights": {
+      "common": 50,
+      "rare": 45,
+      "legendary": 5
+    }
+  },
+  {
+    "template_id": 63,
+    "stage": 6,
+    "name": "Collapsing Spire",
+    "element": "gravity",
+    "is_boss": false,
+    "boss_monster_id": null,
+    "level_min": 16,
+    "level_max": 18,
+    "rarity_weights": {
+      "common": 50,
+      "rare": 45,
+      "legendary": 5
+    }
+  },
+  {
+    "template_id": 64,
+    "stage": 6,
+    "name": "Morpheon's Dreamgate",
+    "element": "dream",
+    "is_boss": true,
+    "boss_monster_id": 16,
+    "level_min": 20,
+    "level_max": 20,
+    "rarity_weights": {
+      "common": 0,
+      "rare": 0,
+      "legendary": 100
+    }
+  },
+  {
+    "template_id": 71,
+    "stage": 7,
+    "name": "The Frozen Moment",
+    "element": "time",
+    "is_boss": false,
+    "boss_monster_id": null,
+    "level_min": 19,
+    "level_max": 21,
+    "rarity_weights": {
+      "common": 40,
+      "rare": 50,
+      "legendary": 10
+    }
+  },
+  {
+    "template_id": 72,
+    "stage": 7,
+    "name": "Vault of Quiet",
+    "element": "silence",
+    "is_boss": false,
+    "boss_monster_id": null,
+    "level_min": 19,
+    "level_max": 21,
+    "rarity_weights": {
+      "common": 40,
+      "rare": 50,
+      "legendary": 10
+    }
+  },
+  {
+    "template_id": 73,
+    "stage": 7,
+    "name": "Storm of Shards",
+    "element": "chaos",
+    "is_boss": false,
+    "boss_monster_id": null,
+    "level_min": 19,
+    "level_max": 21,
+    "rarity_weights": {
+      "common": 40,
+      "rare": 50,
+      "legendary": 10
+    }
+  },
+  {
+    "template_id": 74,
+    "stage": 7,
+    "name": "Hall of Quietus",
+    "element": "silence",
+    "is_boss": true,
+    "boss_monster_id": 92,
+    "level_min": 23,
+    "level_max": 23,
+    "rarity_weights": {
+      "common": 0,
+      "rare": 0,
+      "legendary": 100
+    }
+  },
+  {
+    "template_id": 81,
+    "stage": 8,
+    "name": "Nightmare Rift",
+    "element": "dream",
+    "is_boss": false,
+    "boss_monster_id": null,
+    "level_min": 22,
+    "level_max": 24,
+    "rarity_weights": {
+      "common": 30,
+      "rare": 55,
+      "legendary": 15
+    }
+  },
+  {
+    "template_id": 82,
+    "stage": 8,
+    "name": "Event Horizon",
+    "element": "gravity",
+    "is_boss": false,
+    "boss_monster_id": null,
+    "level_min": 22,
+    "level_max": 24,
+    "rarity_weights": {
+      "common": 30,
+      "rare": 55,
+      "legendary": 15
+    }
+  },
+  {
+    "template_id": 83,
+    "stage": 8,
+    "name": "Primordial Maelstrom",
+    "element": "chaos",
+    "is_boss": false,
+    "boss_monster_id": null,
+    "level_min": 22,
+    "level_max": 24,
+    "rarity_weights": {
+      "common": 30,
+      "rare": 55,
+      "legendary": 15
+    }
+  },
+  {
+    "template_id": 84,
+    "stage": 8,
+    "name": "Omnivoid Abyss",
+    "element": "chaos",
+    "is_boss": true,
+    "boss_monster_id": 100,
+    "level_min": 26,
+    "level_max": 26,
+    "rarity_weights": {
+      "common": 0,
+      "rare": 0,
+      "legendary": 100
+    }
+  }
+]

@@ -1,0 +1,23 @@
+meta {
+  name: POST /internal/collections/{{playerId}}/starters - starters valid
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{monstersUrl}}/internal/collections/{{playerId}}/starters
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{serviceToken}}
+}
+
+body:json {
+  {"run_id":"{{runId}}","monster_ids":[{{starter1}},{{starter2}},{{starter3}}]}
+}
+
+tests {
+  test("Creates three starters", () => {expect(res.getStatus()).to.equal(201); expect(res.getBody()).to.have.lengthOf(3); bru.setVar("owned1",res.getBody()[0].owned_id); bru.setVar("owned2",res.getBody()[1].owned_id); bru.setVar("owned3",res.getBody()[2].owned_id);});
+}

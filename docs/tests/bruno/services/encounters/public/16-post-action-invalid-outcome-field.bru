@@ -1,0 +1,23 @@
+meta {
+  name: POST /api/battles/current/actions - client sends an outcome
+  type: http
+  seq: 16
+}
+
+post {
+  url: {{encountersUrl}}/api/battles/current/actions
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+body:json {
+  {"type":"attack","outcome":"victory","hp":999}
+}
+
+tests {
+  test("400: only actions are accepted", () => {expect(res.getStatus()).to.equal(400); expect(res.getBody().error).to.equal("VALIDATION_ERROR");});
+}

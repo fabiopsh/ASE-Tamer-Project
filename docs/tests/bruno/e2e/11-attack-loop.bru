@@ -1,0 +1,51 @@
+meta {
+  name: POST /api/battles/current/actions - attack until the battle ends
+  type: http
+  seq: 11
+}
+
+post {
+  url: {{encountersUrl}}/api/battles/current/actions
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+body:json {
+  {"type":"attack"}
+}
+
+tests {
+  test("Round resolved by the server", () => {
+    expect(res.getStatus()).to.equal(200);
+    var b = res.getBody();
+    var rounds = bru.getVar("rounds") + 1;
+    bru.setVar("rounds", rounds);
+    expect(b.encounter_id).to.equal(bru.getVar("encounterId"));
+    expect(b.turn).to.equal(rounds);
+    // HP never increases (no healing abilities in P1) and stays in range
+    expect(b.wild.hp).to.be.at.most(bru.getVar("wildHp"));
+    expect(b.wild.hp).to.be.within(0, b.wild.max_hp);
+    b.team.forEach(m => expect(m.hp).to.be.within(0, m.max_hp));
+    bru.setVar("wildHp", b.wild.hp);
+    if (b.status === "finished") {
+      expect(["victory", "defeat"]).to.include(b.result.outcome);
+      bru.setVar("outcome", b.result.outcome);
+      bru.setVar("rewardMonsterId", b.result.reward ? b.result.reward.monster_id : null);
+      if (b.result.outcome === "victory") {
+        expect(b.wild.hp).to.equal(0);
+        expect(b.result.reward.monster_id).to.equal(bru.getVar("wildMonsterId"));
+      } else {
+        expect(b.team.every(m => m.knocked_out)).to.equal(true);
+        expect(b.result.reward).to.equal(null);
+      }
+    } else {
+      expect(b.result).to.equal(null);
+      expect(rounds).to.be.below(100);
+      bru.setNextRequest("POST /api/battles/current/actions - attack until the battle ends");
+    }
+  });
+}

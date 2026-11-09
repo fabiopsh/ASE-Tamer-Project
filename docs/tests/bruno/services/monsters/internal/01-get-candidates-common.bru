@@ -1,0 +1,19 @@
+meta {
+  name: GET /internal/monsters?rarity=common - candidates common
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{monstersUrl}}/internal/monsters?rarity=common
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{serviceToken}}
+}
+
+tests {
+  test("Only common monster ids", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody()).to.have.lengthOf(60);});
+}

@@ -1,0 +1,19 @@
+meta {
+  name: GET /api/monsters?element=dream&rarity=common - catalogue valid
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{monstersUrl}}/api/monsters?element=dream&rarity=common
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+tests {
+  test("Paginated filtered catalogue", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody().items).to.be.an("array");});
+}

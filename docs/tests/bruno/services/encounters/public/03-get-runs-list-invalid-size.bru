@@ -1,0 +1,19 @@
+meta {
+  name: GET /api/runs - size out of range
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{encountersUrl}}/api/runs?size=51
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+tests {
+  test("400 VALIDATION_ERROR", () => {expect(res.getStatus()).to.equal(400); expect(res.getBody().error).to.equal("VALIDATION_ERROR");});
+}

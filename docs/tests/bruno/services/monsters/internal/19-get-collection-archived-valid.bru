@@ -1,0 +1,24 @@
+meta {
+  name: GET /api/collection?run_id={{runId}} - valid: archived run stays readable
+  type: http
+  seq: 19
+}
+
+get {
+  url: {{monstersUrl}}/api/collection?run_id={{runId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+tests {
+  test("Three starters and the reward, all archived", () => {
+    expect(res.getStatus()).to.equal(200);
+    var items = res.getBody().items;
+    expect(items).to.have.lengthOf(4);
+    items.forEach(i => expect(i.status).to.equal("archived"));
+  });
+}

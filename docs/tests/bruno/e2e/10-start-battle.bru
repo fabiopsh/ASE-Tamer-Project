@@ -1,0 +1,33 @@
+meta {
+  name: POST /api/battles - start a battle
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{encountersUrl}}/api/battles
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+body:json {
+  {"template_id":{{templateId}},"team_id":"{{teamId}}"}
+}
+
+tests {
+  test("Battle in progress with a full-HP wild monster", () => {
+    expect(res.getStatus()).to.equal(201);
+    var b = res.getBody();
+    expect(b.status).to.equal("in_progress");
+    expect(b.wild.hp).to.equal(b.wild.max_hp);
+    expect(b.team).to.have.lengthOf(3);
+    bru.setVar("encounterId", b.encounter_id);
+    bru.setVar("wildHp", b.wild.hp);
+    bru.setVar("wildMonsterId", b.wild.monster_id);
+    bru.setVar("rounds", 0);
+  });
+}

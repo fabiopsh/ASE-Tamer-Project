@@ -1,0 +1,23 @@
+meta {
+  name: POST /api/battles - start a battle
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{encountersUrl}}/api/battles
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+body:json {
+  {"template_id":11,"team_id":"{{teamId}}"}
+}
+
+tests {
+  test("Battle started", () => {expect(res.getStatus()).to.equal(201); bru.setVar("encounterId", res.getBody().encounter_id); bru.setVar("fleeRounds", 0);});
+}

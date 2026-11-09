@@ -1,0 +1,2096 @@
+{
+  "info": {
+    "name": "Monster Tamers - services-encounters",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "00-setup",
+      "item": [
+        {
+          "name": "POST /api/auth/register - register player",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "{{authUrl}}/api/auth/register",
+              "protocol": "",
+              "host": [
+                "{{authUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"username\":\"{{setupUsername}}\",\"password\":\"pikachu123\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "bru.setVar(\"setupUsername\", \"t_\" + Math.random().toString(16).slice(2, 12));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Account registered\", () => {expect(res.getStatus()).to.equal(201); bru.setVar(\"playerId\", res.getBody().player_id);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/auth/token - get player token",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "{{authUrl}}/api/auth/token",
+              "protocol": "",
+              "host": [
+                "{{authUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "token"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "password",
+                  "disabled": false,
+                  "type": "default",
+                  "description": ""
+                },
+                {
+                  "key": "username",
+                  "value": "{{setupUsername}}",
+                  "disabled": false,
+                  "type": "default",
+                  "description": ""
+                },
+                {
+                  "key": "password",
+                  "value": "pikachu123",
+                  "disabled": false,
+                  "type": "default",
+                  "description": ""
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Player token issued\", () => {expect(res.getStatus()).to.equal(200); bru.setVar(\"playerToken\", res.getBody().access_token);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/players/me/starters - starter pool",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{playersUrl}}/api/players/me/starters",
+              "protocol": "",
+              "host": [
+                "{{playersUrl}}"
+              ],
+              "path": [
+                "api",
+                "players",
+                "me",
+                "starters"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Ten starter ids\", () => {expect(res.getStatus()).to.equal(200); var pool = res.getBody().pool; expect(pool).to.have.lengthOf(10); bru.setVar(\"starterPool\", JSON.stringify(pool)); bru.setVar(\"starter1\", pool[0]); bru.setVar(\"starter2\", pool[1]); bru.setVar(\"starter3\", pool[2]);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/players/me/starters - choose starters",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{playersUrl}}/api/players/me/starters",
+              "protocol": "",
+              "host": [
+                "{{playersUrl}}"
+              ],
+              "path": [
+                "api",
+                "players",
+                "me",
+                "starters"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"monster_ids\":[{{starter1}},{{starter2}},{{starter3}}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Starters granted and run opened\", () => {expect(res.getStatus()).to.equal(201); var b = res.getBody(); bru.setVar(\"runId\", b.run_id); bru.setVar(\"owned1\", b.starters[0].owned_id); bru.setVar(\"owned2\", b.starters[1].owned_id); bru.setVar(\"owned3\", b.starters[2].owned_id);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/teams - create test team",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{teamsUrl}}/api/teams",
+              "protocol": "",
+              "host": [
+                "{{teamsUrl}}"
+              ],
+              "path": [
+                "api",
+                "teams"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\":\"Main\",\"members\":[\"{{owned1}}\",\"{{owned2}}\",\"{{owned3}}\"]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Team saved\", () => {expect(res.getStatus()).to.equal(201); bru.setVar(\"teamId\", res.getBody().team_id);});"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "auth": {
+        "type": "noauth"
+      }
+    },
+    {
+      "name": "public",
+      "item": [
+        {
+          "name": "GET /api/runs/current - active run",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{encountersUrl}}/api/runs/current",
+              "protocol": "",
+              "host": [
+                "{{encountersUrl}}"
+              ],
+              "path": [
+                "api",
+                "runs",
+                "current"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Active run at stage 1\", () => {expect(res.getStatus()).to.equal(200); var r = res.getBody(); expect(r.run_id).to.equal(bru.getVar(\"runId\")); expect(r.status).to.equal(\"active\"); expect(r.stage).to.equal(1); expect(r.wins_in_stage).to.equal(0); expect(r.boss_available).to.equal(false); expect(r.bosses_defeated).to.eql([]); expect(r.ended_at).to.equal(null);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/runs - list",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{encountersUrl}}/api/runs",
+              "protocol": "",
+              "host": [
+                "{{encountersUrl}}"
+              ],
+              "path": [
+                "api",
+                "runs"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Page with the run\", () => {expect(res.getStatus()).to.equal(200); var b = res.getBody(); expect(b.items).to.have.lengthOf(1); expect(b.page).to.equal(0); expect(b.total_items).to.equal(1);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/runs - size out of range",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{encountersUrl}}/api/runs?size=51",
+              "protocol": "",
+              "host": [
+                "{{encountersUrl}}"
+              ],
+              "path": [
+                "api",
+                "runs?size=51"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"400 VALIDATION_ERROR\", () => {expect(res.getStatus()).to.equal(400); expect(res.getBody().error).to.equal(\"VALIDATION_ERROR\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/runs/{{runId}} - valid: own run",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{encountersUrl}}/api/runs/{{runId}}",
+              "protocol": "",
+              "host": [
+                "{{encountersUrl}}"
+              ],
+              "path": [
+                "api",
+                "runs",
+                "{{runId}}"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Run detail of the player\", () => {expect(res.getStatus()).to.equal(200); var b = res.getBody(); expect(b.run_id).to.equal(bru.getVar(\"runId\")); expect(b.status).to.equal(\"active\"); expect(b.stage).to.equal(1);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/runs/{id} - unknown run",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{encountersUrl}}/api/runs/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+              "protocol": "",
+              "host": [
+                "{{encountersUrl}}"
+              ],
+              "path": [
+                "api",
+                "runs",
+                "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"404 NOT_FOUND\", () => {expect(res.getStatus()).to.equal(404); expect(res.getBody().error).to.equal(\"NOT_FOUND\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/encounters - stage 1",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{encountersUrl}}/api/encounters",
+              "protocol": "",
+              "host": [
+                "{{encountersUrl}}"
+              ],
+              "path": [
+                "api",
+                "encounters"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Three normal templates of stage 1\", () => {expect(res.getStatus()).to.equal(200); var t = res.getBody(); expect(t.map(x => x.template_id)).to.eql([11, 12, 13]); t.forEach(x => {expect(x.is_boss).to.equal(false); expect(x.level_min).to.equal(1); expect(x.level_max).to.equal(3); expect(x.rarity_weights.common).to.equal(100);});});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/encounters/11 - valid: available template",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{encountersUrl}}/api/encounters/11",
+              "protocol": "",
+              "host": [
+                "{{encountersUrl}}"
+              ],
+              "path": [
+                "api",
+                "encounters",
+                "11"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Template detail\", () => {expect(res.getStatus()).to.equal(200); var b = res.getBody(); expect(b.template_id).to.equal(11); expect(b.is_boss).to.equal(false); expect(b).to.include.keys(\"element\", \"level_min\", \"level_max\", \"rarity_weights\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/encounters/14 - boss locked",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{encountersUrl}}/api/encounters/14",
+              "protocol": "",
+              "host": [
+                "{{encountersUrl}}"
+              ],
+              "path": [
+                "api",
+                "encounters",
+                "14"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"404 before two wins\", () => {expect(res.getStatus()).to.equal(404); expect(res.getBody().error).to.equal(\"NOT_FOUND\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/encounters - no token",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "{{encountersUrl}}/api/encounters",
+              "protocol": "",
+              "host": [
+                "{{encountersUrl}}"
+              ],
+              "path": [
+                "api",
+                "encounters"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"401 UNAUTHORIZED\", () => {expect(res.getStatus()).to.equal(401); expect(res.getBody().error).to.equal(\"UNAUTHORIZED\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/battles/current/actions - invalid: no battle in progress",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{encountersUrl}}/api/battles/current/actions",
+              "protocol": "",
+              "host": [
+                "{{encountersUrl}}"
+              ],
+              "path": [
+                "api",
+                "battles",
+                "current",
+                "actions"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"type\":\"attack\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"404 NOT_FOUND\", () => {expect(res.getStatus()).to.equal(404); expect(res.getBody().error).to.equal(\"NOT_FOUND\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/battles - template of a stage not reached",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{encountersUrl}}/api/battles",
+              "protocol": "",
+              "host": [
+                "{{encountersUrl}}"
+              ],
+              "path": [
+                "api",
+                "battles"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"template_id\":21,\"team_id\":\"{{teamId}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"404 NOT_FOUND\", () => {expect(res.getStatus()).to.equal(404);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/battles - invalid: unknown team",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{encountersUrl}}/api/battles",
+              "protocol": "",
+              "host": [
+                "{{encountersUrl}}"
+              ],
+              "path": [
+                "api",
+                "battles"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"template_id\":11,\"team_id\":\"aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"404 NOT_FOUND for a missing or foreign team\", () => {expect(res.getStatus()).to.equal(404); expect(res.getBody().error).to.equal(\"NOT_FOUND\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/battles - start",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{encountersUrl}}/api/battles",
+              "protocol": "",
+              "host": [
+                "{{encountersUrl}}"
+              ],
+              "path": [
+                "api",
+                "battles"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"template_id\":11,\"team_id\":\"{{teamId}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Initial state\", () => {",
+                  "  expect(res.getStatus()).to.equal(201);",
+                  "  var b = res.getBody();",
+                  "  bru.setVar(\"encounterId\", b.encounter_id);",
+                  "  expect(b.status).to.equal(\"in_progress\");",
+                  "  expect(b.turn).to.equal(0);",
+                  "  expect(b.template.template_id).to.equal(11);",
+                  "  expect(b.wild.element).to.equal(\"dream\");",
+                  "  expect(b.wild.level).to.be.within(1, 3);",
+                  "  expect(b.wild.hp).to.equal(b.wild.max_hp);",
+                  "  expect(b.wild.image_url).to.match(/^\\/images\\/monsters\\/\\d{3}\\.png$/);",
+                  "  expect(b.team).to.have.lengthOf(3);",
+                  "  expect(b.team.filter(m => m.active)).to.have.lengthOf(1);",
+                  "  expect(b.team[0].active).to.equal(true);",
+                  "  b.team.forEach(m => {expect(m.hp).to.equal(m.max_hp); expect(m.knocked_out).to.equal(false);});",
+                  "  expect(b.last_round).to.equal(null);",
+                  "  expect(b.result).to.equal(null);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/battles - second battle",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{encountersUrl}}/api/battles",
+              "protocol": "",
+              "host": [
+                "{{encountersUrl}}"
+              ],
+              "path": [
+                "api",
+                "battles"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"template_id\":12,\"team_id\":\"{{teamId}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"409 BATTLE_IN_PROGRESS\", () => {expect(res.getStatus()).to.equal(409); expect(res.getBody().error).to.equal(\"BATTLE_IN_PROGRESS\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/battles/current - state",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{encountersUrl}}/api/battles/current",
+              "protocol": "",
+              "host": [
+                "{{encountersUrl}}"
+              ],
+              "path": [
+                "api",
+                "battles",
+                "current"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Same battle\", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody().encounter_id).to.equal(bru.getVar(\"encounterId\")); expect(res.getBody().status).to.equal(\"in_progress\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/battles/current/actions - client sends an outcome",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{encountersUrl}}/api/battles/current/actions",
+              "protocol": "",
+              "host": [
+                "{{encountersUrl}}"
+              ],
+              "path": [
+                "api",
+                "battles",
+                "current",
+                "actions"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"type\":\"attack\",\"outcome\":\"victory\",\"hp\":999}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"400: only actions are accepted\", () => {expect(res.getStatus()).to.equal(400); expect(res.getBody().error).to.equal(\"VALIDATION_ERROR\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/battles/current/actions - switch to the active member",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{encountersUrl}}/api/battles/current/actions",
+              "protocol": "",
+              "host": [
+                "{{encountersUrl}}"
+              ],
+              "path": [
+                "api",
+                "battles",
+                "current",
+                "actions"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"type\":\"switch\",\"slot\":1}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"400 INVALID_ACTION\", () => {expect(res.getStatus()).to.equal(400); expect(res.getBody().error).to.equal(\"INVALID_ACTION\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/battles/current/actions - attack",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{encountersUrl}}/api/battles/current/actions",
+              "protocol": "",
+              "host": [
+                "{{encountersUrl}}"
+              ],
+              "path": [
+                "api",
+                "battles",
+                "current",
+                "actions"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"type\":\"attack\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Round resolved by the server\", () => {",
+                  "  expect(res.getStatus()).to.equal(200);",
+                  "  var b = res.getBody();",
+                  "  expect(b.encounter_id).to.equal(bru.getVar(\"encounterId\"));",
+                  "  expect(b.turn).to.equal(1);",
+                  "  expect(b.last_round.turn).to.equal(1);",
+                  "  expect(b.last_round.events.length).to.be.above(0);",
+                  "  expect(b.wild.hp).to.be.within(0, b.wild.max_hp);",
+                  "  b.team.forEach(m => expect(m.hp).to.be.within(0, m.max_hp));",
+                  "  var attacks = b.last_round.events.filter(e => e.type === \"attack\");",
+                  "  attacks.forEach(e => {expect(e.damage).to.be.at.least(0); expect([\"strong\", \"neutral\", \"weak\"]).to.include(e.effectiveness);});",
+                  "  if (b.status === \"finished\") {",
+                  "    expect([\"victory\", \"defeat\"]).to.include(b.result.outcome);",
+                  "    expect(b.result.run).to.have.property(\"stage\");",
+                  "  } else {",
+                  "    expect(b.result).to.equal(null);",
+                  "  }",
+                  "  bru.setVar(\"runLost\", b.status === \"finished\" && b.result.outcome === \"defeat\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/runs/current/abandon - abandon the run",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{encountersUrl}}/api/runs/current/abandon",
+              "protocol": "",
+              "host": [
+                "{{encountersUrl}}"
+              ],
+              "path": [
+                "api",
+                "runs",
+                "current",
+                "abandon"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Run abandoned (or already lost by a defeat in the previous round)\", () => {",
+                  "  if (bru.getVar(\"runLost\") === true) {",
+                  "    expect(res.getStatus()).to.equal(409);",
+                  "  } else {",
+                  "    expect(res.getStatus()).to.equal(200);",
+                  "    expect(res.getBody().status).to.equal(\"abandoned\");",
+                  "    expect(res.getBody().battle_in_progress).to.equal(false);",
+                  "    expect(res.getBody().ended_at).to.not.equal(null);",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/battles/current - no battle",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{encountersUrl}}/api/battles/current",
+              "protocol": "",
+              "host": [
+                "{{encountersUrl}}"
+              ],
+              "path": [
+                "api",
+                "battles",
+                "current"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"404 NOT_FOUND\", () => {expect(res.getStatus()).to.equal(404);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/runs/current/abandon - no active run",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{encountersUrl}}/api/runs/current/abandon",
+              "protocol": "",
+              "host": [
+                "{{encountersUrl}}"
+              ],
+              "path": [
+                "api",
+                "runs",
+                "current",
+                "abandon"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"409 NO_ACTIVE_RUN\", () => {expect(res.getStatus()).to.equal(409); expect(res.getBody().error).to.equal(\"NO_ACTIVE_RUN\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/runs/current - after the reset",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{encountersUrl}}/api/runs/current",
+              "protocol": "",
+              "host": [
+                "{{encountersUrl}}"
+              ],
+              "path": [
+                "api",
+                "runs",
+                "current"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"404 NO_ACTIVE_RUN: new starters must be chosen\", () => {expect(res.getStatus()).to.equal(404); expect(res.getBody().error).to.equal(\"NO_ACTIVE_RUN\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/runs - latest run not won",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{encountersUrl}}/api/runs",
+              "protocol": "",
+              "host": [
+                "{{encountersUrl}}"
+              ],
+              "path": [
+                "api",
+                "runs"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"409 NEW_RUN_NOT_ALLOWED\", () => {expect(res.getStatus()).to.equal(409); expect(res.getBody().error).to.equal(\"NEW_RUN_NOT_ALLOWED\");});"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "auth": {
+        "type": "noauth"
+      }
+    },
+    {
+      "name": "internal",
+      "item": [
+        {
+          "name": "00-setup",
+          "item": [
+            {
+              "name": "POST /api/auth/register - register player",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "auth": {
+                  "type": "noauth"
+                },
+                "description": "",
+                "url": {
+                  "raw": "{{authUrl}}/api/auth/register",
+                  "protocol": "",
+                  "host": [
+                    "{{authUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "register"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"username\":\"{{setupUsername}}\",\"password\":\"pikachu123\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "bru.setVar(\"setupUsername\", \"t_\" + Math.random().toString(16).slice(2, 12));"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "// Tests",
+                      "test(\"Account registered\", () => {expect(res.getStatus()).to.equal(201); bru.setVar(\"playerId\", res.getBody().player_id);});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "POST /api/auth/token - get player token",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "auth": {
+                  "type": "noauth"
+                },
+                "description": "",
+                "url": {
+                  "raw": "{{authUrl}}/api/auth/token",
+                  "protocol": "",
+                  "host": [
+                    "{{authUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "token"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "grant_type",
+                      "value": "password",
+                      "disabled": false,
+                      "type": "default",
+                      "description": ""
+                    },
+                    {
+                      "key": "username",
+                      "value": "{{setupUsername}}",
+                      "disabled": false,
+                      "type": "default",
+                      "description": ""
+                    },
+                    {
+                      "key": "password",
+                      "value": "pikachu123",
+                      "disabled": false,
+                      "type": "default",
+                      "description": ""
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "// Tests",
+                      "test(\"Player token issued\", () => {expect(res.getStatus()).to.equal(200); bru.setVar(\"playerToken\", res.getBody().access_token);});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "GET /api/players/me/starters - starter pool",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{playerToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "description": "",
+                "url": {
+                  "raw": "{{playersUrl}}/api/players/me/starters",
+                  "protocol": "",
+                  "host": [
+                    "{{playersUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "players",
+                    "me",
+                    "starters"
+                  ],
+                  "query": [],
+                  "variable": []
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "// Tests",
+                      "test(\"Ten starter ids\", () => {expect(res.getStatus()).to.equal(200); var pool = res.getBody().pool; expect(pool).to.have.lengthOf(10); bru.setVar(\"starterPool\", JSON.stringify(pool)); bru.setVar(\"starter1\", pool[0]); bru.setVar(\"starter2\", pool[1]); bru.setVar(\"starter3\", pool[2]);});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "POST /api/players/me/starters - choose starters",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{playerToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "description": "",
+                "url": {
+                  "raw": "{{playersUrl}}/api/players/me/starters",
+                  "protocol": "",
+                  "host": [
+                    "{{playersUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "players",
+                    "me",
+                    "starters"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"monster_ids\":[{{starter1}},{{starter2}},{{starter3}}]}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "// Tests",
+                      "test(\"Starters granted and run opened\", () => {expect(res.getStatus()).to.equal(201); var b = res.getBody(); bru.setVar(\"runId\", b.run_id); bru.setVar(\"owned1\", b.starters[0].owned_id); bru.setVar(\"owned2\", b.starters[1].owned_id); bru.setVar(\"owned3\", b.starters[2].owned_id);});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "POST /internal/auth/token - get service token",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "auth": {
+                  "type": "noauth"
+                },
+                "description": "",
+                "url": {
+                  "raw": "{{authUrl}}/internal/auth/token",
+                  "protocol": "",
+                  "host": [
+                    "{{authUrl}}"
+                  ],
+                  "path": [
+                    "internal",
+                    "auth",
+                    "token"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "grant_type",
+                      "value": "client_credentials",
+                      "disabled": false,
+                      "type": "default",
+                      "description": ""
+                    },
+                    {
+                      "key": "client_id",
+                      "value": "tests",
+                      "disabled": false,
+                      "type": "default",
+                      "description": ""
+                    },
+                    {
+                      "key": "client_secret",
+                      "value": "{{process.env.TESTS_CLIENT_SECRET}}",
+                      "disabled": false,
+                      "type": "default",
+                      "description": ""
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {},
+                    "exec": [
+                      "// Tests",
+                      "test(\"Service token issued\", () => {expect(res.getStatus()).to.equal(200); bru.setVar(\"serviceToken\", res.getBody().access_token);});"
+                    ]
+                  }
+                }
+              ]
+            }
+          ],
+          "auth": {
+            "type": "noauth"
+          }
+        },
+        {
+          "name": "POST /internal/runs - repeat of the run opened by players",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{serviceToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{encountersUrl}}/internal/runs",
+              "protocol": "",
+              "host": [
+                "{{encountersUrl}}"
+              ],
+              "path": [
+                "internal",
+                "runs"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"run_id\":\"{{runId}}\",\"player_id\":\"{{playerId}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"Existing run returned with 200\", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody().run_id).to.equal(bru.getVar(\"runId\")); expect(res.getBody().status).to.equal(\"active\"); expect(res.getBody().stage).to.equal(1);});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /internal/runs - second active run",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{serviceToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{encountersUrl}}/internal/runs",
+              "protocol": "",
+              "host": [
+                "{{encountersUrl}}"
+              ],
+              "path": [
+                "internal",
+                "runs"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"run_id\":\"{{otherRunId}}\",\"player_id\":\"{{playerId}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "bru.setVar(\"otherRunId\", \"xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx\".replace(/x/g, () => Math.floor(Math.random() * 16).toString(16)));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"409 RUN_CONFLICT\", () => {expect(res.getStatus()).to.equal(409); expect(res.getBody().error).to.equal(\"RUN_CONFLICT\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /internal/runs - missing player_id",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{serviceToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{encountersUrl}}/internal/runs",
+              "protocol": "",
+              "host": [
+                "{{encountersUrl}}"
+              ],
+              "path": [
+                "internal",
+                "runs"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"run_id\":\"{{runId}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"400 VALIDATION_ERROR\", () => {expect(res.getStatus()).to.equal(400); expect(res.getBody().error).to.equal(\"VALIDATION_ERROR\");});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /internal/runs - player token",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{encountersUrl}}/internal/runs",
+              "protocol": "",
+              "host": [
+                "{{encountersUrl}}"
+              ],
+              "path": [
+                "internal",
+                "runs"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"run_id\":\"{{runId}}\",\"player_id\":\"{{playerId}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"403 FORBIDDEN\", () => {expect(res.getStatus()).to.equal(403); expect(res.getBody().error).to.equal(\"FORBIDDEN\");});"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "auth": {
+        "type": "noauth"
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "authUrl",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "setupUsername",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "playersUrl",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "playerToken",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "starter1",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "starter2",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "starter3",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "teamsUrl",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "owned1",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "owned2",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "owned3",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "encountersUrl",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "runId",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "teamId",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "process.env.TESTS_CLIENT_SECRET",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "serviceToken",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "playerId",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "otherRunId",
+      "value": "",
+      "type": "default"
+    }
+  ]
+}

@@ -1,0 +1,494 @@
+# Monster Tamers - full backend (docs/plan/02-infrastructure.md, INFRA-6)
+#   docker compose up --build        start everything (secrets generated on first start)
+#   docker compose down -v           stop and delete all data and secrets
+# Only the gateway publishes a port: https://localhost:8443
+# Requires Docker Compose >= 2.30 (volume subpath).
+
+name: tamer
+
+x-hardening: &hardening
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+
+x-after-secrets: &after-secrets
+  init-secrets:
+    condition: service_completed_successfully
+
+services:
+  init-secrets:
+    build: infra/init-secrets
+    image: tamer/init-secrets:dev
+    user: "10001:10001"
+    <<: *hardening
+    network_mode: none
+    volumes:
+      - secrets:/secrets
+
+  gateway:
+    build: gateway
+    image: tamer/gateway:dev
+    <<: *hardening
+    restart: unless-stopped
+    ports:
+      - "8443:8443"
+    networks:
+      - edge
+      - backend
+    volumes:
+      - type: volume
+        source: secrets
+        target: /run/secrets
+        read_only: true
+        volume:
+          subpath: gateway
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "--cacert", "/run/secrets/ca.crt", "https://localhost:8443/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    depends_on:
+      <<: *after-secrets
+      auth:
+        condition: service_healthy
+      players:
+        condition: service_healthy
+      monsters:
+        condition: service_healthy
+      teams:
+        condition: service_healthy
+      encounters:
+        condition: service_healthy
+      history:
+        condition: service_healthy
+
+  auth:
+    build:
+      context: backend
+      dockerfile: auth/Dockerfile
+    image: tamer/auth:dev
+    user: "185"
+    <<: *hardening
+    restart: unless-stopped
+    networks:
+      - backend
+    environment:
+      QUARKUS_PROFILE: prod
+      TAMER_PLAYERS_URL: https://players:8443
+      TAMER_ACCESS_TOKEN_TTL: "3600"
+    volumes:
+      - type: volume
+        source: secrets
+        target: /run/secrets
+        read_only: true
+        volume:
+          subpath: auth
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "--cacert", "/run/secrets/ca.crt", "https://localhost:8443/q/health/ready"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 60s
+    depends_on:
+      <<: *after-secrets
+      auth-db:
+        condition: service_healthy
+
+  auth-db:
+    build: infra/postgres
+    image: tamer/postgres:dev
+    user: "70:70"
+    <<: *hardening
+    restart: unless-stopped
+    networks:
+      - backend
+    environment:
+      POSTGRES_DB: auth
+      POSTGRES_USER: auth_app
+      POSTGRES_PASSWORD_FILE: /run/secrets/db-password
+    # The server key must be 0600 and owned by the server user: copy it before starting.
+    command:
+      - sh
+      - -c
+      - >-
+        cp /run/secrets/tls/server.key /tmp/server.key && chmod 600 /tmp/server.key &&
+        exec docker-entrypoint.sh postgres -c ssl=on
+        -c ssl_cert_file=/run/secrets/tls/server.crt -c ssl_key_file=/tmp/server.key
+        -c ssl_min_protocol_version=TLSv1.2
+    volumes:
+      - auth-db-data:/var/lib/postgresql/data
+      - type: volume
+        source: secrets
+        target: /run/secrets
+        read_only: true
+        volume:
+          subpath: auth-db
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "auth_app", "-d", "auth"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    depends_on:
+      <<: *after-secrets
+
+  players:
+    build:
+      context: backend
+      dockerfile: players/Dockerfile
+    image: tamer/players:dev
+    user: "185"
+    <<: *hardening
+    restart: unless-stopped
+    networks:
+      - backend
+    environment:
+      QUARKUS_PROFILE: prod
+      TAMER_AUTH_URL: https://auth:8443
+      TAMER_MONSTERS_URL: https://monsters:8443
+      TAMER_ENCOUNTERS_URL: https://encounters:8443
+    volumes:
+      - type: volume
+        source: secrets
+        target: /run/secrets
+        read_only: true
+        volume:
+          subpath: players
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "--cacert", "/run/secrets/ca.crt", "https://localhost:8443/q/health/ready"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 60s
+    depends_on:
+      <<: *after-secrets
+      players-db:
+        condition: service_healthy
+
+  players-db:
+    build: infra/postgres
+    image: tamer/postgres:dev
+    user: "70:70"
+    <<: *hardening
+    restart: unless-stopped
+    networks:
+      - backend
+    environment:
+      POSTGRES_DB: players
+      POSTGRES_USER: players_app
+      POSTGRES_PASSWORD_FILE: /run/secrets/db-password
+    # The server key must be 0600 and owned by the server user: copy it before starting.
+    command:
+      - sh
+      - -c
+      - >-
+        cp /run/secrets/tls/server.key /tmp/server.key && chmod 600 /tmp/server.key &&
+        exec docker-entrypoint.sh postgres -c ssl=on
+        -c ssl_cert_file=/run/secrets/tls/server.crt -c ssl_key_file=/tmp/server.key
+        -c ssl_min_protocol_version=TLSv1.2
+    volumes:
+      - players-db-data:/var/lib/postgresql/data
+      - type: volume
+        source: secrets
+        target: /run/secrets
+        read_only: true
+        volume:
+          subpath: players-db
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "players_app", "-d", "players"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    depends_on:
+      <<: *after-secrets
+
+  monsters:
+    build:
+      context: backend
+      dockerfile: monsters/Dockerfile
+    image: tamer/monsters:dev
+    user: "185"
+    <<: *hardening
+    restart: unless-stopped
+    networks:
+      - backend
+    environment:
+      QUARKUS_PROFILE: prod
+    volumes:
+      - type: volume
+        source: secrets
+        target: /run/secrets
+        read_only: true
+        volume:
+          subpath: monsters
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "--cacert", "/run/secrets/ca.crt", "https://localhost:8443/q/health/ready"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 60s
+    depends_on:
+      <<: *after-secrets
+      monsters-db:
+        condition: service_healthy
+
+  monsters-db:
+    build: infra/postgres
+    image: tamer/postgres:dev
+    user: "70:70"
+    <<: *hardening
+    restart: unless-stopped
+    networks:
+      - backend
+    environment:
+      POSTGRES_DB: monsters
+      POSTGRES_USER: monsters_app
+      POSTGRES_PASSWORD_FILE: /run/secrets/db-password
+    # The server key must be 0600 and owned by the server user: copy it before starting.
+    command:
+      - sh
+      - -c
+      - >-
+        cp /run/secrets/tls/server.key /tmp/server.key && chmod 600 /tmp/server.key &&
+        exec docker-entrypoint.sh postgres -c ssl=on
+        -c ssl_cert_file=/run/secrets/tls/server.crt -c ssl_key_file=/tmp/server.key
+        -c ssl_min_protocol_version=TLSv1.2
+    volumes:
+      - monsters-db-data:/var/lib/postgresql/data
+      - type: volume
+        source: secrets
+        target: /run/secrets
+        read_only: true
+        volume:
+          subpath: monsters-db
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "monsters_app", "-d", "monsters"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    depends_on:
+      <<: *after-secrets
+
+  teams:
+    build:
+      context: backend
+      dockerfile: teams/Dockerfile
+    image: tamer/teams:dev
+    user: "185"
+    <<: *hardening
+    restart: unless-stopped
+    networks:
+      - backend
+    environment:
+      QUARKUS_PROFILE: prod
+      TAMER_AUTH_URL: https://auth:8443
+      TAMER_MONSTERS_URL: https://monsters:8443
+    volumes:
+      - type: volume
+        source: secrets
+        target: /run/secrets
+        read_only: true
+        volume:
+          subpath: teams
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "--cacert", "/run/secrets/ca.crt", "https://localhost:8443/q/health/ready"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 60s
+    depends_on:
+      <<: *after-secrets
+      teams-db:
+        condition: service_healthy
+
+  teams-db:
+    build: infra/postgres
+    image: tamer/postgres:dev
+    user: "70:70"
+    <<: *hardening
+    restart: unless-stopped
+    networks:
+      - backend
+    environment:
+      POSTGRES_DB: teams
+      POSTGRES_USER: teams_app
+      POSTGRES_PASSWORD_FILE: /run/secrets/db-password
+    # The server key must be 0600 and owned by the server user: copy it before starting.
+    command:
+      - sh
+      - -c
+      - >-
+        cp /run/secrets/tls/server.key /tmp/server.key && chmod 600 /tmp/server.key &&
+        exec docker-entrypoint.sh postgres -c ssl=on
+        -c ssl_cert_file=/run/secrets/tls/server.crt -c ssl_key_file=/tmp/server.key
+        -c ssl_min_protocol_version=TLSv1.2
+    volumes:
+      - teams-db-data:/var/lib/postgresql/data
+      - type: volume
+        source: secrets
+        target: /run/secrets
+        read_only: true
+        volume:
+          subpath: teams-db
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "teams_app", "-d", "teams"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    depends_on:
+      <<: *after-secrets
+
+  encounters:
+    build:
+      context: backend
+      dockerfile: encounters/Dockerfile
+    image: tamer/encounters:dev
+    user: "185"
+    <<: *hardening
+    restart: unless-stopped
+    networks:
+      - backend
+    environment:
+      QUARKUS_PROFILE: prod
+      TAMER_AUTH_URL: https://auth:8443
+      TAMER_PLAYERS_URL: https://players:8443
+      TAMER_MONSTERS_URL: https://monsters:8443
+      TAMER_TEAMS_URL: https://teams:8443
+      TAMER_HISTORY_URL: https://history:8443
+    volumes:
+      - type: volume
+        source: secrets
+        target: /run/secrets
+        read_only: true
+        volume:
+          subpath: encounters
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "--cacert", "/run/secrets/ca.crt", "https://localhost:8443/q/health/ready"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 60s
+    depends_on:
+      <<: *after-secrets
+      encounters-db:
+        condition: service_healthy
+
+  encounters-db:
+    build: infra/postgres
+    image: tamer/postgres:dev
+    user: "70:70"
+    <<: *hardening
+    restart: unless-stopped
+    networks:
+      - backend
+    environment:
+      POSTGRES_DB: encounters
+      POSTGRES_USER: encounters_app
+      POSTGRES_PASSWORD_FILE: /run/secrets/db-password
+    # The server key must be 0600 and owned by the server user: copy it before starting.
+    command:
+      - sh
+      - -c
+      - >-
+        cp /run/secrets/tls/server.key /tmp/server.key && chmod 600 /tmp/server.key &&
+        exec docker-entrypoint.sh postgres -c ssl=on
+        -c ssl_cert_file=/run/secrets/tls/server.crt -c ssl_key_file=/tmp/server.key
+        -c ssl_min_protocol_version=TLSv1.2
+    volumes:
+      - encounters-db-data:/var/lib/postgresql/data
+      - type: volume
+        source: secrets
+        target: /run/secrets
+        read_only: true
+        volume:
+          subpath: encounters-db
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "encounters_app", "-d", "encounters"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    depends_on:
+      <<: *after-secrets
+
+  history:
+    build:
+      context: backend
+      dockerfile: history/Dockerfile
+    image: tamer/history:dev
+    user: "185"
+    <<: *hardening
+    restart: unless-stopped
+    networks:
+      - backend
+    environment:
+      QUARKUS_PROFILE: prod
+    volumes:
+      - type: volume
+        source: secrets
+        target: /run/secrets
+        read_only: true
+        volume:
+          subpath: history
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "--cacert", "/run/secrets/ca.crt", "https://localhost:8443/q/health/ready"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 60s
+    depends_on:
+      <<: *after-secrets
+      history-db:
+        condition: service_healthy
+
+  history-db:
+    build: infra/postgres
+    image: tamer/postgres:dev
+    user: "70:70"
+    <<: *hardening
+    restart: unless-stopped
+    networks:
+      - backend
+    environment:
+      POSTGRES_DB: history
+      POSTGRES_USER: history_app
+      POSTGRES_PASSWORD_FILE: /run/secrets/db-password
+    # The server key must be 0600 and owned by the server user: copy it before starting.
+    command:
+      - sh
+      - -c
+      - >-
+        cp /run/secrets/tls/server.key /tmp/server.key && chmod 600 /tmp/server.key &&
+        exec docker-entrypoint.sh postgres -c ssl=on
+        -c ssl_cert_file=/run/secrets/tls/server.crt -c ssl_key_file=/tmp/server.key
+        -c ssl_min_protocol_version=TLSv1.2
+    volumes:
+      - history-db-data:/var/lib/postgresql/data
+      - type: volume
+        source: secrets
+        target: /run/secrets
+        read_only: true
+        volume:
+          subpath: history-db
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "history_app", "-d", "history"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    depends_on:
+      <<: *after-secrets
+
+networks:
+  # Services and databases: no access from or to the outside
+  backend:
+    internal: true
+  # Only the gateway publishes a port
+  edge: {}
+
+volumes:
+  secrets:
+  auth-db-data:
+  players-db-data:
+  monsters-db-data:
+  teams-db-data:
+  encounters-db-data:
+  history-db-data:

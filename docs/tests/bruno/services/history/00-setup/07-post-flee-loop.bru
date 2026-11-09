@@ -1,0 +1,35 @@
+meta {
+  name: POST /api/battles/current/actions - flee until the battle ends
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{encountersUrl}}/api/battles/current/actions
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+body:json {
+  {"type":"flee"}
+}
+
+tests {
+  test("Round resolved", () => {
+    expect(res.getStatus()).to.equal(200);
+    var b = res.getBody();
+    var rounds = (bru.getVar("fleeRounds") || 0) + 1;
+    bru.setVar("fleeRounds", rounds);
+    if (b.status === "finished") {
+      expect(["fled", "defeat"]).to.include(b.result.outcome);
+      bru.setVar("battleOutcome", b.result.outcome);
+    } else {
+      expect(rounds).to.be.below(50);
+      bru.setNextRequest("POST /api/battles/current/actions - flee until the battle ends");
+    }
+  });
+}

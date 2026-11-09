@@ -1,0 +1,15 @@
+meta {
+  name: GET /api/players/me/starters - pool unauthorized
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{playersUrl}}/api/players/me/starters
+  body: none
+  auth: none
+}
+
+tests {
+  test("401 without token", () => {expect(res.getStatus()).to.equal(401);});
+}

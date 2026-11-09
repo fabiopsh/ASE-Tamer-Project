@@ -1,0 +1,27 @@
+meta {
+  name: POST /internal/collections/{{playerId}}/xp - xp valid
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{monstersUrl}}/internal/collections/{{playerId}}/xp
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{serviceToken}}
+}
+
+body:json {
+  {"encounter_id":"{{xpEncounterId}}","owned_ids":["{{owned1}}","{{owned2}}"],"xp":100}
+}
+
+script:pre-request {
+  bru.setVar("xpEncounterId", "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => {let r = Math.floor(Math.random() * 16); return (c === "x" ? r : (r & 3 | 8)).toString(16);}));
+}
+
+tests {
+  test("Grants XP exactly once", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody()).to.have.lengthOf(2); expect(res.getBody()[0].level_after).to.be.above(1);});
+}

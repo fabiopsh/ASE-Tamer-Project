@@ -1,0 +1,19 @@
+meta {
+  name: GET /api/runs/current - active run
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{encountersUrl}}/api/runs/current
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+tests {
+  test("Active run at stage 1", () => {expect(res.getStatus()).to.equal(200); var r = res.getBody(); expect(r.run_id).to.equal(bru.getVar("runId")); expect(r.status).to.equal("active"); expect(r.stage).to.equal(1); expect(r.wins_in_stage).to.equal(0); expect(r.boss_available).to.equal(false); expect(r.bosses_defeated).to.eql([]); expect(r.ended_at).to.equal(null);});
+}

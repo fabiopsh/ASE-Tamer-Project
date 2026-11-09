@@ -1,0 +1,23 @@
+meta {
+  name: POST /api/teams - invalid: sixth team in the run
+  type: http
+  seq: 16
+}
+
+post {
+  url: {{teamsUrl}}/api/teams
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+body:json {
+  {"name":"Sixth","members":["{{owned1}}"]}
+}
+
+tests {
+  test("400 TEAM_INVALID with TEAM_LIMIT", () => {expect(res.getStatus()).to.equal(400); var b = res.getBody(); expect(b.error).to.equal("TEAM_INVALID"); expect(b.details.some(d => d.code === "TEAM_LIMIT")).to.equal(true);});
+}

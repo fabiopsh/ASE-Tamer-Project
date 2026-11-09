@@ -1,0 +1,4 @@
+# Justified exceptions for Trivy (CI-2, docs/plan/11-ci-security.md).
+# One finding ID per line, each preceded by a comment explaining why it is accepted.
+# Every entry must also be listed in docs/security/README.md and in the report.
+# Currently empty: all CRITICAL/HIGH findings were fixed (see docs/security/README.md).

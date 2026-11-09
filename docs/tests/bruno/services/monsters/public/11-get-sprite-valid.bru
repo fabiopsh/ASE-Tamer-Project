@@ -1,0 +1,15 @@
+meta {
+  name: GET /images/monsters/001.png - sprite valid
+  type: http
+  seq: 11
+}
+
+get {
+  url: {{monstersUrl}}/images/monsters/001.png
+  body: none
+  auth: none
+}
+
+tests {
+  test("Sprite is public and cacheable", () => {expect(res.getStatus()).to.equal(200); expect(res.getHeader("cache-control")).to.contain("max-age");});
+}

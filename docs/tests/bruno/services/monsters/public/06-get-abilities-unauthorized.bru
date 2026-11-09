@@ -1,0 +1,15 @@
+meta {
+  name: GET /api/abilities - abilities unauthorized
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{monstersUrl}}/api/abilities
+  body: none
+  auth: none
+}
+
+tests {
+  test("401 without player token", () => {expect(res.getStatus()).to.equal(401);});
+}

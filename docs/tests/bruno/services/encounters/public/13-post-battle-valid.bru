@@ -1,0 +1,40 @@
+meta {
+  name: POST /api/battles - start
+  type: http
+  seq: 13
+}
+
+post {
+  url: {{encountersUrl}}/api/battles
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+body:json {
+  {"template_id":11,"team_id":"{{teamId}}"}
+}
+
+tests {
+  test("Initial state", () => {
+    expect(res.getStatus()).to.equal(201);
+    var b = res.getBody();
+    bru.setVar("encounterId", b.encounter_id);
+    expect(b.status).to.equal("in_progress");
+    expect(b.turn).to.equal(0);
+    expect(b.template.template_id).to.equal(11);
+    expect(b.wild.element).to.equal("dream");
+    expect(b.wild.level).to.be.within(1, 3);
+    expect(b.wild.hp).to.equal(b.wild.max_hp);
+    expect(b.wild.image_url).to.match(/^\/images\/monsters\/\d{3}\.png$/);
+    expect(b.team).to.have.lengthOf(3);
+    expect(b.team.filter(m => m.active)).to.have.lengthOf(1);
+    expect(b.team[0].active).to.equal(true);
+    b.team.forEach(m => {expect(m.hp).to.equal(m.max_hp); expect(m.knocked_out).to.equal(false);});
+    expect(b.last_round).to.equal(null);
+    expect(b.result).to.equal(null);
+  });
+}

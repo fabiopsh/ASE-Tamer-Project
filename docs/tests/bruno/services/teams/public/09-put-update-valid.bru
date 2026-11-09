@@ -1,0 +1,23 @@
+meta {
+  name: PUT /api/teams/{{teamId}} - update valid
+  type: http
+  seq: 9
+}
+
+put {
+  url: {{teamsUrl}}/api/teams/{{teamId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+body:json {
+  {"name":"Reordered","members":["{{owned2}}","{{owned1}}"]}
+}
+
+tests {
+  test("PUT changes member order", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody().members[0].owned_id).to.equal(bru.getVar("owned2"));});
+}

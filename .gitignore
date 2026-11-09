@@ -15,3 +15,14 @@ __pycache__/
 Thumbs.db
 .vscode/
 .idea/
+
+# Build output
+target/
+node_modules/
+*.iml
+
+# Local secrets and test material (never commit, see docs/plan/02-infrastructure.md INFRA-4)
+.env
+.test-secrets/
+docs/tests/bruno/.env
+tamer-ca.crt

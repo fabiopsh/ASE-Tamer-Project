@@ -1,0 +1,19 @@
+meta {
+  name: GET /api/teams - list valid
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{teamsUrl}}/api/teams
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+tests {
+  test("Lists own teams", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody()).to.have.lengthOf(1);});
+}

@@ -1,0 +1,19 @@
+meta {
+  name: GET /api/history/{{encounterId1}} - valid: stored fixture with turn log
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{historyUrl}}/api/history/{{encounterId1}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+tests {
+  test("Full record with turn log", () => {expect(res.getStatus()).to.equal(200); var b = res.getBody(); expect(b.encounter_id).to.equal(bru.getVar("encounterId1")); expect(b.outcome).to.equal("victory"); expect(b.team_snapshot).to.have.lengthOf(1); expect(b.turns).to.have.lengthOf(1); expect(b.turns[0].events[0].amount).to.equal(7); expect(b.rng_seed).to.equal("-4512345678901234567"); expect(b.reward.monster_id).to.equal(51);});
+}

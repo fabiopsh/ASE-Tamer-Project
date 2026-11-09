@@ -1,0 +1,23 @@
+meta {
+  name: POST /internal/players - create player token forbidden
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{playersUrl}}/internal/players
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+body:json {
+  {"player_id":"{{playerId}}"}
+}
+
+tests {
+  test("Forbidden for players", () => {expect(res.getStatus()).to.equal(403); expect(res.getBody().error).to.equal("FORBIDDEN");});
+}

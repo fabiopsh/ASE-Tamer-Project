@@ -1,0 +1,19 @@
+meta {
+  name: GET /api/abilities/9999 - ability missing
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{monstersUrl}}/api/abilities/9999
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+tests {
+  test("404 unknown ability", () => {expect(res.getStatus()).to.equal(404);});
+}

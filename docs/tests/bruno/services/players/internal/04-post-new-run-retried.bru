@@ -1,0 +1,23 @@
+meta {
+  name: POST /internal/players/{{playerId}}/new-run - new run retried
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{playersUrl}}/internal/players/{{playerId}}/new-run
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{serviceToken}}
+}
+
+body:json {
+  {"ended_run_id":"{{oldRunId}}"}
+}
+
+tests {
+  test("Repeated reset does nothing", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody().current_run_id).to.equal(bru.getVar("runId"));});
+}

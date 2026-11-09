@@ -1,0 +1,30 @@
+meta {
+  name: POST /api/auth/register - valid
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{authUrl}}/api/auth/register
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "username": "{{authUsername}}",
+    "password": "pikachu123"
+  }
+}
+
+script:pre-request {
+  bru.setVar("authUsername", "Br_" + Math.random().toString(16).slice(2, 12));
+}
+
+tests {
+  test("201 with player_id and normalised username", function () {
+    expect(res.getStatus()).to.equal(201);
+    expect(res.getBody().player_id).to.match(/^[0-9a-f-]{36}$/);
+    expect(res.getBody().username).to.equal(bru.getVar("authUsername").toLowerCase());
+  });
+}

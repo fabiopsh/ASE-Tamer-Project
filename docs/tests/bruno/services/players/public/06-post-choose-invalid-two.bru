@@ -1,0 +1,23 @@
+meta {
+  name: POST /api/players/me/starters - invalid: two starters
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{playersUrl}}/api/players/me/starters
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+body:json {
+  {"monster_ids":[{{starter1}},{{starter2}}]}
+}
+
+tests {
+  test("Exactly three starters required", () => {expect(res.getStatus()).to.equal(400); expect(res.getBody().error).to.equal("INVALID_STARTERS");});
+}

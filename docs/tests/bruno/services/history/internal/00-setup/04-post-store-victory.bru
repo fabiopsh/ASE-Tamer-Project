@@ -1,0 +1,27 @@
+meta {
+  name: POST /internal/history - store fixture victory (older)
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{historyUrl}}/internal/history
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{serviceToken}}
+}
+
+body:json {
+  {"encounter_id":"{{encounterId1}}","player_id":"{{playerId}}","run_id":"{{runId}}","template":{"template_id":12,"name":"Mossy Hollow","stage":1,"element":"echo","is_boss":false},"wild":{"monster_id":51,"name":"Mossling","level":2,"rarity":"common","element":"echo"},"team_snapshot":[{"position":1,"owned_id":"{{ownedId}}","monster_id":3,"name":"Emberling","level":3,"stats":{"hp":30,"attack":9}}],"outcome":"victory","reward":{"owned_id":"{{rewardOwnedId}}","monster_id":51,"level":2},"xp_gained":20,"turns":[{"turn":1,"events":[{"type":"damage","target_side":"wild","amount":7}]}],"rng_seed":"-4512345678901234567","engine_version":1,"started_at":"2026-11-06T10:00:00Z","ended_at":"2026-11-06T10:05:00Z"}
+}
+
+script:pre-request {
+  function u() { return "xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx".replace(/x/g, () => Math.floor(Math.random() * 16).toString(16)); } bru.setVar("runId", u()); bru.setVar("otherRunId", u()); bru.setVar("ownedId", u()); bru.setVar("rewardOwnedId", u()); bru.setVar("encounterId1", u()); bru.setVar("encounterId2", u()); bru.setVar("encounterId3", u());
+}
+
+tests {
+  test("Fixture stored", () => {expect(res.getStatus()).to.equal(201);});
+}

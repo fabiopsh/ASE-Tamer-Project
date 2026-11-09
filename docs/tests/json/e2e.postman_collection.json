@@ -1,0 +1,1087 @@
+{
+  "info": {
+    "name": "Monster Tamers - e2e",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "POST /api/auth/register - new player",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "auth": {
+          "type": "noauth"
+        },
+        "description": "",
+        "url": {
+          "raw": "{{authUrl}}/api/auth/register",
+          "protocol": "",
+          "host": [
+            "{{authUrl}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "register"
+          ],
+          "query": [],
+          "variable": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"username\":\"{{e2eUsername}}\",\"password\":\"pikachu123\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              "bru.setVar(\"e2eUsername\", \"e2e_\" + Math.random().toString(16).slice(2, 12));"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              "// Tests",
+              "test(\"Account created\", () => {",
+              "  expect(res.getStatus()).to.equal(201);",
+              "  expect(res.getBody().player_id).to.be.a(\"string\");",
+              "  expect(res.getBody()).to.not.have.property(\"password\");",
+              "  bru.setVar(\"playerId\", res.getBody().player_id);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "POST /api/auth/token - log in",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "auth": {
+          "type": "noauth"
+        },
+        "description": "",
+        "url": {
+          "raw": "{{authUrl}}/api/auth/token",
+          "protocol": "",
+          "host": [
+            "{{authUrl}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "token"
+          ],
+          "query": [],
+          "variable": []
+        },
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "grant_type",
+              "value": "password",
+              "disabled": false,
+              "type": "default",
+              "description": ""
+            },
+            {
+              "key": "username",
+              "value": "{{e2eUsername}}",
+              "disabled": false,
+              "type": "default",
+              "description": ""
+            },
+            {
+              "key": "password",
+              "value": "pikachu123",
+              "disabled": false,
+              "type": "default",
+              "description": ""
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              "// Tests",
+              "test(\"Bearer token issued\", () => {",
+              "  expect(res.getStatus()).to.equal(200);",
+              "  var b = res.getBody();",
+              "  expect(b.token_type.toLowerCase()).to.equal(\"bearer\");",
+              "  expect(b.expires_in).to.be.above(0);",
+              "  bru.setVar(\"playerToken\", b.access_token);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "GET /api/players/me/starters - starter pool",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{playerToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "description": "",
+        "url": {
+          "raw": "{{playersUrl}}/api/players/me/starters",
+          "protocol": "",
+          "host": [
+            "{{playersUrl}}"
+          ],
+          "path": [
+            "api",
+            "players",
+            "me",
+            "starters"
+          ],
+          "query": [],
+          "variable": []
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              "// Tests",
+              "test(\"Pool of ten distinct monsters\", () => {",
+              "  expect(res.getStatus()).to.equal(200);",
+              "  var pool = res.getBody().pool;",
+              "  expect(pool).to.have.lengthOf(10);",
+              "  expect(new Set(pool).size).to.equal(10);",
+              "  bru.setVar(\"starter1\", pool[0]); bru.setVar(\"starter2\", pool[1]); bru.setVar(\"starter3\", pool[2]);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "GET /api/monsters/{{starter1}} - catalogue detail of a pool monster",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{playerToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "description": "",
+        "url": {
+          "raw": "{{monstersUrl}}/api/monsters/{{starter1}}",
+          "protocol": "",
+          "host": [
+            "{{monstersUrl}}"
+          ],
+          "path": [
+            "api",
+            "monsters",
+            "{{starter1}}"
+          ],
+          "query": [],
+          "variable": []
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              "// Tests",
+              "test(\"Starters are common catalogue monsters\", () => {",
+              "  expect(res.getStatus()).to.equal(200);",
+              "  var b = res.getBody();",
+              "  expect(b.monster_id).to.equal(bru.getVar(\"starter1\"));",
+              "  expect(b.rarity).to.equal(\"common\");",
+              "  expect(b).to.include.keys(\"name\", \"element\", \"image_url\");",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "POST /api/players/me/starters - choose three starters",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{playerToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "description": "",
+        "url": {
+          "raw": "{{playersUrl}}/api/players/me/starters",
+          "protocol": "",
+          "host": [
+            "{{playersUrl}}"
+          ],
+          "path": [
+            "api",
+            "players",
+            "me",
+            "starters"
+          ],
+          "query": [],
+          "variable": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"monster_ids\":[{{starter1}},{{starter2}},{{starter3}}]}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              "// Tests",
+              "test(\"Starters granted and run opened\", () => {",
+              "  expect(res.getStatus()).to.equal(201);",
+              "  var b = res.getBody();",
+              "  expect(b.starters).to.have.lengthOf(3);",
+              "  bru.setVar(\"runId\", b.run_id);",
+              "  bru.setVar(\"owned1\", b.starters[0].owned_id); bru.setVar(\"owned2\", b.starters[1].owned_id); bru.setVar(\"owned3\", b.starters[2].owned_id);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "GET /api/collection - three starters owned",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{playerToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "description": "",
+        "url": {
+          "raw": "{{monstersUrl}}/api/collection",
+          "protocol": "",
+          "host": [
+            "{{monstersUrl}}"
+          ],
+          "path": [
+            "api",
+            "collection"
+          ],
+          "query": [],
+          "variable": []
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              "// Tests",
+              "test(\"Collection holds the three starters\", () => {",
+              "  expect(res.getStatus()).to.equal(200);",
+              "  var ids = res.getBody().items.map(i => i.owned_id).sort();",
+              "  expect(ids).to.eql([bru.getVar(\"owned1\"), bru.getVar(\"owned2\"), bru.getVar(\"owned3\")].sort());",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "POST /api/teams/validate - team of three",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{playerToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "description": "",
+        "url": {
+          "raw": "{{teamsUrl}}/api/teams/validate",
+          "protocol": "",
+          "host": [
+            "{{teamsUrl}}"
+          ],
+          "path": [
+            "api",
+            "teams",
+            "validate"
+          ],
+          "query": [],
+          "variable": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"members\":[\"{{owned1}}\",\"{{owned2}}\",\"{{owned3}}\"]}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              "// Tests",
+              "test(\"Team is valid\", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody().valid).to.equal(true);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "POST /api/teams - save the team",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{playerToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "description": "",
+        "url": {
+          "raw": "{{teamsUrl}}/api/teams",
+          "protocol": "",
+          "host": [
+            "{{teamsUrl}}"
+          ],
+          "path": [
+            "api",
+            "teams"
+          ],
+          "query": [],
+          "variable": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"name\":\"E2E\",\"members\":[\"{{owned1}}\",\"{{owned2}}\",\"{{owned3}}\"]}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              "// Tests",
+              "test(\"Team saved in order\", () => {",
+              "  expect(res.getStatus()).to.equal(201);",
+              "  var b = res.getBody();",
+              "  expect(b.members.map(m => m.owned_id)).to.eql([bru.getVar(\"owned1\"), bru.getVar(\"owned2\"), bru.getVar(\"owned3\")]);",
+              "  bru.setVar(\"teamId\", b.team_id);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "GET /api/encounters - available encounters",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{playerToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "description": "",
+        "url": {
+          "raw": "{{encountersUrl}}/api/encounters",
+          "protocol": "",
+          "host": [
+            "{{encountersUrl}}"
+          ],
+          "path": [
+            "api",
+            "encounters"
+          ],
+          "query": [],
+          "variable": []
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              "// Tests",
+              "test(\"Stage 1 encounters, no boss yet\", () => {",
+              "  expect(res.getStatus()).to.equal(200);",
+              "  var t = res.getBody();",
+              "  expect(t.length).to.be.above(0);",
+              "  t.forEach(x => {expect(x.stage).to.equal(1); expect(x.is_boss).to.equal(false);});",
+              "  bru.setVar(\"templateId\", t[0].template_id);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "POST /api/battles - start a battle",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{playerToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "description": "",
+        "url": {
+          "raw": "{{encountersUrl}}/api/battles",
+          "protocol": "",
+          "host": [
+            "{{encountersUrl}}"
+          ],
+          "path": [
+            "api",
+            "battles"
+          ],
+          "query": [],
+          "variable": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"template_id\":{{templateId}},\"team_id\":\"{{teamId}}\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              "// Tests",
+              "test(\"Battle in progress with a full-HP wild monster\", () => {",
+              "  expect(res.getStatus()).to.equal(201);",
+              "  var b = res.getBody();",
+              "  expect(b.status).to.equal(\"in_progress\");",
+              "  expect(b.wild.hp).to.equal(b.wild.max_hp);",
+              "  expect(b.team).to.have.lengthOf(3);",
+              "  bru.setVar(\"encounterId\", b.encounter_id);",
+              "  bru.setVar(\"wildHp\", b.wild.hp);",
+              "  bru.setVar(\"wildMonsterId\", b.wild.monster_id);",
+              "  bru.setVar(\"rounds\", 0);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "POST /api/battles/current/actions - attack until the battle ends",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{playerToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "description": "",
+        "url": {
+          "raw": "{{encountersUrl}}/api/battles/current/actions",
+          "protocol": "",
+          "host": [
+            "{{encountersUrl}}"
+          ],
+          "path": [
+            "api",
+            "battles",
+            "current",
+            "actions"
+          ],
+          "query": [],
+          "variable": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"type\":\"attack\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              "// Tests",
+              "test(\"Round resolved by the server\", () => {",
+              "  expect(res.getStatus()).to.equal(200);",
+              "  var b = res.getBody();",
+              "  var rounds = bru.getVar(\"rounds\") + 1;",
+              "  bru.setVar(\"rounds\", rounds);",
+              "  expect(b.encounter_id).to.equal(bru.getVar(\"encounterId\"));",
+              "  expect(b.turn).to.equal(rounds);",
+              "  // HP never increases (no healing abilities in P1) and stays in range",
+              "  expect(b.wild.hp).to.be.at.most(bru.getVar(\"wildHp\"));",
+              "  expect(b.wild.hp).to.be.within(0, b.wild.max_hp);",
+              "  b.team.forEach(m => expect(m.hp).to.be.within(0, m.max_hp));",
+              "  bru.setVar(\"wildHp\", b.wild.hp);",
+              "  if (b.status === \"finished\") {",
+              "    expect([\"victory\", \"defeat\"]).to.include(b.result.outcome);",
+              "    bru.setVar(\"outcome\", b.result.outcome);",
+              "    bru.setVar(\"rewardMonsterId\", b.result.reward ? b.result.reward.monster_id : null);",
+              "    if (b.result.outcome === \"victory\") {",
+              "      expect(b.wild.hp).to.equal(0);",
+              "      expect(b.result.reward.monster_id).to.equal(bru.getVar(\"wildMonsterId\"));",
+              "    } else {",
+              "      expect(b.team.every(m => m.knocked_out)).to.equal(true);",
+              "      expect(b.result.reward).to.equal(null);",
+              "    }",
+              "  } else {",
+              "    expect(b.result).to.equal(null);",
+              "    expect(rounds).to.be.below(100);",
+              "    bru.setNextRequest(\"POST /api/battles/current/actions - attack until the battle ends\");",
+              "  }",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "GET /api/history - the battle is recorded",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{playerToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "description": "",
+        "url": {
+          "raw": "{{historyUrl}}/api/history?run_id={{runId}}",
+          "protocol": "",
+          "host": [
+            "{{historyUrl}}"
+          ],
+          "path": [
+            "api",
+            "history?run_id={{runId}}"
+          ],
+          "query": [],
+          "variable": []
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              "// Tests",
+              "test(\"History lists the finished encounter\", () => {",
+              "  expect(res.getStatus()).to.equal(200);",
+              "  var item = res.getBody().items.find(i => i.encounter_id === bru.getVar(\"encounterId\"));",
+              "  expect(item).to.not.equal(undefined);",
+              "  expect(item.outcome).to.equal(bru.getVar(\"outcome\"));",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "GET /api/history/{{encounterId}} - detail matches the battle",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{playerToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "description": "",
+        "url": {
+          "raw": "{{historyUrl}}/api/history/{{encounterId}}",
+          "protocol": "",
+          "host": [
+            "{{historyUrl}}"
+          ],
+          "path": [
+            "api",
+            "history",
+            "{{encounterId}}"
+          ],
+          "query": [],
+          "variable": []
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              "// Tests",
+              "test(\"Detail matches the final battle response\", () => {",
+              "  expect(res.getStatus()).to.equal(200);",
+              "  var b = res.getBody();",
+              "  expect(b.encounter_id).to.equal(bru.getVar(\"encounterId\"));",
+              "  expect(b.outcome).to.equal(bru.getVar(\"outcome\"));",
+              "  expect(b.template.template_id).to.equal(bru.getVar(\"templateId\"));",
+              "  expect(b.wild.monster_id).to.equal(bru.getVar(\"wildMonsterId\"));",
+              "  expect(b.team_snapshot).to.have.lengthOf(3);",
+              "  expect(b.turns).to.have.lengthOf(bru.getVar(\"rounds\"));",
+              "  if (bru.getVar(\"outcome\") === \"victory\") {",
+              "    expect(b.reward.monster_id).to.equal(bru.getVar(\"rewardMonsterId\"));",
+              "  } else {",
+              "    expect(b.reward).to.equal(null);",
+              "  }",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "GET /api/collection?run_id={{runId}} - reward only on victory",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{playerToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "description": "",
+        "url": {
+          "raw": "{{monstersUrl}}/api/collection?run_id={{runId}}",
+          "protocol": "",
+          "host": [
+            "{{monstersUrl}}"
+          ],
+          "path": [
+            "api",
+            "collection?run_id={{runId}}"
+          ],
+          "query": [],
+          "variable": []
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              "// Tests",
+              "test(\"Four monsters after a victory, three after a defeat\", () => {",
+              "  expect(res.getStatus()).to.equal(200);",
+              "  var items = res.getBody().items;",
+              "  if (bru.getVar(\"outcome\") === \"victory\") {",
+              "    expect(items).to.have.lengthOf(4);",
+              "    expect(items.some(i => i.monster_id === bru.getVar(\"rewardMonsterId\") && i.source === \"encounter\")).to.equal(true);",
+              "  } else {",
+              "    expect(items).to.have.lengthOf(3);",
+              "  }",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "POST /internal/players - invalid: internal API not exposed by the gateway",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{playerToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "description": "",
+        "url": {
+          "raw": "{{playersUrl}}/internal/players",
+          "protocol": "",
+          "host": [
+            "{{playersUrl}}"
+          ],
+          "path": [
+            "internal",
+            "players"
+          ],
+          "query": [],
+          "variable": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"player_id\":\"{{playerId}}\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              "// Tests",
+              "test(\"404 at the gateway\", () => {expect(res.getStatus()).to.equal(404);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "GET /api/players/me - invalid: no token",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "auth": {
+          "type": "noauth"
+        },
+        "description": "",
+        "url": {
+          "raw": "{{playersUrl}}/api/players/me",
+          "protocol": "",
+          "host": [
+            "{{playersUrl}}"
+          ],
+          "path": [
+            "api",
+            "players",
+            "me"
+          ],
+          "query": [],
+          "variable": []
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              "// Tests",
+              "test(\"401 UNAUTHORIZED\", () => {expect(res.getStatus()).to.equal(401); expect(res.getBody().error).to.equal(\"UNAUTHORIZED\");});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "GET /api/collection - invalid: forged token",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{forgedToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "description": "",
+        "url": {
+          "raw": "{{monstersUrl}}/api/collection",
+          "protocol": "",
+          "host": [
+            "{{monstersUrl}}"
+          ],
+          "path": [
+            "api",
+            "collection"
+          ],
+          "query": [],
+          "variable": []
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              "bru.setVar(\"forgedToken\", \"eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ4In0.c2lnbmF0dXJl\");"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              "// Tests",
+              "test(\"401 UNAUTHORIZED\", () => {expect(res.getStatus()).to.equal(401);});"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "authUrl",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "e2eUsername",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "playersUrl",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "playerToken",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "starter1",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "monstersUrl",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "starter2",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "starter3",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "teamsUrl",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "owned1",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "owned2",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "owned3",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "encountersUrl",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "templateId",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "teamId",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "historyUrl",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "runId",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "encounterId",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "playerId",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "forgedToken",
+      "value": "",
+      "type": "default"
+    }
+  ]
+}

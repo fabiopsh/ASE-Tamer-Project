@@ -1,0 +1,23 @@
+meta {
+  name: POST /api/battles - template of a stage not reached
+  type: http
+  seq: 11
+}
+
+post {
+  url: {{encountersUrl}}/api/battles
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+body:json {
+  {"template_id":21,"team_id":"{{teamId}}"}
+}
+
+tests {
+  test("404 NOT_FOUND", () => {expect(res.getStatus()).to.equal(404);});
+}

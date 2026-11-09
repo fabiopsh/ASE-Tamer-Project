@@ -1,0 +1,27 @@
+meta {
+  name: POST /api/auth/token - log in
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{authUrl}}/api/auth/token
+  body: formUrlEncoded
+  auth: none
+}
+
+body:form-urlencoded {
+  grant_type: password
+  username: {{e2eUsername}}
+  password: pikachu123
+}
+
+tests {
+  test("Bearer token issued", () => {
+    expect(res.getStatus()).to.equal(200);
+    var b = res.getBody();
+    expect(b.token_type.toLowerCase()).to.equal("bearer");
+    expect(b.expires_in).to.be.above(0);
+    bru.setVar("playerToken", b.access_token);
+  });
+}

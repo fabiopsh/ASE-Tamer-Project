@@ -1,0 +1,23 @@
+meta {
+  name: POST /api/teams - invalid: monster of another player
+  type: http
+  seq: 13
+}
+
+post {
+  url: {{teamsUrl}}/api/teams
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+body:json {
+  {"name":"Stolen","members":["{{owned1}}","{{otherOwned1}}"]}
+}
+
+tests {
+  test("400 TEAM_INVALID with NOT_OWNED", () => {expect(res.getStatus()).to.equal(400); var b = res.getBody(); expect(b.error).to.equal("TEAM_INVALID"); expect(b.details.some(d => d.code === "NOT_OWNED")).to.equal(true);});
+}

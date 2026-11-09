@@ -1,0 +1,23 @@
+meta {
+  name: POST /internal/runs - missing player_id
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{encountersUrl}}/internal/runs
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{serviceToken}}
+}
+
+body:json {
+  {"run_id":"{{runId}}"}
+}
+
+tests {
+  test("400 VALIDATION_ERROR", () => {expect(res.getStatus()).to.equal(400); expect(res.getBody().error).to.equal("VALIDATION_ERROR");});
+}

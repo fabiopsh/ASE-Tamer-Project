@@ -1,0 +1,19 @@
+meta {
+  name: GET /api/players/me/starters - other player's pool
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{playersUrl}}/api/players/me/starters
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{otherToken}}
+}
+
+tests {
+  test("Ten starter ids", () => {expect(res.getStatus()).to.equal(200); var pool = res.getBody().pool; expect(pool).to.have.lengthOf(10); bru.setVar("starterPool", JSON.stringify(pool)); bru.setVar("otherStarter1", pool[0]); bru.setVar("otherStarter2", pool[1]); bru.setVar("otherStarter3", pool[2]);});
+}

@@ -1,0 +1,6 @@
+**/target
+**/.idea
+**/.vscode
+**/*.iml
+**/README.md
+monsters/seed/catalog_preview.png

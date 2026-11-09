@@ -1,0 +1,19 @@
+meta {
+  name: GET /api/collection?page=-1 - collection invalid page
+  type: http
+  seq: 14
+}
+
+get {
+  url: {{monstersUrl}}/api/collection?page=-1
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+tests {
+  test("400 invalid page", () => {expect(res.getStatus()).to.equal(400);});
+}

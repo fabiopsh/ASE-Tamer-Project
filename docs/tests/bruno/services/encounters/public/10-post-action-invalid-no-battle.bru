@@ -1,0 +1,23 @@
+meta {
+  name: POST /api/battles/current/actions - invalid: no battle in progress
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{encountersUrl}}/api/battles/current/actions
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+body:json {
+  {"type":"attack"}
+}
+
+tests {
+  test("404 NOT_FOUND", () => {expect(res.getStatus()).to.equal(404); expect(res.getBody().error).to.equal("NOT_FOUND");});
+}

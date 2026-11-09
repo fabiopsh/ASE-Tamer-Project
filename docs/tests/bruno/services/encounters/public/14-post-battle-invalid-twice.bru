@@ -1,0 +1,23 @@
+meta {
+  name: POST /api/battles - second battle
+  type: http
+  seq: 14
+}
+
+post {
+  url: {{encountersUrl}}/api/battles
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+body:json {
+  {"template_id":12,"team_id":"{{teamId}}"}
+}
+
+tests {
+  test("409 BATTLE_IN_PROGRESS", () => {expect(res.getStatus()).to.equal(409); expect(res.getBody().error).to.equal("BATTLE_IN_PROGRESS");});
+}

@@ -1,0 +1,23 @@
+meta {
+  name: POST /api/battles - invalid: unknown team
+  type: http
+  seq: 12
+}
+
+post {
+  url: {{encountersUrl}}/api/battles
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+body:json {
+  {"template_id":11,"team_id":"aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee"}
+}
+
+tests {
+  test("404 NOT_FOUND for a missing or foreign team", () => {expect(res.getStatus()).to.equal(404); expect(res.getBody().error).to.equal("NOT_FOUND");});
+}

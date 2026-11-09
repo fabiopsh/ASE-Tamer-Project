@@ -1,0 +1,41 @@
+meta {
+  name: POST /api/battles/current/actions - attack
+  type: http
+  seq: 18
+}
+
+post {
+  url: {{encountersUrl}}/api/battles/current/actions
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+body:json {
+  {"type":"attack"}
+}
+
+tests {
+  test("Round resolved by the server", () => {
+    expect(res.getStatus()).to.equal(200);
+    var b = res.getBody();
+    expect(b.encounter_id).to.equal(bru.getVar("encounterId"));
+    expect(b.turn).to.equal(1);
+    expect(b.last_round.turn).to.equal(1);
+    expect(b.last_round.events.length).to.be.above(0);
+    expect(b.wild.hp).to.be.within(0, b.wild.max_hp);
+    b.team.forEach(m => expect(m.hp).to.be.within(0, m.max_hp));
+    var attacks = b.last_round.events.filter(e => e.type === "attack");
+    attacks.forEach(e => {expect(e.damage).to.be.at.least(0); expect(["strong", "neutral", "weak"]).to.include(e.effectiveness);});
+    if (b.status === "finished") {
+      expect(["victory", "defeat"]).to.include(b.result.outcome);
+      expect(b.result.run).to.have.property("stage");
+    } else {
+      expect(b.result).to.equal(null);
+    }
+    bru.setVar("runLost", b.status === "finished" && b.result.outcome === "defeat");
+  });
+}

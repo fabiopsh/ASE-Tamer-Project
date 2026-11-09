@@ -1,0 +1,19 @@
+meta {
+  name: GET /api/runs/{id} - unknown run
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{encountersUrl}}/api/runs/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+tests {
+  test("404 NOT_FOUND", () => {expect(res.getStatus()).to.equal(404); expect(res.getBody().error).to.equal("NOT_FOUND");});
+}

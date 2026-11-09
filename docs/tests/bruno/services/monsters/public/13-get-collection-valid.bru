@@ -1,0 +1,19 @@
+meta {
+  name: GET /api/collection?run_id={{runId}} - collection valid
+  type: http
+  seq: 13
+}
+
+get {
+  url: {{monstersUrl}}/api/collection?run_id={{runId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+tests {
+  test("Three starters in the current run", () => {expect(res.getStatus()).to.equal(200); var b = res.getBody(); expect(b.items).to.have.lengthOf(3); b.items.forEach(i => {expect(i.run_id).to.equal(bru.getVar("runId")); expect(i).to.include.keys("owned_id", "monster_id", "level");});});
+}

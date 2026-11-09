@@ -1,0 +1,19 @@
+meta {
+  name: GET /api/runs/current - after the reset
+  type: http
+  seq: 22
+}
+
+get {
+  url: {{encountersUrl}}/api/runs/current
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+tests {
+  test("404 NO_ACTIVE_RUN: new starters must be chosen", () => {expect(res.getStatus()).to.equal(404); expect(res.getBody().error).to.equal("NO_ACTIVE_RUN");});
+}

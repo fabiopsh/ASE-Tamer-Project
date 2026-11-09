@@ -1,0 +1,75 @@
+/* Round log lines: battle screen and history detail. */
+
+.blog-lines {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.blog-line {
+  --tone: var(--text-2);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: rgba(8, 10, 32, 0.55);
+  border: 1px solid var(--border-soft);
+  border-left: 3px solid var(--tone);
+  font-size: var(--text-sm);
+  line-height: 1.4;
+}
+.blog-line--team { --tone: var(--accent-2); }
+.blog-line--wild { --tone: #ff9a7a; }
+.blog-line--strong { --tone: var(--gold); background: linear-gradient(90deg, rgba(255, 210, 122, 0.12), rgba(8, 10, 32, 0.55) 60%); }
+.blog-line--weak { --tone: var(--text-3); }
+.blog-line--miss { --tone: var(--info); }
+.blog-line--ko { --tone: var(--danger); background: linear-gradient(90deg, rgba(255, 111, 142, 0.14), rgba(8, 10, 32, 0.55) 60%); }
+.blog-line--switch { --tone: var(--accent-strong); }
+.blog-line--flee { --tone: var(--warning); }
+.blog-line--end { --tone: var(--success); font-weight: var(--weight-bold); }
+.blog-line--info { --tone: var(--text-3); }
+
+.blog-line__icon { flex: none; color: var(--tone); margin-top: 2px; }
+.blog-line__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.blog-line__text { color: var(--text-1); }
+.blog-line__detail { color: var(--tone); font-weight: var(--weight-bold); font-size: var(--text-sm); }
+.blog-line--weak .blog-line__detail { color: var(--text-2); }
+.blog-line__dmg {
+  flex: none;
+  align-self: center;
+  padding: 1px 8px;
+  border-radius: var(--radius-pill);
+  font-weight: var(--weight-black);
+  font-size: var(--text-sm);
+  color: #ffd9de;
+  background: rgba(255, 111, 142, 0.16);
+  border: 1px solid rgba(255, 111, 142, 0.35);
+}
+
+.blog-line--fresh { animation: blog-in 320ms var(--ease-out) backwards; }
+@keyframes blog-in {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: none; }
+}
+
+.blog-round { display: flex; flex-direction: column; gap: var(--space-2); }
+.blog-round + .blog-round { padding-top: var(--space-4); border-top: 1px solid var(--border-soft); }
+.blog-round__turn {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  font-family: var(--font-ui);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-black);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .blog-line--fresh { animation: none; }
+}

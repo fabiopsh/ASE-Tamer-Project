@@ -1,0 +1,19 @@
+meta {
+  name: GET /api/abilities/1 - ability valid
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{monstersUrl}}/api/abilities/1
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+tests {
+  test("Ability detail", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody().ability_id).to.equal(1);});
+}

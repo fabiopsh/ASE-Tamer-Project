@@ -1,0 +1,28 @@
+meta {
+  name: POST /api/teams - save the team
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{teamsUrl}}/api/teams
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+body:json {
+  {"name":"E2E","members":["{{owned1}}","{{owned2}}","{{owned3}}"]}
+}
+
+tests {
+  test("Team saved in order", () => {
+    expect(res.getStatus()).to.equal(201);
+    var b = res.getBody();
+    expect(b.members.map(m => m.owned_id)).to.eql([bru.getVar("owned1"), bru.getVar("owned2"), bru.getVar("owned3")]);
+    bru.setVar("teamId", b.team_id);
+  });
+}

@@ -1,0 +1,33 @@
+meta {
+  name: GET /api/history/{{encounterId}} - detail matches the battle
+  type: http
+  seq: 13
+}
+
+get {
+  url: {{historyUrl}}/api/history/{{encounterId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+tests {
+  test("Detail matches the final battle response", () => {
+    expect(res.getStatus()).to.equal(200);
+    var b = res.getBody();
+    expect(b.encounter_id).to.equal(bru.getVar("encounterId"));
+    expect(b.outcome).to.equal(bru.getVar("outcome"));
+    expect(b.template.template_id).to.equal(bru.getVar("templateId"));
+    expect(b.wild.monster_id).to.equal(bru.getVar("wildMonsterId"));
+    expect(b.team_snapshot).to.have.lengthOf(3);
+    expect(b.turns).to.have.lengthOf(bru.getVar("rounds"));
+    if (bru.getVar("outcome") === "victory") {
+      expect(b.reward.monster_id).to.equal(bru.getVar("rewardMonsterId"));
+    } else {
+      expect(b.reward).to.equal(null);
+    }
+  });
+}

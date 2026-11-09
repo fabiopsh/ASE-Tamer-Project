@@ -1,0 +1,19 @@
+meta {
+  name: GET /api/history/{{encounterId1}} - invalid: record of another player
+  type: http
+  seq: 11
+}
+
+get {
+  url: {{historyUrl}}/api/history/{{encounterId1}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{ownerToken}}
+}
+
+tests {
+  test("404 NOT_FOUND, never 403 (P-11)", () => {expect(res.getStatus()).to.equal(404); expect(res.getBody().error).to.equal("NOT_FOUND");});
+}

@@ -1,0 +1,28 @@
+meta {
+  name: POST /api/auth/register - new player
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{authUrl}}/api/auth/register
+  body: json
+  auth: none
+}
+
+body:json {
+  {"username":"{{e2eUsername}}","password":"pikachu123"}
+}
+
+script:pre-request {
+  bru.setVar("e2eUsername", "e2e_" + Math.random().toString(16).slice(2, 12));
+}
+
+tests {
+  test("Account created", () => {
+    expect(res.getStatus()).to.equal(201);
+    expect(res.getBody().player_id).to.be.a("string");
+    expect(res.getBody()).to.not.have.property("password");
+    bru.setVar("playerId", res.getBody().player_id);
+  });
+}

@@ -1,0 +1,21 @@
+meta {
+  name: POST /api/auth/token - get player token
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{authUrl}}/api/auth/token
+  body: formUrlEncoded
+  auth: none
+}
+
+body:form-urlencoded {
+  grant_type: password
+  username: {{setupUsername}}
+  password: pikachu123
+}
+
+tests {
+  test("Player token issued", () => {expect(res.getStatus()).to.equal(200); bru.setVar("playerToken", res.getBody().access_token); bru.setVar("ownerToken", res.getBody().access_token);});
+}

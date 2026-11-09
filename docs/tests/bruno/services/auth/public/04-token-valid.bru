@@ -1,0 +1,30 @@
+meta {
+  name: POST /api/auth/token - valid: password grant
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{authUrl}}/api/auth/token
+  body: formUrlEncoded
+  auth: none
+}
+
+body:form-urlencoded {
+  grant_type: password
+  username: {{authUsername}}
+  password: pikachu123
+}
+
+tests {
+  test("200 Bearer token, not cacheable", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getHeader("cache-control")).to.equal("no-store");
+    const body = res.getBody();
+    expect(body.token_type).to.equal("Bearer");
+    expect(body.scope).to.equal("player");
+    expect(body.expires_in).to.be.above(0);
+    expect(body.access_token.split(".")).to.have.lengthOf(3);
+    bru.setVar("playerToken", body.access_token);
+  });
+}

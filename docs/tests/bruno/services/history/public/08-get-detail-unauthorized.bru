@@ -1,0 +1,15 @@
+meta {
+  name: GET /api/history/{{encounterId}} - detail invalid: no token
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{historyUrl}}/api/history/{{encounterId}}
+  body: none
+  auth: none
+}
+
+tests {
+  test("401 without token", () => {expect(res.getStatus()).to.equal(401);});
+}

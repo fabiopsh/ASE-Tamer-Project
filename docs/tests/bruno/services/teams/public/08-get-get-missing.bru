@@ -1,0 +1,19 @@
+meta {
+  name: GET /api/teams/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee - get missing
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{teamsUrl}}/api/teams/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+tests {
+  test("404 for missing or foreign team", () => {expect(res.getStatus()).to.equal(404);});
+}

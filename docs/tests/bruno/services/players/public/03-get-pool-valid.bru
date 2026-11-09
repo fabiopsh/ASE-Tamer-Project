@@ -1,0 +1,19 @@
+meta {
+  name: GET /api/players/me/starters - pool valid
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{playersUrl}}/api/players/me/starters
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+tests {
+  test("Pool of ten commons", () => {expect(res.getStatus()).to.equal(200); expect(res.getBody().pool).to.have.lengthOf(10);});
+}
