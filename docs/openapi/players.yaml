@@ -1,0 +1,208 @@
+---
+openapi: 3.1.0
+tags:
+- name: players
+- name: players-internal
+components:
+  schemas:
+    ChooseStartersRequest:
+      type: object
+      properties:
+        monsterIds:
+          type: array
+          items:
+            type: integer
+            format: int32
+    CreatePlayerRequest:
+      type: object
+      required:
+      - playerId
+      properties:
+        playerId:
+          $ref: "#/components/schemas/UUID"
+    ErrorDetail:
+      type: object
+      properties:
+        field:
+          type: string
+        code:
+          type: string
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        details:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorDetail"
+    NewRunRequest:
+      type: object
+      required:
+      - endedRunId
+      properties:
+        endedRunId:
+          $ref: "#/components/schemas/UUID"
+    UUID:
+      type: string
+      format: uuid
+      pattern: "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}"
+  securitySchemes:
+    bearerAuth:
+      description: JWT access token from the auth service (player or service role)
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+paths:
+  /api/players/me:
+    get:
+      summary: Read my player profile (US-03)
+      operationId: PlayersResource_profile
+      tags:
+      - players
+      responses:
+        "200":
+          description: Player profile
+          content:
+            application/json:
+              schema: {}
+        "404":
+          description: NOT_FOUND
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      security:
+      - bearerAuth:
+        - player
+  /api/players/me/starters:
+    get:
+      summary: Read the persistent starter pool (US-06)
+      operationId: PlayersResource_starterPool
+      tags:
+      - players
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: {}
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      security:
+      - bearerAuth:
+        - player
+    post:
+      summary: "Choose three starter monsters and open the run (US-06, US-07)"
+      operationId: PlayersResource_choose
+      tags:
+      - players
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChooseStartersRequest"
+        required: true
+      responses:
+        "201":
+          description: Starters chosen
+        "400":
+          description: INVALID_STARTERS
+        "409":
+          description: STARTERS_ALREADY_CHOSEN
+        "503":
+          description: DEPENDENCY_UNAVAILABLE
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      security:
+      - bearerAuth:
+        - player
+  /internal/players:
+    post:
+      summary: "Create a profile idempotently, called by auth"
+      operationId: PlayersInternalResource_create
+      tags:
+      - players-internal
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePlayerRequest"
+        required: true
+      responses:
+        "201":
+          description: Profile created
+        "200":
+          description: Profile already existed
+          content:
+            application/json:
+              schema: {}
+        "400":
+          description: VALIDATION_ERROR
+        "401":
+          description: "UNAUTHORIZED: missing or invalid token"
+        "403":
+          description: "FORBIDDEN: not a service token"
+        "503":
+          description: DEPENDENCY_UNAVAILABLE
+      security:
+      - bearerAuth:
+        - service
+  /internal/players/{pid}/new-run:
+    post:
+      summary: Rotate the run and starter pool after a completed run
+      operationId: PlayersInternalResource_newRun
+      tags:
+      - players-internal
+      parameters:
+      - name: pid
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewRunRequest"
+        required: true
+      responses:
+        "200":
+          description: Profile with the new run (unchanged when repeated)
+          content:
+            application/json:
+              schema: {}
+        "400":
+          description: VALIDATION_ERROR
+        "401":
+          description: "UNAUTHORIZED: missing or invalid token"
+        "403":
+          description: "FORBIDDEN: not a service token"
+        "404":
+          description: NOT_FOUND
+        "503":
+          description: DEPENDENCY_UNAVAILABLE
+      security:
+      - bearerAuth:
+        - service
+info:
+  title: Monster Tamers - players
+  version: 0.1.0
+  description: "Monster Tamers players service. Public endpoints (/api/*) need a player\
+    \ token, internal endpoints (/internal/*) a service token; both are Bearer JWTs\
+    \ from the auth service. Errors use {error, message, details}."
+servers:
+- url: https://localhost:8443
+  description: Auto generated value
+- url: https://0.0.0.0:8443
+  description: Auto generated value

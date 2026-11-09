@@ -17,6 +17,7 @@ import jakarta.ws.rs.core.Response;
 import java.util.UUID;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 
 @Path("/internal/players")
 @Consumes(MediaType.APPLICATION_JSON)
@@ -30,6 +31,12 @@ public class PlayersInternalResource {
 
     @POST
     @Operation(summary = "Create a profile idempotently, called by auth")
+    @APIResponse(responseCode = "201", description = "Profile created")
+    @APIResponse(responseCode = "200", description = "Profile already existed")
+    @APIResponse(responseCode = "400", description = "VALIDATION_ERROR")
+    @APIResponse(responseCode = "401", description = "UNAUTHORIZED: missing or invalid token")
+    @APIResponse(responseCode = "403", description = "FORBIDDEN: not a service token")
+    @APIResponse(responseCode = "503", description = "DEPENDENCY_UNAVAILABLE")
     public Response create(@Valid @NotNull CreatePlayerRequest request) {
         // The service call is idempotent even when auth retries after a timeout.
         boolean exists = it.unipi.ase.tamer.players.domain.Player.findById(request.playerId()) != null;
@@ -40,6 +47,12 @@ public class PlayersInternalResource {
     @POST
     @Path("/{pid}/new-run")
     @Operation(summary = "Rotate the run and starter pool after a completed run")
+    @APIResponse(responseCode = "200", description = "Profile with the new run (unchanged when repeated)")
+    @APIResponse(responseCode = "400", description = "VALIDATION_ERROR")
+    @APIResponse(responseCode = "401", description = "UNAUTHORIZED: missing or invalid token")
+    @APIResponse(responseCode = "403", description = "FORBIDDEN: not a service token")
+    @APIResponse(responseCode = "404", description = "NOT_FOUND")
+    @APIResponse(responseCode = "503", description = "DEPENDENCY_UNAVAILABLE")
     public Object newRun(@PathParam("pid") UUID playerId, @Valid @NotNull NewRunRequest request) {
         return service.newRun(playerId, request.endedRunId());
     }

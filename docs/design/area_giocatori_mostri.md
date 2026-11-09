@@ -2,6 +2,8 @@
 
 Proposta per la consegna opzionale dell'architettura (20/10).
 
+> **Documento superato in parte (09/11/2026).** Gli acceptance criteria della sezione 3 sono sostituiti da [`docs/backlog/acceptance_criteria.md`](../backlog/acceptance_criteria.md). Le API e le tabelle effettive sono in [`docs/openapi/`](../openapi/) e nelle migrazioni Flyway dei servizi. Cambiano in particolare: starter scelti **una volta per run**, mostro ottenuto al **livello del selvatico**, risorse altrui → **404** (non 403), lo username **non** è copiato in `Players` (P-19). Vedi anche [architettura_backend.md, sezione 10](../architettura/architettura_backend.md#10-aggiornamento-del-091126-piano-di-implementazione).
+>
 > **Aggiornamento 15/10:** alcune decisioni sono cambiate con l'introduzione delle run roguelike (stage, starter per run, livello dei mostri ottenuti, `run_id` in `OwnedMonsters`). Vedi [architettura_backend.md, sezione 8](../architettura/architettura_backend.md#8-cosa-cambia-nelle-decisioni-precedenti).
 
 Copre:
@@ -112,6 +114,8 @@ statistica_effettiva = base + growth × (level − 1)
 ---
 
 ## 3. Acceptance criteria
+
+> **Superata:** versione aggiornata in [`docs/backlog/acceptance_criteria.md`](../backlog/acceptance_criteria.md).
 
 ### Account e progressi
 

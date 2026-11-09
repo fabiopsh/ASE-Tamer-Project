@@ -1,0 +1,548 @@
+---
+openapi: 3.1.0
+tags:
+- name: collection
+- name: collections-internal
+- name: monsters
+- name: monsters-internal
+- name: sprites
+paths:
+  /api/abilities:
+    get:
+      summary: List all abilities
+      operationId: CatalogueResource_abilities
+      tags:
+      - monsters
+      responses:
+        "200":
+          description: Abilities
+          content:
+            application/json:
+              schema: {}
+        "401":
+          description: "UNAUTHORIZED: missing or invalid token"
+        "403":
+          description: Not Allowed
+      security:
+      - bearerAuth:
+        - player
+  /api/abilities/{id}:
+    get:
+      summary: View an ability
+      operationId: CatalogueResource_ability
+      tags:
+      - monsters
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "200":
+          description: Ability
+          content:
+            application/json:
+              schema: {}
+        "401":
+          description: "UNAUTHORIZED: missing or invalid token"
+        "404":
+          description: "NOT_FOUND: unknown ability"
+        "403":
+          description: Not Allowed
+      security:
+      - bearerAuth:
+        - player
+  /api/collection:
+    get:
+      summary: View active or archived personal collection (US-09)
+      operationId: CollectionResource_list
+      tags:
+      - collection
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: run_id
+        in: query
+        schema:
+          $ref: "#/components/schemas/UUID"
+      - name: size
+        in: query
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "200":
+          description: Page of owned monsters
+          content:
+            application/json:
+              schema: {}
+        "400":
+          description: VALIDATION_ERROR
+        "401":
+          description: "UNAUTHORIZED: missing or invalid token"
+        "403":
+          description: Not Allowed
+      security:
+      - bearerAuth:
+        - player
+  /api/collection/{owned_id}:
+    get:
+      summary: View an owned monster instance (US-11)
+      operationId: CollectionResource_detail
+      tags:
+      - collection
+      parameters:
+      - name: owned_id
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      responses:
+        "200":
+          description: Owned monster
+          content:
+            application/json:
+              schema: {}
+        "401":
+          description: "UNAUTHORIZED: missing or invalid token"
+        "404":
+          description: "NOT_FOUND: missing or owned by another player"
+        "403":
+          description: Not Allowed
+      security:
+      - bearerAuth:
+        - player
+  /api/elements:
+    get:
+      summary: Get the element effectiveness cycle
+      operationId: CatalogueResource_elements
+      tags:
+      - monsters
+      responses:
+        "200":
+          description: Elements and effectiveness
+          content:
+            application/json:
+              schema: {}
+        "401":
+          description: "UNAUTHORIZED: missing or invalid token"
+        "403":
+          description: Not Allowed
+      security:
+      - bearerAuth:
+        - player
+  /api/monsters:
+    get:
+      summary: Browse the monster catalogue (US-10)
+      operationId: CatalogueResource_catalogue
+      tags:
+      - monsters
+      parameters:
+      - name: element
+        in: query
+        schema:
+          type: string
+      - name: ids
+        in: query
+        schema:
+          type: string
+      - name: page
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: rarity
+        in: query
+        schema:
+          type: string
+      - name: size
+        in: query
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "200":
+          description: Page of monster species
+          content:
+            application/json:
+              schema: {}
+        "400":
+          description: VALIDATION_ERROR
+        "401":
+          description: "UNAUTHORIZED: missing or invalid token"
+        "403":
+          description: Not Allowed
+      security:
+      - bearerAuth:
+        - player
+  /api/monsters/{id}:
+    get:
+      summary: View a monster species and its ability (US-11)
+      operationId: CatalogueResource_monster
+      tags:
+      - monsters
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "200":
+          description: Monster species with stats and ability
+          content:
+            application/json:
+              schema: {}
+        "401":
+          description: "UNAUTHORIZED: missing or invalid token"
+        "404":
+          description: "NOT_FOUND: unknown species"
+        "403":
+          description: Not Allowed
+      security:
+      - bearerAuth:
+        - player
+  /images/monsters/{filename}:
+    get:
+      summary: Serve a cacheable 64x64 monster sprite (public)
+      operationId: SpriteResource_sprite
+      tags:
+      - sprites
+      parameters:
+      - name: filename
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: "PNG image (no token needed, P-16)"
+          content:
+            application/json:
+              schema: {}
+        "404":
+          description: Unknown sprite
+  /internal/collections/{pid}/archive:
+    post:
+      summary: Archive active monsters of a completed run
+      operationId: CollectionsInternalResource_archive
+      tags:
+      - collections-internal
+      parameters:
+      - name: pid
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ArchiveRequest"
+        required: true
+      responses:
+        "200":
+          description: Number of archived monsters (0 when repeated)
+          content:
+            application/json:
+              schema: {}
+        "400":
+          description: VALIDATION_ERROR
+        "401":
+          description: "UNAUTHORIZED: missing or invalid token"
+        "403":
+          description: "FORBIDDEN: not a service token"
+      security:
+      - bearerAuth:
+        - service
+  /internal/collections/{pid}/instances:
+    get:
+      summary: Get player-owned instances and stats for teams/encounters
+      operationId: CollectionsInternalResource_instances
+      tags:
+      - collections-internal
+      parameters:
+      - name: pid
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      - name: ids
+        in: query
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Owned instances with stats
+          content:
+            application/json:
+              schema: {}
+        "400":
+          description: VALIDATION_ERROR
+        "401":
+          description: "UNAUTHORIZED: missing or invalid token"
+        "403":
+          description: "FORBIDDEN: not a service token"
+      security:
+      - bearerAuth:
+        - service
+  /internal/collections/{pid}/monsters:
+    post:
+      summary: Idempotently grant an encounter reward (US-12)
+      operationId: CollectionsInternalResource_reward
+      tags:
+      - collections-internal
+      parameters:
+      - name: pid
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RewardRequest"
+        required: true
+      responses:
+        "201":
+          description: Reward created
+        "200":
+          description: "Already granted for this encounter: the same instance"
+          content:
+            application/json:
+              schema: {}
+        "400":
+          description: VALIDATION_ERROR
+        "401":
+          description: "UNAUTHORIZED: missing or invalid token"
+        "403":
+          description: "FORBIDDEN: not a service token"
+      security:
+      - bearerAuth:
+        - service
+  /internal/collections/{pid}/starters:
+    post:
+      summary: Idempotently grant three common starters for a run
+      operationId: CollectionsInternalResource_starters
+      tags:
+      - collections-internal
+      parameters:
+      - name: pid
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StarterGrantRequest"
+        required: true
+      responses:
+        "201":
+          description: Starters created
+        "200":
+          description: "Already granted for this run: the same instances"
+          content:
+            application/json:
+              schema: {}
+        "400":
+          description: VALIDATION_ERROR or INVALID_COLLECTION_OPERATION
+        "401":
+          description: "UNAUTHORIZED: missing or invalid token"
+        "403":
+          description: "FORBIDDEN: not a service token"
+      security:
+      - bearerAuth:
+        - service
+  /internal/collections/{pid}/xp:
+    post:
+      summary: Idempotently grant XP to active owned instances
+      operationId: CollectionsInternalResource_xp
+      tags:
+      - collections-internal
+      parameters:
+      - name: pid
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/XpGrantRequest"
+        required: true
+      responses:
+        "200":
+          description: XP applied (or already applied for this encounter)
+          content:
+            application/json:
+              schema: {}
+        "400":
+          description: VALIDATION_ERROR
+        "401":
+          description: "UNAUTHORIZED: missing or invalid token"
+        "403":
+          description: "FORBIDDEN: not a service token"
+      security:
+      - bearerAuth:
+        - service
+  /internal/monsters:
+    get:
+      summary: List species candidates for starter/wild generation
+      operationId: MonstersInternalResource_candidates
+      tags:
+      - monsters-internal
+      parameters:
+      - name: element
+        in: query
+        schema:
+          type: string
+      - name: exclude
+        in: query
+        schema:
+          type: string
+      - name: rarity
+        in: query
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Candidate species
+          content:
+            application/json:
+              schema: {}
+        "400":
+          description: VALIDATION_ERROR
+        "401":
+          description: "UNAUTHORIZED: missing or invalid token"
+        "403":
+          description: "FORBIDDEN: not a service token"
+      security:
+      - bearerAuth:
+        - service
+  /internal/monsters/{id}/stats:
+    get:
+      summary: Get effective stats of a species at a level
+      operationId: MonstersInternalResource_stats
+      tags:
+      - monsters-internal
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int32
+      - name: level
+        in: query
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "200":
+          description: Stats at the level
+          content:
+            application/json:
+              schema: {}
+        "400":
+          description: "VALIDATION_ERROR: level outside 1..50"
+        "401":
+          description: "UNAUTHORIZED: missing or invalid token"
+        "403":
+          description: "FORBIDDEN: not a service token"
+        "404":
+          description: NOT_FOUND
+      security:
+      - bearerAuth:
+        - service
+components:
+  schemas:
+    ArchiveRequest:
+      type: object
+      required:
+      - runId
+      properties:
+        runId:
+          $ref: "#/components/schemas/UUID"
+    RewardRequest:
+      type: object
+      required:
+      - runId
+      - monsterId
+      - level
+      - encounterId
+      - source
+      properties:
+        runId:
+          $ref: "#/components/schemas/UUID"
+        monsterId:
+          type: integer
+          format: int32
+        level:
+          type: integer
+          format: int32
+        encounterId:
+          $ref: "#/components/schemas/UUID"
+        source:
+          type: string
+    StarterGrantRequest:
+      type: object
+      required:
+      - runId
+      - monsterIds
+      properties:
+        runId:
+          $ref: "#/components/schemas/UUID"
+        monsterIds:
+          type: array
+          items:
+            type: integer
+            format: int32
+    UUID:
+      type: string
+      format: uuid
+      pattern: "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}"
+    XpGrantRequest:
+      type: object
+      required:
+      - encounterId
+      - ownedIds
+      - xp
+      properties:
+        encounterId:
+          $ref: "#/components/schemas/UUID"
+        ownedIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+            pattern: "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}"
+        xp:
+          type: integer
+          format: int32
+  securitySchemes:
+    bearerAuth:
+      description: JWT access token from the auth service (player or service role)
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+info:
+  title: Monster Tamers - monsters
+  version: 0.1.0
+  description: "Monster Tamers monsters service. Public endpoints (/api/*) need a\
+    \ player token, internal endpoints (/internal/*) a service token; both are Bearer\
+    \ JWTs from the auth service. Errors use {error, message, details}."
+servers:
+- url: https://localhost:8443
+  description: Auto generated value
+- url: https://0.0.0.0:8443
+  description: Auto generated value

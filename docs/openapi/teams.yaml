@@ -1,0 +1,286 @@
+---
+openapi: 3.1.0
+tags:
+- name: teams
+- name: teams-internal
+components:
+  schemas:
+    ResetTeamsRequest:
+      type: object
+      required:
+      - runId
+      properties:
+        runId:
+          $ref: "#/components/schemas/UUID"
+    TeamRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        members:
+          type: array
+          items:
+            type: string
+            format: uuid
+            pattern: "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}"
+    UUID:
+      type: string
+      format: uuid
+      pattern: "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}"
+    ValidateTeamRequest:
+      type: object
+      properties:
+        members:
+          type: array
+          items:
+            type: string
+            format: uuid
+            pattern: "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}"
+  securitySchemes:
+    bearerAuth:
+      description: JWT access token from the auth service (player or service role)
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+paths:
+  /api/teams:
+    get:
+      summary: List saved teams for the current run (US-14)
+      operationId: TeamsResource_teams
+      tags:
+      - teams
+      responses:
+        "200":
+          description: Teams of the current run
+          content:
+            application/json:
+              schema: {}
+        "401":
+          description: "UNAUTHORIZED: missing or invalid token"
+        "403":
+          description: Not Allowed
+      security:
+      - bearerAuth:
+        - player
+    post:
+      summary: Create and validate a team (US-14)
+      operationId: TeamsResource_create
+      tags:
+      - teams
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TeamRequest"
+        required: true
+      responses:
+        "201":
+          description: Team created
+        "400":
+          description: "TEAM_INVALID (details: TEAM_SIZE, DUPLICATE_MEMBER, NOT_OWNED,\
+            \ TEAM_LIMIT, ...)"
+        "401":
+          description: "UNAUTHORIZED: missing or invalid token"
+        "503":
+          description: DEPENDENCY_UNAVAILABLE
+        "403":
+          description: Not Allowed
+      security:
+      - bearerAuth:
+        - player
+  /api/teams/validate:
+    post:
+      summary: Validate a team without saving it (US-16)
+      operationId: TeamsResource_validate
+      tags:
+      - teams
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ValidateTeamRequest"
+        required: true
+      responses:
+        "200":
+          description: "{valid, errors}: invalid teams are reported here, not as errors"
+          content:
+            application/json:
+              schema: {}
+        "400":
+          description: VALIDATION_ERROR
+        "401":
+          description: "UNAUTHORIZED: missing or invalid token"
+        "503":
+          description: DEPENDENCY_UNAVAILABLE
+        "403":
+          description: Not Allowed
+      security:
+      - bearerAuth:
+        - player
+  /api/teams/{id}:
+    put:
+      summary: "Replace a team's name, members and order (US-15)"
+      operationId: TeamsResource_update
+      tags:
+      - teams
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TeamRequest"
+        required: true
+      responses:
+        "200":
+          description: Team updated
+          content:
+            application/json:
+              schema: {}
+        "400":
+          description: TEAM_INVALID
+        "401":
+          description: "UNAUTHORIZED: missing or invalid token"
+        "404":
+          description: "NOT_FOUND: missing or owned by another player"
+        "409":
+          description: "TEAM_INVALID: MIXED_RUNS"
+        "503":
+          description: DEPENDENCY_UNAVAILABLE
+        "403":
+          description: Not Allowed
+      security:
+      - bearerAuth:
+        - player
+    get:
+      summary: View a saved team
+      operationId: TeamsResource_team
+      tags:
+      - teams
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      responses:
+        "200":
+          description: Team with ordered members
+          content:
+            application/json:
+              schema: {}
+        "401":
+          description: "UNAUTHORIZED: missing or invalid token"
+        "404":
+          description: "NOT_FOUND: missing or owned by another player"
+        "403":
+          description: Not Allowed
+      security:
+      - bearerAuth:
+        - player
+    delete:
+      summary: Delete a team
+      operationId: TeamsResource_delete
+      tags:
+      - teams
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      responses:
+        "204":
+          description: Team deleted
+        "401":
+          description: "UNAUTHORIZED: missing or invalid token"
+        "404":
+          description: "NOT_FOUND: missing or owned by another player"
+        "403":
+          description: Not Allowed
+      security:
+      - bearerAuth:
+        - player
+  /internal/teams/{id}:
+    get:
+      summary: Revalidate a team and return full member stats for a battle
+      operationId: TeamsInternalResource_team
+      tags:
+      - teams-internal
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      - name: player_id
+        in: query
+        schema:
+          $ref: "#/components/schemas/UUID"
+      responses:
+        "200":
+          description: Team with member stats
+          content:
+            application/json:
+              schema: {}
+        "401":
+          description: "UNAUTHORIZED: missing or invalid token"
+        "403":
+          description: "FORBIDDEN: not a service token"
+        "404":
+          description: NOT_FOUND
+        "409":
+          description: TEAM_INVALID
+        "503":
+          description: DEPENDENCY_UNAVAILABLE
+      security:
+      - bearerAuth:
+        - service
+  /internal/teams/{pid}/reset:
+    post:
+      summary: Idempotently remove all teams of a completed run
+      operationId: TeamsInternalResource_reset
+      tags:
+      - teams-internal
+      parameters:
+      - name: pid
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResetTeamsRequest"
+        required: true
+      responses:
+        "200":
+          description: Number of removed teams (0 when repeated)
+          content:
+            application/json:
+              schema: {}
+        "400":
+          description: VALIDATION_ERROR
+        "401":
+          description: "UNAUTHORIZED: missing or invalid token"
+        "403":
+          description: "FORBIDDEN: not a service token"
+      security:
+      - bearerAuth:
+        - service
+info:
+  title: Monster Tamers - teams
+  version: 0.1.0
+  description: "Monster Tamers teams service. Public endpoints (/api/*) need a player\
+    \ token, internal endpoints (/internal/*) a service token; both are Bearer JWTs\
+    \ from the auth service. Errors use {error, message, details}."
+servers:
+- url: https://localhost:8443
+  description: Auto generated value
+- url: https://0.0.0.0:8443
+  description: Auto generated value

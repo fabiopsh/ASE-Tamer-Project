@@ -1,0 +1,388 @@
+---
+openapi: 3.1.0
+tags:
+- name: history
+- name: history-internal
+components:
+  schemas:
+    EncounterRecordRequest:
+      type: object
+      required:
+      - encounterId
+      - playerId
+      - runId
+      - template
+      - wild
+      - outcome
+      - engineVersion
+      - startedAt
+      - endedAt
+      properties:
+        encounterId:
+          $ref: "#/components/schemas/UUID"
+        playerId:
+          $ref: "#/components/schemas/UUID"
+        runId:
+          $ref: "#/components/schemas/UUID"
+        template:
+          $ref: "#/components/schemas/TemplateInfo"
+        wild:
+          $ref: "#/components/schemas/WildInfo"
+        teamSnapshot:
+          type: array
+          items:
+            $ref: "#/components/schemas/JsonNode"
+          maxItems: 6
+        outcome:
+          $ref: "#/components/schemas/Outcome"
+        reward:
+          $ref: "#/components/schemas/JsonNode"
+        xpGained:
+          type: integer
+          format: int32
+          maximum: 1000000
+          minimum: 0
+        turns:
+          type: array
+          items:
+            $ref: "#/components/schemas/JsonNode"
+          maxItems: 500
+        rngSeed:
+          type: string
+          pattern: "-?[0-9]{1,19}"
+        engineVersion:
+          type: integer
+          format: int32
+          maximum: 32767
+          minimum: 1
+        startedAt:
+          $ref: "#/components/schemas/Instant"
+        endedAt:
+          $ref: "#/components/schemas/Instant"
+    EncounterRecordResponse:
+      type: object
+      properties:
+        encounterId:
+          $ref: "#/components/schemas/UUID"
+        runId:
+          $ref: "#/components/schemas/UUID"
+        template:
+          $ref: "#/components/schemas/TemplateInfo"
+        wild:
+          $ref: "#/components/schemas/JsonNode"
+        teamSnapshot:
+          $ref: "#/components/schemas/JsonNode"
+        outcome:
+          type: string
+        reward:
+          $ref: "#/components/schemas/JsonNode"
+        xpGained:
+          type: integer
+          format: int32
+        turns:
+          $ref: "#/components/schemas/JsonNode"
+        rngSeed:
+          type: string
+        engineVersion:
+          type: integer
+          format: int32
+        startedAt:
+          $ref: "#/components/schemas/Instant"
+        endedAt:
+          $ref: "#/components/schemas/Instant"
+    Instant:
+      type: string
+      format: date-time
+      examples:
+      - 2022-03-10T16:15:50Z
+    JsonNode:
+      type: object
+      properties:
+        empty:
+          type: boolean
+        valueNode:
+          type: boolean
+        containerNode:
+          type: boolean
+        missingNode:
+          type: boolean
+        array:
+          type: boolean
+        object:
+          type: boolean
+        nodeType:
+          $ref: "#/components/schemas/JsonNodeType"
+        pojo:
+          type: boolean
+        number:
+          type: boolean
+        integralNumber:
+          type: boolean
+        floatingPointNumber:
+          type: boolean
+        short:
+          type: boolean
+        int:
+          type: boolean
+        long:
+          type: boolean
+        float:
+          type: boolean
+        double:
+          type: boolean
+        bigDecimal:
+          type: boolean
+        bigInteger:
+          type: boolean
+        textual:
+          type: boolean
+        boolean:
+          type: boolean
+        "null":
+          type: boolean
+        binary:
+          type: boolean
+    JsonNodeType:
+      type: string
+      enum:
+      - ARRAY
+      - BINARY
+      - BOOLEAN
+      - MISSING
+      - "NULL"
+      - NUMBER
+      - OBJECT
+      - POJO
+      - STRING
+    Outcome:
+      type: string
+      enum:
+      - victory
+      - defeat
+      - fled
+      - expired
+      - interrupted
+      - abandoned
+    PageResponseRecordSummary:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/RecordSummary"
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        totalItems:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+    RecordSummary:
+      type: object
+      properties:
+        encounterId:
+          $ref: "#/components/schemas/UUID"
+        runId:
+          $ref: "#/components/schemas/UUID"
+        outcome:
+          type: string
+        template:
+          $ref: "#/components/schemas/TemplateInfo"
+        wild:
+          $ref: "#/components/schemas/JsonNode"
+        reward:
+          $ref: "#/components/schemas/JsonNode"
+        xpGained:
+          type: integer
+          format: int32
+        startedAt:
+          $ref: "#/components/schemas/Instant"
+        endedAt:
+          $ref: "#/components/schemas/Instant"
+    TemplateInfo:
+      type: object
+      required:
+      - templateId
+      - name
+      - stage
+      - element
+      - isBoss
+      properties:
+        templateId:
+          type: integer
+          format: int32
+          minimum: 1
+        name:
+          type: string
+          pattern: \S
+          maxLength: 60
+        stage:
+          type: integer
+          format: int32
+          maximum: 1000
+          minimum: 1
+        element:
+          type: string
+          pattern: \S
+          maxLength: 20
+        isBoss:
+          type: boolean
+    UUID:
+      type: string
+      format: uuid
+      pattern: "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}"
+    WildInfo:
+      type: object
+      required:
+      - monsterId
+      - name
+      - level
+      - rarity
+      - element
+      properties:
+        monsterId:
+          type: integer
+          format: int32
+          minimum: 1
+        name:
+          type: string
+          pattern: \S
+          maxLength: 60
+        level:
+          type: integer
+          format: int32
+          maximum: 1000
+          minimum: 1
+        rarity:
+          type: string
+          pattern: \S
+          maxLength: 20
+        element:
+          type: string
+          pattern: \S
+          maxLength: 20
+  securitySchemes:
+    bearerAuth:
+      description: JWT access token from the auth service (player or service role)
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+paths:
+  /api/history:
+    get:
+      summary: "List my previous encounters, newest first (US-23)"
+      operationId: HistoryResource_list
+      tags:
+      - history
+      parameters:
+      - description: "victory, defeat, fled, expired, interrupted or abandoned"
+        name: outcome
+        in: query
+        schema:
+          type: string
+      - description: "Zero-based page, default 0"
+        name: page
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - description: Only encounters of this run
+        name: run_id
+        in: query
+        schema:
+          type: string
+      - description: "Page size, default 20, max 50"
+        name: size
+        in: query
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "200":
+          description: Page of encounter summaries
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PageResponseRecordSummary"
+        "400":
+          description: "Invalid run_id, outcome, page or size (VALIDATION_ERROR)"
+        "401":
+          description: Missing or invalid token
+        "403":
+          description: Not Allowed
+      security:
+      - bearerAuth:
+        - player
+  /api/history/{encounter_id}:
+    get:
+      summary: View one previous encounter with its full turn log (US-24)
+      operationId: HistoryResource_detail
+      tags:
+      - history
+      parameters:
+      - name: encounter_id
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      responses:
+        "200":
+          description: Full record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EncounterRecordResponse"
+        "401":
+          description: Missing or invalid token
+        "404":
+          description: Not found or not owned (NOT_FOUND)
+        "403":
+          description: Not Allowed
+      security:
+      - bearerAuth:
+        - player
+  /internal/history:
+    post:
+      summary: Store a finished encounter; idempotent on encounter_id (called by encounters)
+      operationId: HistoryInternalResource_store
+      tags:
+      - history-internal
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EncounterRecordRequest"
+        required: true
+      responses:
+        "201":
+          description: Stored; body is the summary of the new record
+        "200":
+          description: "Already stored: nothing changed; body is the stored summary"
+          content:
+            application/json:
+              schema: {}
+        "400":
+          description: Invalid body (VALIDATION_ERROR)
+        "401":
+          description: Missing or invalid token
+        "403":
+          description: Not a service token (FORBIDDEN)
+      security:
+      - bearerAuth:
+        - service
+info:
+  title: Monster Tamers - history
+  version: 0.1.0
+  description: "Monster Tamers history service. Public endpoints (/api/*) need a player\
+    \ token, internal endpoints (/internal/*) a service token; both are Bearer JWTs\
+    \ from the auth service. Errors use {error, message, details}."
+servers:
+- url: https://localhost:8443
+  description: Auto generated value
+- url: https://0.0.0.0:8443
+  description: Auto generated value

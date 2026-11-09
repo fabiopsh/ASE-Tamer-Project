@@ -4,6 +4,8 @@ Decisioni prese dal gruppo il 15/10/2026. Integra [`docs/design/area_giocatori_m
 
 I valori numerici delle formule di gioco (sezione 4) sono **valori iniziali**: vanno bilanciati con simulazioni prima del prototipo.
 
+> **Aggiornamento 09/11/2026:** il piano di implementazione in [`docs/plan/`](../plan/README.md) (06/11/2026) ha cambiato alcune decisioni di questo documento. Dove i due documenti non coincidono vale il piano. Le modifiche sono riassunte nella [sezione 10](#10-aggiornamento-del-091126-piano-di-implementazione). Le API effettive sono in [`docs/openapi/`](../openapi/). Il PDF (`architettura_backend.pdf`, da `.tex`) è fermo al 15/10.
+
 ---
 
 ## 1. Decisioni
@@ -402,3 +404,54 @@ Rispetto a [`area_giocatori_mostri.md`](../design/area_giocatori_mostri.md):
 - Template precisi degli 8 stage e scelta dei boss rare (stage 1–3).
 - Dettaglio degli effetti di `copy_ability`, `invert_advantage`, `random_boost`.
 - Analisi di sicurezza completa (consegna finale).
+
+## 10. Aggiornamento del 09/11/26: piano di implementazione
+
+### Modifiche rispetto a questo documento
+
+| Questo documento (15/10) | Piano di implementazione (06/11) |
+|---|---|
+| `POST /api/auth/login` (JSON) | `POST /api/auth/token`, endpoint OAuth2 (form-urlencoded, `grant_type=password`; `refresh_token` in P2) |
+| `POST /internal/auth/service-token` | `POST /internal/auth/token` con `grant_type=client_credentials` |
+| Nginx serve anche il frontend statico su `/` | Il frontend gira fuori da compose (Vite); Nginx fa solo da proxy per l'API, con CORS |
+| HTTPS terminato su Nginx | HTTPS su ogni collegamento: client→gateway, gateway→servizio, servizio→servizio, servizio→Postgres |
+| Violazione di ownership → 403 (AC di US-05) | → **404**, senza rivelare se la risorsa esiste |
+| Body di `POST /internal/players` non specificato | `{player_id}`; il nome visualizzato di default lo genera `players` |
+| Nessun endpoint interno per filtrare il catalogo | `GET /internal/monsters?rarity=&element=` |
+| US-20 senza endpoint | Risposta finale dell'azione di battaglia + `GET /api/history/{id}` |
+| Esiti: victory, defeat, fled, expired, interrupted | + `abandoned` (battaglia chiusa dall'abbandono della run) |
+| Catalogo solo con autenticazione (D11) | Vale per gli endpoint JSON; le immagini dei mostri sono pubbliche (P-16) |
+
+### Decision log P-01…P-21
+
+| # | Tema | Decisione |
+|---|---|---|
+| P-01 | Ambito | Prototipo P1 (10/11) e consegna finale P2 (15/12) in un unico piano |
+| P-02 | Lingua | Codice, API, OpenAPI e piano in inglese; i documenti italiani precedenti restano |
+| P-03 | Frontend | Vite + React (TypeScript), fuori da docker compose |
+| P-04 | Segreti | Generati al primo avvio dal container `init-secrets` (password DB, certificati, chiavi JWT, segreti dei client); nulla di segreto nel repository |
+| P-05 | Login | Endpoint OAuth2 `POST /api/auth/token`; i servizi usano `client_credentials` su `/internal/auth/token` |
+| P-06 | TLS | HTTPS ovunque già in P1: una CA locale, un certificato per container |
+| P-07 | Porta del gateway | `https://localhost:8443` |
+| P-08 | Stage | Tutti gli 8 stage già in P1 |
+| P-09 | Abilità | Effetti semplici in P1, complessi in P2 |
+| P-10 | Fuga / abbandono | Entrambi in P1: la fuga è un'azione di battaglia, l'abbandono riusa il reset della sconfitta |
+| P-11 | Risorse altrui | Sempre 404, mai 403 |
+| P-12 | Bruno | Collection di component test per tutti e 6 i servizi, più integration ed e2e |
+| P-13 | Accesso per i test | `docker-compose.test.yml` espone i servizi su localhost solo per i test |
+| P-14 | Cifratura a riposo (P2) | Username cifrato (AES-GCM) con indice HMAC; refresh token salvati solo come hash SHA-256 |
+| P-15 | Strumenti di sicurezza (P2) | Semgrep (SAST) e Trivy (dipendenze e immagini); in CI dal 09/11 |
+| P-16 | Immagini | Gli sprite dei mostri sono pubblici: `<img src>` non può inviare un bearer token |
+| P-17 | Token nel frontend | `localStorage`, con CSP e nessun HTML grezzo renderizzato |
+| P-18 | CI in P1 | GitHub Actions con build e test da P1; scansioni di sicurezza in P2 |
+| P-19 | Nome visualizzato di default | `Tamer-<prime 6 cifre esadecimali del player_id>`; lo username non viene copiato in `players` |
+| P-20 | Robustezza della battaglia in P1 | Recupero pigro: una battaglia sparita dalla memoria viene chiusa come `interrupted`, una inattiva come `expired`, al successivo accesso del giocatore; sweep periodico in P2 |
+| P-21 | Boss | I boss di stage non compaiono negli incontri selvatici: si ottengono solo battendoli |
+
+### Altre scelte fatte durante l'implementazione
+
+- Moltiplicatore HP dei boss ×1,5 (vedi [`docs/plan/07-encounters.md`](../plan/07-encounters.md#tuned-constants)).
+- Outbox nel servizio `encounters`: se un servizio non risponde, ricompensa, XP e record di history restano in sospeso e vengono ritentati al successivo accesso del giocatore alla run (idempotenti per `encounter_id`).
+- Gateway: invia ai servizi `Host: <nome del servizio>`, non l'header `Host` del client (CI-2).
+- Immagini Docker: Postgres derivato senza `gosu` (`infra/postgres`), Jackson 2.22.4 sopra il BOM di Quarkus (CI-2, vedi [`docs/security/`](../security/README.md)).
+

@@ -6,6 +6,21 @@ Advanced Software Engineering lab project (University of Pisa, A.Y. 2026/27).
 
 Monster Tamers is a browser game built on microservices. A player registers, picks three starter monsters, builds a team and fights wild monsters and stage bosses in roguelike runs. Victories grant experience and new monsters for the collection.
 
+**Core loop.** Register and log in → choose 3 starters out of a pool of 10 common monsters → build a team of 1–3 monsters → pick an encounter of the current stage → fight turn by turn (`attack`, `switch`, `flee`) → on victory the wild monster joins the collection at its level and the team gains XP → after two wins the stage boss unlocks; beating it opens the next stage.
+
+**Roguelike runs.** A run has 8 stages of growing difficulty. A defeat (or abandoning the run) ends it: the collection of that run is archived, teams are removed and the player chooses new starters for a new run. Past runs, their monsters and their battle history stay visible. Beating the stage 8 boss wins the run.
+
+**Fair play.** The server computes every battle: the client only sends the chosen action. Rewards and XP are granted by internal service-to-service calls, which are idempotent, and every finished battle is stored in the history with its full turn log.
+
+| Service | Responsibility |
+|---|---|
+| `auth` | Accounts, passwords (bcrypt), OAuth2 token endpoint, JWT signing, service clients |
+| `players` | Game profile, starter pool, pointer to the current run |
+| `monsters` | Catalogue of 100 monsters, abilities, sprites, personal collections, levels and XP |
+| `teams` | Teams and their validation (size, ownership, run, limit of five) |
+| `encounters` | Runs and stages, encounter templates, battle engine, end-of-battle outbox |
+| `history` | Permanent record of every finished battle |
+
 ## Architecture
 
 ```
@@ -20,9 +35,17 @@ Browser (Vite + React) ──HTTPS──▶ gateway (Nginx, :8443) ──HTTPS�
 
 Documents:
 
-- [`docs/plan/`](docs/plan/README.md): implementation plan and decision log (the reference for development)
-- [`docs/architettura/architettura_backend.md`](docs/architettura/architettura_backend.md): architecture and game rules
-- [`docs/Monster_Tamer_Functional_Requirements.pdf`](docs/Monster_Tamer_Functional_Requirements.pdf): official requirements
+| What | Where |
+|---|---|
+| Implementation plan and decision log (the reference for development) | [`docs/plan/`](docs/plan/README.md) |
+| Architecture and game rules | [`docs/architettura/architettura_backend.md`](docs/architettura/architettura_backend.md) |
+| OpenAPI: gateway (public API) and every service | [`docs/openapi/`](docs/openapi/) |
+| Backlog with acceptance criteria, dependencies and tests | [`docs/backlog/acceptance_criteria.md`](docs/backlog/acceptance_criteria.md), [`Monster_Tamers_Backlog_completed.xlsx`](docs/backlog/Monster_Tamers_Backlog_completed.xlsx) |
+| API tests: Bruno sources and exported JSON | [`docs/tests/bruno/`](docs/tests/bruno/README.md), [`docs/tests/json/`](docs/tests/json/) |
+| Performance tests (Locust) | [`docs/locust/`](docs/locust/README.md) |
+| CI workflow (copy) | [`docs/ci/ci.yml`](docs/ci/ci.yml) |
+| Security analysis and self-attack | [`docs/security/`](docs/security/README.md) |
+| Official requirements | [`docs/Monster_Tamer_Functional_Requirements.pdf`](docs/Monster_Tamer_Functional_Requirements.pdf) |
 
 ## Repository layout
 

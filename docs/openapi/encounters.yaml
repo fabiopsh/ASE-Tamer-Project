@@ -1,0 +1,665 @@
+---
+openapi: 3.1.0
+tags:
+- name: battles
+- name: encounters
+- name: runs
+- name: runs-internal
+components:
+  schemas:
+    AbilityView:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+    ActionRequest:
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          pattern: attack|switch|flee
+        slot:
+          type: integer
+          format: int32
+          maximum: 3
+          minimum: 1
+    BattleEvent:
+      type: object
+      properties:
+        type:
+          type: string
+        side:
+          type: string
+        attacker:
+          type: string
+        target:
+          type: string
+        damage:
+          type: integer
+          format: int32
+        effectiveness:
+          type: string
+        dodged:
+          type: boolean
+        abilities:
+          type: array
+          items:
+            type: string
+        position:
+          type: integer
+          format: int32
+        from:
+          type: integer
+          format: int32
+        to:
+          type: integer
+          format: int32
+        success:
+          type: boolean
+        outcome:
+          type: string
+    BattleResultResponse:
+      type: object
+      properties:
+        outcome:
+          type: string
+        reward:
+          $ref: "#/components/schemas/RewardResult"
+        xp_gained:
+          type: integer
+          format: int32
+        level_ups:
+          type: array
+          items:
+            $ref: "#/components/schemas/LevelUp"
+        run:
+          $ref: "#/components/schemas/RunProgress"
+    BattleStateResponse:
+      type: object
+      properties:
+        encounter_id:
+          $ref: "#/components/schemas/UUID"
+        status:
+          type: string
+        turn:
+          type: integer
+          format: int32
+        template:
+          $ref: "#/components/schemas/TemplateInfo"
+        wild:
+          $ref: "#/components/schemas/WildState"
+        team:
+          type: array
+          items:
+            $ref: "#/components/schemas/TeamMemberState"
+        last_round:
+          $ref: "#/components/schemas/RoundResult"
+        result:
+          $ref: "#/components/schemas/BattleResultResponse"
+    EncounterResponse:
+      type: object
+      properties:
+        template_id:
+          type: integer
+          format: int32
+        name:
+          type: string
+        stage:
+          type: integer
+          format: int32
+        element:
+          type: string
+        is_boss:
+          type: boolean
+        boss_monster_id:
+          type: integer
+          format: int32
+        level_min:
+          type: integer
+          format: int32
+        level_max:
+          type: integer
+          format: int32
+        rarity_weights:
+          type: object
+          additionalProperties:
+            type: integer
+            format: int32
+    Instant:
+      type: string
+      format: date-time
+      examples:
+      - 2022-03-10T16:15:50Z
+    LevelUp:
+      type: object
+      properties:
+        owned_id:
+          $ref: "#/components/schemas/UUID"
+        level_before:
+          type: integer
+          format: int32
+        level_after:
+          type: integer
+          format: int32
+    NewRunStatusResponse:
+      type: object
+      properties:
+        status:
+          type: string
+    OpenRunRequest:
+      type: object
+      required:
+      - run_id
+      - player_id
+      properties:
+        run_id:
+          $ref: "#/components/schemas/UUID"
+        player_id:
+          $ref: "#/components/schemas/UUID"
+    PageResponseRunResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/RunResponse"
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        total_items:
+          type: integer
+          format: int64
+        total_pages:
+          type: integer
+          format: int32
+    RewardResult:
+      type: object
+      properties:
+        owned_id:
+          $ref: "#/components/schemas/UUID"
+        monster_id:
+          type: integer
+          format: int32
+        level:
+          type: integer
+          format: int32
+        pending:
+          type: boolean
+    RoundResult:
+      type: object
+      properties:
+        turn:
+          type: integer
+          format: int32
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/BattleEvent"
+    RunProgress:
+      type: object
+      properties:
+        stage:
+          type: integer
+          format: int32
+        wins_in_stage:
+          type: integer
+          format: int32
+        boss_available:
+          type: boolean
+        status:
+          type: string
+    RunResponse:
+      type: object
+      properties:
+        run_id:
+          $ref: "#/components/schemas/UUID"
+        status:
+          type: string
+        stage:
+          type: integer
+          format: int32
+        wins_in_stage:
+          type: integer
+          format: int32
+        boss_available:
+          type: boolean
+        bosses_defeated:
+          type: array
+          items:
+            type: integer
+            format: int32
+        battle_in_progress:
+          type: boolean
+        reset_pending:
+          type: boolean
+        started_at:
+          $ref: "#/components/schemas/Instant"
+        ended_at:
+          $ref: "#/components/schemas/Instant"
+    StartBattleRequest:
+      type: object
+      required:
+      - template_id
+      - team_id
+      properties:
+        template_id:
+          type: integer
+          format: int32
+          maximum: 1000
+          minimum: 1
+        team_id:
+          $ref: "#/components/schemas/UUID"
+    TeamMemberState:
+      type: object
+      properties:
+        position:
+          type: integer
+          format: int32
+        owned_id:
+          type: string
+        monster_id:
+          type: integer
+          format: int32
+        name:
+          type: string
+        level:
+          type: integer
+          format: int32
+        element:
+          type: string
+        hp:
+          type: integer
+          format: int32
+        max_hp:
+          type: integer
+          format: int32
+        active:
+          type: boolean
+        knocked_out:
+          type: boolean
+        image_url:
+          type: string
+    TemplateInfo:
+      type: object
+      properties:
+        template_id:
+          type: integer
+          format: int32
+        name:
+          type: string
+        stage:
+          type: integer
+          format: int32
+        element:
+          type: string
+        is_boss:
+          type: boolean
+    UUID:
+      type: string
+      format: uuid
+      pattern: "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}"
+    WildState:
+      type: object
+      properties:
+        monster_id:
+          type: integer
+          format: int32
+        name:
+          type: string
+        element:
+          type: string
+        rarity:
+          type: string
+        level:
+          type: integer
+          format: int32
+        hp:
+          type: integer
+          format: int32
+        max_hp:
+          type: integer
+          format: int32
+        image_url:
+          type: string
+        ability:
+          $ref: "#/components/schemas/AbilityView"
+  securitySchemes:
+    bearerAuth:
+      description: JWT access token from the auth service (player or service role)
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+paths:
+  /api/battles:
+    post:
+      summary: Start a battle on an available template with a saved team (US-18)
+      operationId: BattlesResource_start
+      tags:
+      - battles
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StartBattleRequest"
+        required: true
+      responses:
+        "201":
+          description: Initial battle state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BattleStateResponse"
+        "400":
+          description: VALIDATION_ERROR
+        "404":
+          description: "Template not available, or team not found"
+        "409":
+          description: "NO_ACTIVE_RUN, BATTLE_IN_PROGRESS, RESET_PENDING, TEAM_INVALID"
+        "503":
+          description: DEPENDENCY_UNAVAILABLE
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      security:
+      - bearerAuth:
+        - player
+  /api/battles/current:
+    get:
+      summary: State of the battle in progress
+      operationId: BattlesResource_current
+      tags:
+      - battles
+      responses:
+        "200":
+          description: Battle state (status in_progress)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BattleStateResponse"
+        "404":
+          description: No battle in progress
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      security:
+      - bearerAuth:
+        - player
+  /api/battles/current/actions:
+    post:
+      summary: "Play one round: attack, switch {slot} or flee (US-19, US-21, US-22)"
+      description: "Returns the state after the round with last_round events. When\
+        \ the battle ends, status is finished and result holds outcome, reward, XP,\
+        \ level-ups and the run progress (US-20)."
+      operationId: BattlesResource_act
+      tags:
+      - battles
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ActionRequest"
+        required: true
+      responses:
+        "200":
+          description: Battle state after the round
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BattleStateResponse"
+        "400":
+          description: "VALIDATION_ERROR (unknown field, bad type) or INVALID_ACTION"
+        "404":
+          description: No battle in progress
+        "409":
+          description: RESET_PENDING
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      security:
+      - bearerAuth:
+        - player
+  /api/encounters:
+    get:
+      summary: Encounters available in the active run
+      description: "Normal templates of the stages reached so far, plus the boss of\
+        \ the current stage once it is unlocked (2 wins in the stage, not yet beaten)."
+      operationId: EncountersResource_list
+      tags:
+      - encounters
+      responses:
+        "200":
+          description: "Available templates, by stage"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EncounterResponse"
+        "409":
+          description: NO_ACTIVE_RUN
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      security:
+      - bearerAuth:
+        - player
+  /api/encounters/{template_id}:
+    get:
+      summary: Characteristics of an available encounter
+      operationId: EncountersResource_get
+      tags:
+      - encounters
+      parameters:
+      - name: template_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int32
+          maximum: 1000
+          minimum: 1
+      responses:
+        "200":
+          description: The template
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EncounterResponse"
+        "404":
+          description: Unknown or not available in the active run
+        "409":
+          description: NO_ACTIVE_RUN
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      security:
+      - bearerAuth:
+        - player
+  /api/runs:
+    post:
+      summary: Start over after a won run
+      description: "Resets the won run (archive, teams reset, new starter pool); the\
+        \ player then chooses new starters with POST /api/players/me/starters. Idempotent."
+      operationId: RunsResource_newRun
+      tags:
+      - runs
+      responses:
+        "202":
+          description: "{\"status\": \"choose_starters\"}"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NewRunStatusResponse"
+        "409":
+          description: NEW_RUN_NOT_ALLOWED (latest run not won) or RESET_PENDING
+        "503":
+          description: "DEPENDENCY_UNAVAILABLE: the reset will be resumed"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      security:
+      - bearerAuth:
+        - player
+    get:
+      summary: "Runs of the player, newest first"
+      operationId: RunsResource_list
+      tags:
+      - runs
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: size
+        in: query
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "200":
+          description: Page of runs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PageResponseRunResponse"
+        "400":
+          description: "VALIDATION_ERROR (page < 0, size outside 1-50)"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      security:
+      - bearerAuth:
+        - player
+  /api/runs/current:
+    get:
+      summary: "Active run, or the latest won run waiting for a new run"
+      operationId: RunsResource_current
+      tags:
+      - runs
+      responses:
+        "200":
+          description: The run
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunResponse"
+        "404":
+          description: "NO_ACTIVE_RUN: choose the starters to open a run"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      security:
+      - bearerAuth:
+        - player
+  /api/runs/current/abandon:
+    post:
+      summary: Abandon the active run (US-21)
+      description: "Closes any battle as abandoned (history record, no reward), sets\
+        \ the run to abandoned and resets it: collection archived, teams removed,\
+        \ new starter pool. If a dependency is down the run is still abandoned and\
+        \ reset_pending is true; the reset resumes by itself."
+      operationId: RunsResource_abandon
+      tags:
+      - runs
+      responses:
+        "200":
+          description: The abandoned run
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunResponse"
+        "409":
+          description: NO_ACTIVE_RUN or RESET_PENDING
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      security:
+      - bearerAuth:
+        - player
+  /api/runs/{run_id}:
+    get:
+      summary: Run detail (own runs only)
+      operationId: RunsResource_get
+      tags:
+      - runs
+      parameters:
+      - name: run_id
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      responses:
+        "200":
+          description: The run
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunResponse"
+        "404":
+          description: Not found or not owned
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      security:
+      - bearerAuth:
+        - player
+  /internal/runs:
+    post:
+      summary: Open a run at stage 1; idempotent on run_id
+      operationId: RunsInternalResource_open
+      tags:
+      - runs-internal
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OpenRunRequest"
+        required: true
+      responses:
+        "201":
+          description: Run created
+        "200":
+          description: Run already existed (retry)
+          content:
+            application/json:
+              schema: {}
+        "409":
+          description: "RUN_CONFLICT: another active run, or run of another player"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+        "400":
+          description: Bad Request
+      security:
+      - bearerAuth:
+        - service
+info:
+  title: Monster Tamers - encounters
+  version: 0.1.0
+  description: "Monster Tamers encounters service. Public endpoints (/api/*) need\
+    \ a player token, internal endpoints (/internal/*) a service token; both are Bearer\
+    \ JWTs from the auth service. Errors use {error, message, details}."
+servers:
+- url: https://localhost:8443
+  description: Auto generated value
+- url: https://0.0.0.0:8443
+  description: Auto generated value

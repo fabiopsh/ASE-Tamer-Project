@@ -45,6 +45,21 @@ Test references:
 | 1 | **Given** I have a player profile, **when** I sign in again and request `/api/players/me`, **then** I receive my same `player_id`, `current_run_id`, and starter-choice state. | Bruno `services/players/public/01-get-profile-valid`; `services/players/00-setup/03-get-profile-and-run` |
 | 2 | **Given** I am not authenticated, **when** I request my profile, **then** the backend returns 401. | Bruno `services/players/public/02-get-profile-unauthorized` |
 | 3 | **Given** I have chosen starters, **when** I consult my collection or return after a restart, **then** the saved instances and run remain available through the owning services. | Bruno `services/monsters/public/13-get-collection-valid`; e2e `e2e/06-collection`, `e2e/14-collection-after-battle` |
+| 4 | **Given** my run was lost or abandoned (roguelike rule R14), **when** I come back, **then** I start a new run with a new starter pool, and I can still consult my past runs, their archived monsters and their history. | `BattleApiTest#abandonClosesTheBattleAndResetsTheRun`; Bruno `services/encounters/public/19-post-abandon-valid`, `services/encounters/public/02-get-runs-list-valid`, `services/monsters/internal/19-get-collection-archived-valid` |
+
+## US-05 — Protect my account data
+
+**Dependencies:** US-01, US-02 · **Service:** auth, gateway, every service · **Phase:** P1 (access control), P2 (encryption at rest, refresh/logout, login backoff: AUTH-7, AUTH-8)
+
+| # | Criterion | Tests |
+|---|---|---|
+| 1 | **Given** another player's team, monster, run or encounter, **when** I request, change or use it with my token, **then** I receive 404, never 403, and nothing changes (P-11). | Bruno `services/teams/public/10-put-update-invalid-foreign`, `14-get-get-invalid-foreign`, `13-post-create-invalid-foreign-monster`, `services/monsters/public/17-get-instance-invalid-foreign`, `services/history/internal/11-get-detail-invalid-foreign`; `scripts/security-check.sh` §3 |
+| 2 | **Given** I registered, **then** my password is stored only as a bcrypt hash and never returned by any API. | `PasswordHasherTest#hashIsBcryptAndNotThePassword`, `RegistrationResourceTest#validRegistrationCreatesAccountAndProfile`; e2e `e2e/01-register` |
+| 3 | **Given** no token, a tampered, unsigned or expired token, **when** I call any protected endpoint, **then** I receive 401; a player token on an internal endpoint gets 403 (404 through the gateway). | `TokenVerificationTest`; e2e `e2e/15-internal-not-exposed`, `16-no-token`, `17-bad-token`; `scripts/security-check.sh` §2, §4 |
+| 4 | **Given** many wrong login attempts from the same address, **when** I keep trying, **then** the gateway answers 429. | `scripts/security-check.sh` §10 |
+| 5 | **Given** any client, **when** it talks to the backend, **then** every hop uses TLS (client→gateway, gateway→service, service→service, service→database) and plain HTTP is refused. | CI job `compose-smoke` (plain HTTP refused); `scripts/security-check.sh` §9 |
+| 6 | **P2** — **Given** the auth database is read by an attacker, **then** usernames are encrypted (AES-GCM, HMAC index) and refresh tokens are stored only as hashes. | Not implemented yet (AUTH-7, AUTH-8) |
+| 7 | **P2** — **Given** I log out, **when** my refresh token is used again, **then** it is rejected. | Not implemented yet (AUTH-7) |
 
 ## US-06 — Receive a starter collection
 
@@ -226,3 +241,27 @@ Test references:
 | 1 | **Given** a finished encounter, **when** I open it, **then** I see team, wild monster, outcome, reward, XP and every round's events. | `HistoryResourceTest#detailReturnsFullRecord`, `#storedJsonIsReturnedUntouched`; Bruno `services/history/public/06-get-detail-valid` |
 | 2 | **Given** an encounter of another player (or an id that does not exist), **when** I open its id, **then** I receive 404 `NOT_FOUND`, without revealing whether it exists. | `HistoryResourceTest#foreignOrMissingRecordIs404`; Bruno `services/history/public/07-get-detail-missing`, `services/history/internal/11-get-detail-invalid-foreign` |
 | 3 | **Given** no token, **when** I open an encounter, **then** I receive 401 `UNAUTHORIZED`. | `HistoryResourceTest#publicEndpointsWithoutTokenAre401`; Bruno `services/history/public/08-get-detail-unauthorized` |
+
+## US-25 — Protect my saved progress from tampering
+
+**Dependencies:** US-12, US-19, US-23 · **Service:** encounters, monsters, history · **Phase:** P1 (server-side rules, internal-only writes, idempotency), P2 (append-only hash chain: HI-2; encryption at rest)
+
+| # | Criterion | Tests |
+|---|---|---|
+| 1 | **Given** a battle in progress, **when** the client sends an outcome, HP or any field other than the action, **then** it receives 400 and the result is computed only by the server. | Bruno `services/encounters/public/16-post-action-invalid-outcome-field`; `scripts/security-check.sh` §5 |
+| 2 | **Given** a player token, **when** it calls the internal endpoints that grant rewards, XP or history records, **then** it receives 403 (404 through the gateway). | Bruno `services/monsters/internal/02-get-candidates-wrong-role`, `12-get-instances-wrong-role`, `18-post-archive-wrong-role`, `services/history/internal/06-post-store-wrong-role`; e2e `e2e/15-internal-not-exposed` |
+| 3 | **Given** a reward, XP grant or history record is retried, **when** the service processes it again, **then** nothing is duplicated. | Bruno `services/monsters/internal/08-post-reward-idempotent`, `10-post-xp-idempotent`, `services/history/internal/02-post-store-idempotent` |
+| 4 | **Given** a stored encounter, **then** no API can change or delete it. | No update/delete endpoint exists in history (OpenAPI `docs/openapi/history.yaml`) |
+| 5 | **Given** two actions sent at the same time, **then** the battle advances one round per accepted action. | `scripts/security-check.sh` §6 |
+| 6 | **P2** — **Given** a record is changed directly in the database, **when** I call `GET /api/history/verify`, **then** the broken link of the hash chain is reported; `UPDATE`/`DELETE` are rejected by a trigger. | Not implemented yet (HI-2) |
+
+## US-28 — Play through a simple interface
+
+**Dependencies:** US-01, US-02, US-06, US-09, US-14, US-17, US-18, US-19, US-23 · **Service:** frontend (React) through the gateway · **Phase:** P1
+
+| # | Criterion | Tests |
+|---|---|---|
+| 1 | **Given** a browser, **when** I open the frontend, **then** I can register, log in, choose starters, build a team, fight a battle and read my history without technical tools. | Manual walkthrough (README Get Started §3); the same flow through the API: e2e `e2e/01-register` … `14-collection-after-battle` |
+| 2 | **Given** an action is refused (invalid team, no active run, network error), **when** the API returns an error, **then** the UI shows its message instead of failing silently. | Manual walkthrough |
+| 3 | **Given** a monster or team name containing HTML, **when** the UI shows it, **then** it is rendered as text. | `scripts/security-check.sh` §8 (no raw HTML rendering in `frontend/src`); CSP in the production build (`frontend/vite.config.ts`) |
+| 4 | **Given** the frontend source, **when** CI runs, **then** lint and build succeed. | CI job `frontend` |

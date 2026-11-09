@@ -1,0 +1,12 @@
+{
+  "name": "monster-tamers-openapi",
+  "private": true,
+  "description": "Merges the six service specs into docs/openapi/gateway.yaml (DOC-1)",
+  "type": "module",
+  "scripts": {
+    "build": "node build-gateway-openapi.mjs"
+  },
+  "dependencies": {
+    "yaml": "2.9.1"
+  }
+}

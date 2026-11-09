@@ -8,6 +8,7 @@ import jakarta.ws.rs.core.Response;
 import java.io.InputStream;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 
 /** Sprites are public so ordinary browser image elements can load them without bearer tokens. */
 @Path("/images/monsters")
@@ -18,6 +19,8 @@ public class SpriteResource {
     @GET
     @Path("/{filename}")
     @Operation(summary = "Serve a cacheable 64x64 monster sprite (public)")
+    @APIResponse(responseCode = "200", description = "PNG image (no token needed, P-16)")
+    @APIResponse(responseCode = "404", description = "Unknown sprite")
     public Response sprite(@PathParam("filename") String filename) {
         if (filename == null || !filename.matches("[0-9]{3}\\.png")) {
             return Response.status(Response.Status.NOT_FOUND).build();

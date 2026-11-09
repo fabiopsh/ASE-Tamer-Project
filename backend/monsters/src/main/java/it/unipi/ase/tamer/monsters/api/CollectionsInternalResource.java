@@ -21,6 +21,7 @@ import jakarta.ws.rs.core.Response;
 import java.util.UUID;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 
 @Path("/internal/collections/{pid}")
 @Consumes(MediaType.APPLICATION_JSON)
@@ -35,6 +36,10 @@ public class CollectionsInternalResource {
     @GET
     @Path("/instances")
     @Operation(summary = "Get player-owned instances and stats for teams/encounters")
+    @APIResponse(responseCode = "200", description = "Owned instances with stats")
+    @APIResponse(responseCode = "400", description = "VALIDATION_ERROR")
+    @APIResponse(responseCode = "401", description = "UNAUTHORIZED: missing or invalid token")
+    @APIResponse(responseCode = "403", description = "FORBIDDEN: not a service token")
     public Object instances(@PathParam("pid") UUID playerId, @QueryParam("ids") String ids) {
         return service.instances(playerId, ids);
     }
@@ -42,6 +47,11 @@ public class CollectionsInternalResource {
     @POST
     @Path("/starters")
     @Operation(summary = "Idempotently grant three common starters for a run")
+    @APIResponse(responseCode = "201", description = "Starters created")
+    @APIResponse(responseCode = "200", description = "Already granted for this run: the same instances")
+    @APIResponse(responseCode = "400", description = "VALIDATION_ERROR or INVALID_COLLECTION_OPERATION")
+    @APIResponse(responseCode = "401", description = "UNAUTHORIZED: missing or invalid token")
+    @APIResponse(responseCode = "403", description = "FORBIDDEN: not a service token")
     public Response starters(@PathParam("pid") UUID playerId,
                              @Valid @NotNull StarterGrantRequest request) {
         var grant = service.starters(playerId, request);
@@ -51,6 +61,11 @@ public class CollectionsInternalResource {
     @POST
     @Path("/monsters")
     @Operation(summary = "Idempotently grant an encounter reward (US-12)")
+    @APIResponse(responseCode = "201", description = "Reward created")
+    @APIResponse(responseCode = "200", description = "Already granted for this encounter: the same instance")
+    @APIResponse(responseCode = "400", description = "VALIDATION_ERROR")
+    @APIResponse(responseCode = "401", description = "UNAUTHORIZED: missing or invalid token")
+    @APIResponse(responseCode = "403", description = "FORBIDDEN: not a service token")
     public Response reward(@PathParam("pid") UUID playerId, @Valid @NotNull RewardRequest request) {
         var grant = service.reward(playerId, request);
         return Response.status(grant.created() ? 201 : 200).entity(grant.monster()).build();
@@ -59,6 +74,10 @@ public class CollectionsInternalResource {
     @POST
     @Path("/xp")
     @Operation(summary = "Idempotently grant XP to active owned instances")
+    @APIResponse(responseCode = "200", description = "XP applied (or already applied for this encounter)")
+    @APIResponse(responseCode = "400", description = "VALIDATION_ERROR")
+    @APIResponse(responseCode = "401", description = "UNAUTHORIZED: missing or invalid token")
+    @APIResponse(responseCode = "403", description = "FORBIDDEN: not a service token")
     public Object xp(@PathParam("pid") UUID playerId, @Valid @NotNull XpGrantRequest request) {
         return service.grantXp(playerId, request);
     }
@@ -66,6 +85,10 @@ public class CollectionsInternalResource {
     @POST
     @Path("/archive")
     @Operation(summary = "Archive active monsters of a completed run")
+    @APIResponse(responseCode = "200", description = "Number of archived monsters (0 when repeated)")
+    @APIResponse(responseCode = "400", description = "VALIDATION_ERROR")
+    @APIResponse(responseCode = "401", description = "UNAUTHORIZED: missing or invalid token")
+    @APIResponse(responseCode = "403", description = "FORBIDDEN: not a service token")
     public Object archive(@PathParam("pid") UUID playerId, @Valid @NotNull ArchiveRequest request) {
         return service.archive(playerId, request);
     }
