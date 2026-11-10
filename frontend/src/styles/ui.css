@@ -52,15 +52,15 @@
   position: relative;
   background: var(--surface-1);
   border: 1px solid var(--border-soft);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-1), var(--inner-highlight);
+  border-radius: 0;
+  box-shadow: var(--shadow-1);
   padding: var(--space-6);
-  -webkit-backdrop-filter: blur(14px) saturate(130%);
-  backdrop-filter: blur(14px) saturate(130%);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 .panel--tight { padding: var(--space-4); }
 .panel--flush { padding: 0; overflow: hidden; }
-.panel--glow { box-shadow: var(--shadow-2), var(--inner-highlight), 0 0 0 1px rgba(157, 134, 255, 0.18); }
+.panel--glow { box-shadow: var(--shadow-2); }
 
 .panel__title {
   display: flex;
@@ -76,7 +76,7 @@
   height: 1px;
   border: 0;
   margin: 0;
-  background: linear-gradient(90deg, transparent, var(--border-mid), transparent);
+  background: var(--surface-solid);
 }
 
 /* ================================================================ text */
@@ -115,7 +115,7 @@
   gap: var(--space-2);
   min-height: 44px;
   padding: 0 var(--space-5);
-  border-radius: var(--radius-md);
+  border-radius: 0;
   border: 1px solid var(--btn-border);
   background: var(--btn-bg);
   color: var(--btn-fg);
@@ -146,10 +146,10 @@
   --btn-fg: var(--text-on-accent);
   --btn-border: transparent;
   background: var(--accent-gradient);
-  box-shadow: 0 6px 22px rgba(124, 141, 255, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  box-shadow: none;
 }
 .btn--primary:hover:not(:disabled) {
-  box-shadow: 0 8px 30px rgba(124, 141, 255, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  box-shadow: none;
 }
 .btn--ghost {
   --btn-bg: transparent;
@@ -165,11 +165,11 @@
 .btn--gold {
   --btn-fg: #2a1d00;
   --btn-border: transparent;
-  background: linear-gradient(135deg, #ffe39d, #ffc552 55%, #ff9f43);
-  box-shadow: 0 6px 22px rgba(255, 190, 80, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  background: var(--surface-solid);
+  box-shadow: none;
 }
-.btn--lg { min-height: 54px; padding: 0 var(--space-7); font-size: var(--text-md); border-radius: var(--radius-lg); }
-.btn--sm { min-height: 36px; padding: 0 var(--space-3); font-size: var(--text-sm); border-radius: var(--radius-sm); }
+.btn--lg { min-height: 54px; padding: 0 var(--space-7); font-size: var(--text-md); border-radius: 0; }
+.btn--sm { min-height: 36px; padding: 0 var(--space-3); font-size: var(--text-sm); border-radius: 0; }
 .btn--icon { min-width: 44px; padding: 0; }
 .btn--block { width: 100%; }
 
@@ -185,7 +185,7 @@
   width: 100%;
   min-height: 48px;
   padding: 0 var(--space-4);
-  border-radius: var(--radius-md);
+  border-radius: 0;
   border: 1px solid var(--border-mid);
   background: var(--surface-sunken);
   color: var(--text-1);
@@ -198,15 +198,13 @@
 .input:focus-visible,
 .select:focus-visible {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(157, 134, 255, 0.3);
+  box-shadow: none;
 }
 .input[aria-invalid='true'] { border-color: var(--danger); }
 .select {
   appearance: none;
   padding-right: var(--space-8);
-  background-image:
-    linear-gradient(45deg, transparent 50%, var(--text-2) 50%),
-    linear-gradient(135deg, var(--text-2) 50%, transparent 50%);
+  background-image: none;
   background-position: calc(100% - 20px) 21px, calc(100% - 14px) 21px;
   background-size: 6px 6px;
   background-repeat: no-repeat;
@@ -221,7 +219,7 @@
   gap: var(--space-2);
   min-height: 38px;
   padding: 0 var(--space-4);
-  border-radius: var(--radius-pill);
+  border-radius: 0;
   border: 1px solid var(--border-soft);
   background: var(--surface-1);
   color: var(--text-2);
@@ -235,7 +233,7 @@
   color: var(--text-1);
   border-color: color-mix(in srgb, var(--el, var(--accent)) 70%, transparent);
   background: color-mix(in srgb, var(--el, var(--accent)) 20%, var(--surface-solid));
-  box-shadow: 0 0 18px color-mix(in srgb, var(--el, var(--accent)) 30%, transparent);
+  box-shadow: none;
 }
 
 .chip[data-element] svg { color: var(--el); }
@@ -262,7 +260,7 @@
   gap: 6px;
   height: 26px;
   padding: 0 10px;
-  border-radius: var(--radius-pill);
+  border-radius: 0;
   font-size: var(--text-xs);
   font-weight: var(--weight-bold);
   letter-spacing: 0.04em;
@@ -290,14 +288,14 @@
   position: relative;
   overflow: hidden;
   background: rgba(150, 160, 255, 0.08);
-  border-radius: var(--radius-sm);
+  border-radius: 0;
 }
 .skeleton::after {
   content: '';
   position: absolute;
   inset: 0;
   transform: translateX(-100%);
-  background: linear-gradient(90deg, transparent, rgba(190, 200, 255, 0.12), transparent);
+  background: var(--surface-solid);
   animation: shimmer 1.4s ease-in-out infinite;
 }
 @keyframes shimmer {

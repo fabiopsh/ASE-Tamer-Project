@@ -4,7 +4,7 @@
   gap: 6px;
   height: 28px;
   padding: 0 11px 0 8px;
-  border-radius: var(--radius-pill);
+  border-radius: 0;
   font-size: var(--text-xs);
   font-weight: var(--weight-bold);
   letter-spacing: 0.03em;
@@ -18,9 +18,7 @@
 .element-badge--icon.element-badge--sm { width: 24px; }
 .element-badge[data-element='chaos'] {
   border-color: transparent;
-  background:
-    linear-gradient(rgba(30, 10, 34, 0.9), rgba(30, 10, 34, 0.9)) padding-box,
-    var(--el-chaos-gradient) border-box;
+  background: color-mix(in srgb, var(--el, var(--accent)) 14%, var(--surface-solid));
 }
 
 .rarity-badge {
@@ -29,7 +27,7 @@
   gap: 7px;
   height: 28px;
   padding: 0 11px 0 9px;
-  border-radius: var(--radius-pill);
+  border-radius: 0;
   font-size: var(--text-xs);
   font-weight: var(--weight-bold);
   letter-spacing: 0.06em;
@@ -45,17 +43,15 @@
   width: 7px;
   height: 7px;
   transform: rotate(45deg);
-  border-radius: 1.5px;
+  border-radius: 0;
   background: var(--rarity);
-  box-shadow: 0 0 6px color-mix(in srgb, var(--rarity) 70%, transparent);
+  box-shadow: none;
 }
 .rarity-badge[data-rarity='legendary'] {
   border-color: transparent;
-  background:
-    linear-gradient(rgba(36, 26, 8, 0.92), rgba(36, 26, 8, 0.92)) padding-box,
-    var(--legendary-shine) border-box;
+  background: var(--surface-solid);
   animation: shine-spin 4s linear infinite;
-  text-shadow: 0 0 10px rgba(255, 210, 122, 0.5);
+  text-shadow: none;
 }
 
 .level-badge {
@@ -65,7 +61,7 @@
   height: 26px;
   padding: 0 9px;
   line-height: 26px;
-  border-radius: var(--radius-sm);
+  border-radius: 0;
   background: rgba(6, 8, 26, 0.78);
   border: 1px solid var(--border-mid);
   font-weight: var(--weight-black);

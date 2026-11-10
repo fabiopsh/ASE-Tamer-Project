@@ -7,9 +7,7 @@
 }
 .mhero[data-rarity='legendary'] {
   border: 2px solid transparent;
-  background:
-    linear-gradient(var(--surface-solid), var(--surface-solid)) padding-box,
-    var(--legendary-shine) border-box;
+  background: var(--surface-solid);
   animation: shine-spin 6s linear infinite;
 }
 
@@ -20,18 +18,16 @@
   min-height: 300px;
   padding: var(--space-7);
   overflow: hidden;
-  background:
-    radial-gradient(closest-side, color-mix(in srgb, var(--el) 30%, transparent), transparent 85%),
-    linear-gradient(160deg, color-mix(in srgb, var(--el) 16%, #12153a), #0c0e2a);
+  background: color-mix(in srgb, var(--el, var(--accent)) 14%, var(--surface-solid));
 }
 .mhero__stage .sprite { width: clamp(160px, 40vw, 192px) !important; height: clamp(160px, 40vw, 192px) !important; }
 .mhero__ring {
   position: absolute;
   width: 240px;
   height: 240px;
-  border-radius: 50%;
+  border-radius: 0;
   border: 1px solid color-mix(in srgb, var(--el) 40%, transparent);
-  box-shadow: 0 0 40px color-mix(in srgb, var(--el) 20%, transparent), inset 0 0 40px color-mix(in srgb, var(--el) 12%, transparent);
+  box-shadow: none;
 }
 .mhero__ring--outer {
   width: 320px;
@@ -45,8 +41,8 @@
   bottom: 18%;
   width: 180px;
   height: 26px;
-  border-radius: 50%;
-  background: radial-gradient(closest-side, color-mix(in srgb, var(--el) 50%, transparent), transparent);
+  border-radius: 0;
+  background: color-mix(in srgb, var(--el, var(--accent)) 14%, var(--surface-solid));
 }
 
 .mhero__info {
@@ -62,6 +58,6 @@
 .mhero__dex { font-weight: var(--weight-bold); color: var(--text-3); letter-spacing: 0.1em; }
 .mhero__name {
   font-size: var(--text-3xl);
-  text-shadow: 0 0 28px color-mix(in srgb, var(--el) 45%, transparent);
+  text-shadow: none;
   overflow-wrap: anywhere;
 }

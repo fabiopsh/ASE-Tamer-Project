@@ -4,17 +4,13 @@
   align-items: flex-start;
   gap: var(--space-1);
   padding: var(--space-4);
-  border-radius: var(--radius-md);
-  background:
-    linear-gradient(135deg, rgba(157, 134, 255, 0.12), transparent 60%),
-    var(--surface-sunken);
+  border-radius: 0;
+  background: var(--surface-sunken);
   border: 1px solid var(--border-soft);
 }
 .ability-card[data-scope='legendary'] {
   border-color: rgba(255, 210, 122, 0.45);
-  background:
-    linear-gradient(135deg, rgba(255, 210, 122, 0.14), transparent 60%),
-    var(--surface-sunken);
+  background: var(--surface-sunken);
 }
 .ability-card__label {
   font-size: var(--text-xs);

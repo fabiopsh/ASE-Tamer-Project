@@ -32,10 +32,10 @@
   width: 8px;
   height: 8px;
   margin-right: var(--space-2);
-  border-radius: 2px;
+  border-radius: 0;
   transform: rotate(45deg);
   background: var(--stat-color);
-  box-shadow: 0 0 8px var(--stat-color);
+  box-shadow: none;
 }
 .stat-table__value {
   width: 1%;
@@ -48,7 +48,7 @@
 .stat-table__track {
   display: block;
   height: 10px;
-  border-radius: var(--radius-pill);
+  border-radius: 0;
   background: var(--surface-sunken);
   border: 1px solid var(--border-soft);
   overflow: hidden;
@@ -56,9 +56,9 @@
 .stat-table__fill {
   display: block;
   height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, color-mix(in srgb, var(--stat-color) 55%, transparent), var(--stat-color));
-  box-shadow: 0 0 10px color-mix(in srgb, var(--stat-color) 60%, transparent);
+  border-radius: 0;
+  background: var(--surface-solid);
+  box-shadow: none;
   transform-origin: left;
   animation: bar-grow var(--dur-slow) var(--ease-out) both;
 }

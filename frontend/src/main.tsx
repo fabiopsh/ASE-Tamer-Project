@@ -9,6 +9,7 @@ import './styles/ui.css';
 import { App } from './App';
 import { ToastProvider } from './components/ToastProvider';
 import { SessionProvider } from './session/SessionContext';
+import './styles/retro-theme.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

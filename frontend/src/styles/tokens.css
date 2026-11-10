@@ -14,8 +14,8 @@
   color-scheme: dark;
 
   /* ---------- typography ---------- */
-  --font-display: 'Cinzel Variable', 'Cinzel', Georgia, 'Times New Roman', serif;
-  --font-ui: 'Exo 2 Variable', 'Exo 2', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-display: 'Courier New', 'Liberation Mono', 'Menlo', monospace;
+  --font-ui: 'Exo 2 Variable', 'Exo 2', 'Trebuchet MS', system-ui, sans-serif;
 
   --text-xs: 0.8125rem; /* 13px: badges, captions only */
   --text-sm: 0.9375rem; /* 15px */
@@ -27,67 +27,57 @@
 
   --weight-regular: 450;
   --weight-medium: 550;
-  --weight-bold: 700;
-  --weight-black: 800;
+  --weight-bold: 750;
+  --weight-black: 850;
 
   /* ---------- surfaces ---------- */
-  --bg-0: #060716;
-  --bg-1: #0b0d24;
-  --bg-2: #121539;
-  --surface-1: rgba(24, 28, 70, 0.62); /* glass panel */
-  --surface-2: rgba(36, 41, 96, 0.72); /* raised glass, hover */
-  --surface-solid: #141841; /* opaque card body */
-  --surface-solid-2: #1b2054;
-  --surface-sunken: rgba(6, 8, 26, 0.55); /* inputs, bar tracks */
-  --scrim: rgba(4, 5, 18, 0.72);
+  --bg-0: #090f16;
+  --bg-1: #101a26;
+  --bg-2: #1b2938;
+  --surface-1: #1b2a3a; /* glass panel */
+  --surface-2: #284052; /* raised glass, hover */
+  --surface-solid: #192838; /* opaque card body */
+  --surface-solid-2: #2a4050;
+  --surface-sunken: #0d1a27; /* inputs, bar tracks */
+  --scrim: rgba(5, 10, 15, 0.9);
 
-  --border-soft: rgba(166, 176, 255, 0.14);
-  --border-mid: rgba(166, 176, 255, 0.24);
-  --border-strong: rgba(190, 198, 255, 0.42);
+  --border-soft: #41596a;
+  --border-mid: #728c97;
+  --border-strong: #e3d5ab;
 
   /* ---------- text ---------- */
-  --text-1: #f1f2ff; /* primary */
-  --text-2: #c3c7ee; /* secondary */
-  --text-3: #9aa0d0; /* muted, still >= 4.5:1 on --bg-1 */
-  --text-on-accent: #0b0b22;
+  --text-1: #f3f0dc; /* primary */
+  --text-2: #ced8cf; /* secondary */
+  --text-3: #a9bcba; /* muted, still >= 4.5:1 on --bg-1 */
+  --text-on-accent: #10242a;
 
   /* ---------- accents & feedback ---------- */
-  --accent: #9d86ff;
-  --accent-strong: #b9a8ff;
-  --accent-2: #5fd6ec;
-  --accent-gradient: linear-gradient(135deg, #a98bff 0%, #7c8dff 45%, #5fd6ec 100%);
-  --gold: #ffd27a;
+  --accent: #93d9c5;
+  --accent-strong: #bce9cf;
+  --accent-2: #e7bd71;
+  --accent-gradient: #93d9c5;
+  --gold: #f1cf80;
 
-  --success: #5fe3a1;
-  --warning: #ffcb66;
-  --danger: #ff6f8e;
-  --info: #79b8ff;
+  --success: #9fe0a5;
+  --warning: #f2cb7c;
+  --danger: #f48f86;
+  --info: #96c6e0;
 
   /* ---------- elements (palette from docs/design/area_giocatori_mostri.md) ---------- */
-  --el-dream: #e29bff; /* lilac, pastel pink */
-  --el-echo: #43e3d2; /* turquoise, silver */
-  --el-silence: #dbe4f7; /* white, cold grey */
-  --el-memory: #e5a865; /* sepia, amber */
-  --el-time: #f4cd52; /* brass, ochre */
-  --el-gravity: #7d86ff; /* night blue, violet */
-  --el-chaos: #ff5aa8; /* saturated, clashing */
-  --el-chaos-gradient: linear-gradient(120deg, #ff5aa8, #ffb340 35%, #4be3c8 65%, #8a7dff);
+  --el-dream: #d3a6ed; /* lilac, pastel pink */
+  --el-echo: #7cd8c9; /* turquoise, silver */
+  --el-silence: #d9e2e9; /* white, cold grey */
+  --el-memory: #d1a47c; /* sepia, amber */
+  --el-time: #f1cf80; /* brass, ochre */
+  --el-gravity: #9aa4e3; /* night blue, violet */
+  --el-chaos: #f08fae; /* saturated, clashing */
+  --el-chaos-gradient: #f08fae;
 
   /* ---------- rarity ---------- */
-  --rarity-common: #a6aed6;
-  --rarity-rare: #62b0ff;
-  --rarity-legendary: #ffd27a;
-  --legendary-shine: conic-gradient(
-    from var(--shine-angle),
-    #ffd27a,
-    #fff4cf,
-    #ff9edb,
-    #b9a8ff,
-    #ffd27a 50%,
-    #fff4cf,
-    #ffb44d,
-    #ffd27a
-  );
+  --rarity-common: #acb9b3;
+  --rarity-rare: #8ac6f2;
+  --rarity-legendary: #f1cf80;
+  --legendary-shine: #f1cf80;
 
   /* ---------- spacing (4px grid) ---------- */
   --space-1: 4px;
@@ -106,28 +96,28 @@
   --topbar-h: 64px;
 
   /* ---------- radii ---------- */
-  --radius-xs: 6px;
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 22px;
-  --radius-pill: 999px;
+  --radius-xs: 0px;
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --radius-pill: 0px;
 
   /* ---------- shadows & glows ---------- */
-  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.35), 0 4px 14px rgba(3, 4, 20, 0.35);
-  --shadow-2: 0 2px 6px rgba(0, 0, 0, 0.35), 0 14px 38px rgba(3, 4, 20, 0.55);
-  --shadow-3: 0 24px 70px rgba(2, 3, 16, 0.7);
-  --glow-accent: 0 0 0 1px rgba(157, 134, 255, 0.45), 0 0 24px rgba(157, 134, 255, 0.35);
-  --inner-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.07);
-  --focus-ring: 0 0 0 2px var(--bg-1), 0 0 0 4px var(--accent-2);
+  --shadow-1: 3px 3px 0 #070e15;
+  --shadow-2: 5px 5px 0 #070e15;
+  --shadow-3: 7px 7px 0 #070e15;
+  --glow-accent: 0 0 0 2px #93d9c5, 4px 4px 0 #070e15;
+  --inner-highlight: inset 0 0 0 1px #466273;
+  --focus-ring: 0 0 0 2px #0d1a27, 0 0 0 4px #f1cf80;
 
   /* ---------- motion ---------- */
   --dur-fast: 120ms;
   --dur-base: 200ms;
   --dur-slow: 380ms;
   --dur-page: 320ms;
-  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
-  --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+  --ease-out: steps(2, end);
+  --ease-spring: steps(3, end);
 
   --z-topbar: 40;
   --z-overlay: 80;

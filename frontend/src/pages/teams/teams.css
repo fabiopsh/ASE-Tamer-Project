@@ -22,8 +22,8 @@
   inset: -40% -20% auto auto;
   width: 260px;
   height: 260px;
-  border-radius: 50%;
-  background: radial-gradient(circle, color-mix(in srgb, var(--el) 30%, transparent), transparent 70%);
+  border-radius: 0;
+  background: color-mix(in srgb, var(--el, var(--accent)) 14%, var(--surface-solid));
   pointer-events: none;
 }
 .team-card__head { position: relative; display: flex; flex-direction: column; gap: 2px; }
@@ -34,7 +34,7 @@
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-1) var(--space-3) var(--space-1) var(--space-2);
-  border-radius: var(--radius-md);
+  border-radius: 0;
   background: var(--surface-sunken);
   border: 1px solid var(--border-soft);
   min-height: 68px;
@@ -46,7 +46,7 @@
   place-items: center;
   width: 28px;
   height: 28px;
-  border-radius: 50%;
+  border-radius: 0;
   font-weight: var(--weight-black);
   font-size: var(--text-sm);
   color: var(--text-on-accent);
@@ -81,11 +81,9 @@
   gap: var(--space-2);
   min-height: 80px;
   padding: var(--space-2);
-  border-radius: var(--radius-md);
+  border-radius: 0;
   border: 1px solid color-mix(in srgb, var(--el) 35%, var(--border-soft));
-  background:
-    linear-gradient(90deg, color-mix(in srgb, var(--el) 14%, transparent), transparent 70%),
-    var(--surface-sunken);
+  background: var(--surface-sunken);
   cursor: grab;
   transition: border-color var(--dur-base), opacity var(--dur-base), transform var(--dur-fast);
 }
@@ -107,7 +105,7 @@
   place-items: center;
   width: 28px;
   height: 28px;
-  border-radius: 50%;
+  border-radius: 0;
   font-weight: var(--weight-black);
   font-size: var(--text-sm);
   color: var(--text-on-accent);

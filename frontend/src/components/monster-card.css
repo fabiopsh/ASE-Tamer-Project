@@ -1,10 +1,5 @@
 .mcard {
-  --card-body: linear-gradient(
-    165deg,
-    color-mix(in srgb, var(--el, var(--accent)) 20%, var(--surface-solid)) 0%,
-    var(--surface-solid) 55%,
-    #0f1236 100%
-  );
+  --card-body: color-mix(in srgb, var(--el, var(--accent)) 10%, var(--surface-solid));
   position: relative;
   display: flex;
   flex-direction: column;
@@ -12,11 +7,9 @@
   gap: var(--space-2);
   min-width: 0;
   padding: var(--space-3) var(--space-3) var(--space-4);
-  border-radius: var(--radius-lg);
+  border-radius: 0;
   border: 2px solid transparent;
-  background:
-    var(--card-body) padding-box,
-    linear-gradient(160deg, color-mix(in srgb, var(--rarity, var(--rarity-common)) 70%, transparent), color-mix(in srgb, var(--rarity, var(--rarity-common)) 22%, transparent)) border-box;
+  background: var(--surface-solid);
   box-shadow: var(--shadow-1);
   color: var(--text-1);
   text-align: center;
@@ -34,10 +27,10 @@ button.mcard { font: inherit; width: 100%; }
 .mcard[data-rarity='legendary'] {
   background: var(--card-body) padding-box, var(--legendary-shine) border-box;
   animation: shine-spin 5s linear infinite;
-  box-shadow: var(--shadow-1), 0 0 22px rgba(255, 210, 122, 0.18);
+  box-shadow: var(--shadow-1);
 }
 .mcard[data-rarity='rare'] {
-  box-shadow: var(--shadow-1), 0 0 16px rgba(98, 176, 255, 0.12);
+  box-shadow: var(--shadow-1);
 }
 
 .mcard__glow {
@@ -45,7 +38,7 @@ button.mcard { font: inherit; width: 100%; }
   inset: -30% -20% auto;
   height: 75%;
   z-index: -1;
-  background: radial-gradient(closest-side, color-mix(in srgb, var(--el, var(--accent)) 35%, transparent), transparent);
+  background: color-mix(in srgb, var(--el, var(--accent)) 14%, var(--surface-solid));
   opacity: 0.55;
   transition: opacity var(--dur-base) var(--ease-out);
 }
@@ -76,8 +69,8 @@ button.mcard { font: inherit; width: 100%; }
   width: 64%;
   height: 14px;
   transform: translateX(-50%);
-  border-radius: 50%;
-  background: radial-gradient(closest-side, color-mix(in srgb, var(--el, var(--accent)) 45%, transparent), transparent);
+  border-radius: 0;
+  background: color-mix(in srgb, var(--el, var(--accent)) 14%, var(--surface-solid));
   opacity: 0.8;
 }
 
@@ -106,23 +99,18 @@ button.mcard { font: inherit; width: 100%; }
 .mcard--interactive:hover {
   transform: translateY(-4px);
   text-decoration: none;
-  box-shadow: var(--shadow-2), 0 0 28px color-mix(in srgb, var(--el, var(--accent)) 30%, transparent);
+  box-shadow: var(--shadow-2);
 }
 .mcard--interactive:hover .mcard__glow { opacity: 0.9; }
 .mcard--interactive:hover .sprite__img { transform: scale(1.07) translateY(-3%); }
 .mcard--interactive:active { transform: translateY(-1px) scale(0.99); }
 .mcard--interactive:focus-visible {
-  box-shadow: var(--focus-ring), var(--shadow-2);
+  box-shadow: var(--focus-ring);
 }
 
 .mcard--selected {
-  background:
-    var(--card-body) padding-box,
-    linear-gradient(160deg, var(--accent-2), var(--accent)) border-box;
-  box-shadow:
-    0 0 0 3px rgba(95, 214, 236, 0.25),
-    0 0 34px color-mix(in srgb, var(--el, var(--accent)) 45%, transparent),
-    var(--shadow-2);
+  background: var(--surface-solid);
+  box-shadow: var(--shadow-2);
   transform: translateY(-4px);
 }
 .mcard--selected .mcard__glow { opacity: 1; }
@@ -131,10 +119,10 @@ button.mcard { font: inherit; width: 100%; }
   place-items: center;
   width: 28px;
   height: 28px;
-  border-radius: 50%;
+  border-radius: 0;
   color: var(--text-on-accent);
   background: var(--accent-gradient);
-  box-shadow: 0 0 14px rgba(95, 214, 236, 0.6);
+  box-shadow: none;
   animation: pop-in var(--dur-slow) var(--ease-spring) both;
 }
 @keyframes pop-in {

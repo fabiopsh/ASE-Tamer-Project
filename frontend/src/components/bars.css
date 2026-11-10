@@ -20,27 +20,25 @@
   position: relative;
   flex: 1;
   height: 12px;
-  border-radius: var(--radius-pill);
+  border-radius: 0;
   background: rgba(4, 6, 20, 0.8);
   border: 1px solid var(--border-mid);
   overflow: hidden;
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.6);
+  box-shadow: none;
 }
 .hpbar__fill,
 .hpbar__ghost {
   position: absolute;
   inset: 0 auto 0 0;
-  border-radius: inherit;
+  border-radius: 0;
 }
 .hpbar__ghost {
   background: rgba(255, 240, 240, 0.55);
   transition: width 900ms var(--ease-out) 250ms;
 }
 .hpbar__fill {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.35), transparent 55%),
-    var(--hp);
-  box-shadow: 0 0 10px color-mix(in srgb, var(--hp) 60%, transparent);
+  background: var(--surface-solid);
+  box-shadow: none;
   transition: width var(--dur-slow) var(--ease-out), background-color var(--dur-base);
 }
 .hpbar__value {
@@ -74,7 +72,7 @@
 .xpbar__track {
   display: block;
   height: 7px;
-  border-radius: var(--radius-pill);
+  border-radius: 0;
   background: rgba(4, 6, 20, 0.8);
   border: 1px solid var(--border-soft);
   overflow: hidden;
@@ -82,8 +80,8 @@
 .xpbar__fill {
   display: block;
   height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, #6c7dff, var(--accent-2));
-  box-shadow: 0 0 10px rgba(95, 214, 236, 0.55);
+  border-radius: 0;
+  background: var(--surface-solid);
+  box-shadow: none;
   transition: width var(--dur-slow) var(--ease-out);
 }

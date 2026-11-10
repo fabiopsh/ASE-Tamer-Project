@@ -1,0 +1,374 @@
+/*
+ * MONSTER TAMERS / 16-BIT EDITION
+ * Visual-only skin. Every selector below changes decoration, never navigation,
+ * DOM order, positioning, game state, API contracts or interaction handlers.
+ * Frames use hard 1-5px offsets, pixel tiles, flat inks and stepped corners.
+ */
+
+:root {
+  color-scheme: dark;
+  --rpg-ink: #080e16;
+  --rpg-ink-light: #17293a;
+  --rpg-frame: #e8dab2;
+  --rpg-frame-inner: #547281;
+  --rpg-frame-shadow: #070c12;
+  --rpg-cyan: #93d9c5;
+  --rpg-gold: #f1cf80;
+}
+
+html { scrollbar-color: #58777b #0c1824; }
+body {
+  background: #101a26 url('/ui/overworld-tiles.svg') repeat fixed;
+  background-size: 128px 128px;
+  -webkit-font-smoothing: auto;
+  -moz-osx-font-smoothing: auto;
+}
+body::before, body::after { display: none; }
+
+/* The old layout uses radii on hundreds of children. Pixel corners apply to
+ * all controls while the grid, dimensions and hit targets stay untouched. */
+*, *::before, *::after { border-radius: 0 !important; }
+
+h1, h2, h3, h4,
+.panel__title, .page-header__title, .mcard__name, .mhero__name,
+.enc-card__name, .run-strip__value, .arena__banner-text,
+.auth__hero-title, .auth__title, .logo__text,
+.dash-hero__title, .run-stat__value {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  text-shadow: 2px 2px 0 #081018;
+}
+h1, .page-header__title { line-height: 1.2; }
+.eyebrow, .filter-group__label, .run-chip__label,
+.run-stat__label, .run-strip__label, .enc-card__stage,
+.stage-track__label, .tag, .rarity-badge, .element-badge,
+.boss-badge, .starters__count-label {
+  font-family: var(--font-display);
+  font-weight: bold;
+  letter-spacing: 0.055em;
+}
+.eyebrow, .run-chip__label { color: var(--rpg-gold); }
+.muted, .subtle { text-shadow: none; }
+::selection { background: #c0b16e; color: #0e202a; }
+
+/* Accessible focus marker and decorative pixel separators. */
+:where(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px dashed var(--rpg-gold);
+  outline-offset: 3px;
+}
+.divider { height: 2px; background: #536f79; border-bottom: 2px solid #101c28; }
+.page-header__subtitle { color: #d1d8cd; }
+
+/* Window construction: cream outside / teal inner / hard bottom-right shadow.
+ * Deliberately does not change display, margin, padding or dimensions. */
+.panel,
+.dialog,
+.auth__panel,
+.mhero,
+.battle-log,
+.enc-card,
+.mcard,
+.team-card,
+.dash-shortcut,
+.run-row,
+.hrow,
+.ability-card,
+.coming-next {
+  background-color: var(--surface-solid);
+  border: 2px solid var(--rpg-frame);
+  border-radius: 0;
+  box-shadow: inset 0 0 0 2px var(--rpg-frame-inner), 4px 4px 0 var(--rpg-frame-shadow);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+.panel--glow { box-shadow: inset 0 0 0 2px var(--rpg-gold), 4px 4px 0 var(--rpg-frame-shadow); }
+.panel__title { color: #f0db9d; }
+/* Panel headings retain exactly their original layout and icon positions. */
+.panel__title { text-decoration: underline; text-decoration-color: #547281; text-underline-offset: 5px; }
+
+/* Cartridge-style top HUD: solid panels, hard 2px rule, no translucent blur. */
+.topbar {
+  background: #101d2b;
+  border-bottom: 3px solid #d9cc9f;
+  box-shadow: 0 4px 0 #070c14;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+.topbar::after { height: 2px; bottom: -3px; opacity: 1; background: #557984; }
+.topnav { border-top: 2px solid #3d5966; }
+.topnav__link {
+  font-family: var(--font-display);
+  font-size: 0.81rem;
+  letter-spacing: -0.02em;
+  color: #cbdcd4;
+  border: 2px solid transparent;
+}
+.topnav__link:hover { background: #22394a; color: #f2e7c5; border-color: #557582; }
+.topnav__link.active {
+  background: #294a4e;
+  color: #f1dfac;
+  border-color: #bbcfb0;
+  box-shadow: inset 0 0 0 2px #182e3a;
+}
+.topnav__link.active svg { color: var(--rpg-gold); filter: none; }
+.topnav__live, .resume-banner__pulse { background: #fa927d; box-shadow: none; animation: none; }
+.logo__mark { filter: none; image-rendering: pixelated; }
+.logo__word {
+  color: #e7e2ce;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+}
+.logo__word--accent {
+  background: none;
+  color: #f0cb79;
+  font-size: 1.06rem;
+  -webkit-text-fill-color: currentColor;
+  text-shadow: 2px 2px 0 #081018;
+}
+.hud__player, .run-chip, .hud__logout {
+  background: #1d3241;
+  border: 2px solid #809793;
+  box-shadow: inset 0 0 0 1px #122531;
+}
+.hud__avatar { background: #a8d9bd; color: #102b2f; box-shadow: none; font-family: var(--font-display); }
+.run-chip__boss { background: var(--rpg-gold); color: #222b27; box-shadow: 2px 2px 0 #0e1a25; }
+.resume-banner { background: #442e35; border-bottom: 3px solid #f29b89; }
+
+/* Physical buttons, switches and input cartridges. */
+.btn, .action, .pagination__btn {
+  font-family: var(--font-display);
+  font-weight: 800;
+  border: 2px solid #aebfb5;
+  background: #294450;
+  color: #faf1d2;
+  box-shadow: 3px 3px 0 var(--rpg-frame-shadow), inset 0 0 0 1px #172b37;
+  text-shadow: 1px 1px 0 #0f2330;
+  transition: background-color 80ms steps(1, end), border-color 80ms steps(1, end), transform 80ms steps(1, end);
+}
+.btn:hover:not(:disabled), .action:hover:not(:disabled), .pagination__btn:hover:not(:disabled) {
+  background: #345766;
+  color: #fff6da;
+  border-color: #f1d599;
+  box-shadow: 3px 3px 0 var(--rpg-frame-shadow), inset 0 0 0 1px #253d48;
+  filter: none;
+}
+.btn:active:not(:disabled), .action:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--rpg-frame-shadow);
+}
+.btn--primary, .btn--gold {
+  color: #182a2a;
+  background: #f0ce7e;
+  border-color: #fff0ba;
+  text-shadow: none;
+  box-shadow: 3px 3px 0 #09131b, inset 0 0 0 2px #be9553;
+}
+.btn--primary:hover:not(:disabled), .btn--gold:hover:not(:disabled) {
+  color: #14252a;
+  background: #ffe39c;
+  border-color: #fff5ca;
+  box-shadow: 3px 3px 0 #09131b, inset 0 0 0 2px #b99b59;
+}
+.btn--ghost { background: #142635; color: #d3e7d9; border-color: #557c83; }
+.btn--danger { background: #5b363e; color: #ffe0d2; border-color: #da9589; }
+.btn:disabled, .action:disabled, .pagination__btn:disabled {
+  opacity: 0.55; filter: grayscale(0.5); box-shadow: 2px 2px 0 #070e15;
+}
+.input, .select, textarea {
+  border: 2px solid #748f92;
+  background-color: #0f1b27;
+  color: #fff3da;
+  box-shadow: inset 3px 3px 0 #07111a;
+}
+.input:focus-visible, .select:focus-visible, textarea:focus-visible {
+  border-color: #f1d08a;
+  box-shadow: inset 3px 3px 0 #07111a, 0 0 0 2px #2e5659;
+}
+.input::placeholder, textarea::placeholder { color: #9aafa9; }
+.select { background-image: none; }
+.chip, .tag, .element-badge, .rarity-badge, .level-badge, .boss-badge {
+  background: #1b303e;
+  border: 2px solid #63838b;
+  color: #e7e7d3;
+  box-shadow: none;
+  font-family: var(--font-display);
+}
+.chip:hover { color: #fff1d3; border-color: #e0c78a; }
+.chip[aria-pressed='true'] {
+  color: #f9e8b8;
+  background: color-mix(in srgb, var(--el, var(--accent)) 19%, #142a35);
+  border-color: var(--el, var(--rpg-gold));
+  box-shadow: inset 0 0 0 2px #17232d;
+}
+.tag--success { border-color: #83c9a0; color: #b5eaba; }
+.tag--warning { border-color: #e0b46b; color: #f1d48e; }
+.tag--danger { border-color: #e99387; color: #ffc0b2; }
+.tag--info { border-color: #83b3cb; color: #b0e0ef; }
+.tag--accent { border-color: #9ad7c5; color: #c4e8d8; }
+
+/* Monster cards: rarity is a solid ink stripe, not animated chrome. */
+.mcard {
+  border: 2px solid var(--rarity, var(--rpg-frame));
+  background: color-mix(in srgb, var(--el, var(--accent)) 9%, #172936);
+  box-shadow: inset 0 0 0 2px #395464, 4px 4px 0 #071018;
+}
+.mcard[data-rarity='legendary'] {
+  border-color: #f1cf80;
+  background: #29372d;
+  animation: none;
+  box-shadow: inset 0 0 0 2px #9f854a, 4px 4px 0 #071018;
+}
+.mcard[data-rarity='rare'] { border-color: #8cc3df; box-shadow: inset 0 0 0 2px #3e6571, 4px 4px 0 #071018; }
+.mcard--interactive:hover { transform: translateY(-2px); border-color: #f8e4ae; box-shadow: inset 0 0 0 2px #52727c, 4px 5px 0 #071018; }
+.mcard--selected, .mcard--selected[data-rarity] {
+  background: #27464b;
+  border: 3px solid #fbdf86;
+  box-shadow: inset 0 0 0 2px #629e93, 5px 5px 0 #080e17;
+}
+.mcard__glow, .mcard__pedestal { background: none; opacity: 0; }
+.mcard__check, .enc-card__check { background: #f1cf80; color: #1a2c2f; box-shadow: 2px 2px 0 #0b131b; }
+.mcard__dex { color: #c4d3cb; }
+.mcard__name { color: #f8efd3; text-shadow: 1px 1px 0 #080e15; }
+.mcard--skeleton { background: #203242; }
+.sprite__img { image-rendering: pixelated; filter: none; }
+.sprite__aura { opacity: 0; filter: none; }
+.sprite__fallback { background: #234254; border: 2px solid #688b90; }
+.mhero { background: #1d303f; }
+.mhero__stage { background: #162939; }
+.mhero__ring, .mhero__pedestal { border-color: #607d83; background: none; box-shadow: none; }
+
+/* Dashboard and start selection keep their original flex/grid composition. */
+.dash-hero {
+  background: #1a303d url('/ui/pixel-checks.svg') repeat;
+  background-size: 64px 32px;
+  border-color: #e8d8ad;
+}
+.dash-hero__name { color: #f3cf80; }
+.dash-shortcut { background: #1a2f3c; }
+.dash-shortcut:hover { border-color: #f1cf80; transform: translateY(-2px); box-shadow: inset 0 0 0 2px #486a73, 4px 5px 0 #080e16; }
+.dash-shortcut__icon { background: #24495a; border: 2px solid #8bb6ac; }
+.run-stat, .run-strip__item, .team-pick__item {
+  background: #112330; border: 2px solid #6b8a8a;
+  box-shadow: inset 0 0 0 2px #203c48;
+}
+.run-stat[data-highlight], .run-strip__item--boss[data-state='ready'] {
+  border-color: #efcf81; background: #30362d; box-shadow: inset 0 0 0 2px #6e7043;
+}
+.stage-track::before { background: #7a988a; }
+.stage-track__dot, .stage-dots__dot { border: 2px solid #88a1a0; background: #243847; box-shadow: 2px 2px 0 #09111b; }
+.stage-track__node[data-state='current'] .stage-track__dot { background: #f1ce80; color: #192931; border-color: #fff0be; animation: none; box-shadow: 2px 2px 0 #08111b; }
+.stage-track__node[data-state='done'] .stage-track__dot { background: #8ed2af; color: #102831; border-color: #c3e6ba; }
+.starters__bar { background: #132636; border-top: 3px solid #e8d9b2; box-shadow: 0 -4px 0 #080e16; backdrop-filter: none; }
+.starters__bar::before { background: #557c80; height: 2px; }
+.starters__slot { border-color: #809c93; background: #1a3341; }
+.starters__slot--filled { border-color: #f0d18b; background: #28423c; }
+
+/* Tactics, party management, encounter maps, history: unified framed tiles. */
+.enc-card { background: #1a2b3b; border-color: #a7bbab; }
+.enc-card__bg { background: none; }
+.enc-card__orb { background: #203e48; border: 3px solid var(--el, #8fb4aa); box-shadow: inset 0 0 0 3px #101b2b, 4px 4px 0 #08121a; }
+.enc-card--boss {
+  background: #372f36;
+  border: 3px solid #f0ca7d;
+  box-shadow: inset 0 0 0 2px #8a5a57, 5px 5px 0 #080e16;
+}
+.enc-card--boss .enc-card__orb { background: #49373e; }
+.enc-card[aria-pressed='true'] { background: #294448; border-color: #f0d081; box-shadow: inset 0 0 0 2px #7c9a83, 5px 5px 0 #08121a; }
+button.enc-card:hover { border-color: #f0d081; box-shadow: inset 0 0 0 2px #57747f, 4px 5px 0 #08121a; }
+.enc-card__lv { border: 2px solid #627d86; background: #0d202b; }
+.rarity-bar { background: #11212c; border: 1px solid #69858a; }
+.rarity-bar__seg { box-shadow: none; }
+.team-card, .team-pick__item { background: #1b303e; }
+.team-card__glow, .hd-face__glow { display: none; }
+.team-card:hover, .run-row:hover, .hrow:hover { border-color: #f1cf80; box-shadow: inset 0 0 0 2px #4c7277, 4px 5px 0 #080e16; }
+.slot, .team-slot, .team-card__slot, .team-card__member, .hd-team__member { border-color: #688b90; background: #172b38; }
+.slot--invalid { border-color: #f48f86; }
+.slot--dragging { border-color: #e7c780; }
+.slot--empty { border-style: dashed; }
+.validation__state--ok { color: #a0e3b1; }
+.validation__state--bad { color: #f6a198; }
+.history-list, .run-list { border-color: #657d83; }
+.hrow, .run-row { background: #182e3b; }
+.hrow__boss, .hd-outcome { background: #392c32; color: #f1ce87; border: 1px solid #c59e6d; }
+.ability-card { background: #1a3040; }
+.ability-card[data-rarity='legendary'] { background: #30362e; border-color: #f1cf80; }
+
+/* Battle is an actual 16-bit arena: tiled sky + stone grid instead of a smooth glow. */
+.arena {
+  background: #172936;
+  border: 3px solid #e7d9b0;
+  box-shadow: inset 0 0 0 3px #426473, 5px 5px 0 #070d16;
+}
+.arena__sky, .arena--boss .arena__sky {
+  background: #172b3b url('/ui/battle-sky.svg') center center / cover no-repeat;
+  image-rendering: pixelated;
+}
+.arena--boss .arena__sky { background-color: #362c36; background-blend-mode: multiply; }
+.arena__sky::after { background: none; }
+.arena__ground {
+  background: #2d4746 url('/ui/battle-floor.svg') center top / 256px 128px repeat;
+  border-top: 4px solid #85a085;
+  box-shadow: none;
+}
+.arena__platform, .arena__spot--team .arena__platform {
+  background: #34594d;
+  border: 3px solid #82b59a;
+  box-shadow: inset 0 0 0 2px #182b31;
+}
+.arena__mote { box-shadow: none; }
+.arena__mon .sprite__img { filter: none; }
+.arena__hud {
+  background: #132936;
+  border: 2px solid #e4d2a5;
+  box-shadow: inset 0 0 0 2px #47616d, 3px 3px 0 #071119;
+  backdrop-filter: none;
+}
+.arena__banner { background: #203342; border: 3px solid #f2d486; box-shadow: 4px 4px 0 #08121b; }
+.arena__banner--victory { background: #234b41; }
+.arena__banner--defeat { background: #543a3c; }
+.arena__banner-text { color: #fae6ad; text-shadow: 3px 3px 0 #132432; }
+.arena__flash, .arena__flash--ko { background: rgba(247, 219, 158, 0.18); }
+.battle-top, .battle-log__title { border-color: #83958e; }
+.battle-log { background: #152738; }
+.blog-line, .blog-line--strong, .blog-line--ko { background: #1c3040; border-left: 3px solid var(--tone, #64898d); }
+.action--attack { background: #254f48; border-color: #97d4ae; }
+.action--switch { background: #2a405c; border-color: #8cb4d6; }
+.action--flee { background: #4d353c; border-color: #dc9f8c; }
+.reward { background: #343d30; border: 2px solid #ecd282; }
+.reward::before, .reward::after { background: none; }
+
+/* HP / experience / rarity bars are hard-edged rectangular pixel meters. */
+.hpbar__track, .xpbar__track, .stat-table__track {
+  border: 2px solid #889c93;
+  background: #101e27;
+  box-shadow: inset 0 0 0 2px #0a151c;
+}
+.hpbar__fill { box-shadow: none; }
+.hpbar__ghost { background: #dba26c; }
+.xpbar__fill, .stat-table__fill { background: #8fd2b9; box-shadow: none; }
+.stat-table { border-color: #64828b; }
+.stat-table__dot { background: #f1cf80; box-shadow: none; }
+
+/* Dialogs, loading, notices, pagination, accessibility. */
+.dialog { background: #1a2939; border-color: #f1d8a4; }
+.dialog::backdrop { background: rgba(4, 9, 13, 0.87); backdrop-filter: none; }
+.banner, .toast, .empty-state, .coming-next {
+  background: #1a2d3a;
+  border: 2px solid #92aaa0;
+  box-shadow: inset 0 0 0 2px #365460, 4px 4px 0 #081018;
+}
+.banner--success, .toast--success { border-color: #9adaae; }
+.banner--warning, .toast--warning { border-color: #efd18a; }
+.toast--error { border-color: #e89b91; }
+.fullscreen-loader { background: #101e2b; }
+.fullscreen-loader__orb { background: #8ed7c5; box-shadow: 0 0 0 4px #203c4a; }
+.spinner { border-color: #506e78; border-top-color: var(--rpg-gold); }
+.skeleton { background: #263e4b; }
+.skeleton::after { display: none; }
+.pagination__btn { border-color: #6d9797; }
+
+/* All modern blur, lens, gradient and glow effects are intentionally absent. */
+@media (prefers-reduced-motion: reduce) {
+  .mcard, .enc-card, .dash-shortcut, .team-card, .hrow, .run-row { transition: none; }
+}

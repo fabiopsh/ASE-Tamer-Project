@@ -17,7 +17,7 @@
   min-width: 42px;
   height: 42px;
   padding: 0 var(--space-2);
-  border-radius: var(--radius-sm);
+  border-radius: 0;
   border: 1px solid var(--border-soft);
   background: var(--surface-1);
   color: var(--text-2);
@@ -31,7 +31,7 @@
   color: var(--text-on-accent);
   border-color: transparent;
   background: var(--accent-gradient);
-  box-shadow: 0 4px 16px rgba(124, 141, 255, 0.4);
+  box-shadow: none;
   opacity: 1;
 }
 .pagination__gap { color: var(--text-3); padding: 0 2px; }

@@ -16,7 +16,7 @@
   place-items: center;
   width: 28px;
   height: 28px;
-  border-radius: 50%;
+  border-radius: 0;
   border: 1px dashed var(--border-strong);
   color: var(--text-2);
   font-weight: var(--weight-black);
@@ -29,8 +29,8 @@
   display: grid;
   place-items: center;
   padding: var(--space-3) 0;
-  border-radius: var(--radius-md);
-  background: radial-gradient(closest-side, color-mix(in srgb, var(--el) 22%, transparent), transparent);
+  border-radius: 0;
+  background: color-mix(in srgb, var(--el, var(--accent)) 14%, var(--surface-solid));
 }
 .starters__inspect-name { font-size: var(--text-2xl); }
 
@@ -42,11 +42,11 @@
   bottom: 0;
   z-index: var(--z-topbar);
   padding: var(--space-3) var(--page-gutter) calc(var(--space-3) + env(safe-area-inset-bottom));
-  background: linear-gradient(180deg, rgba(12, 14, 40, 0.88), rgba(8, 9, 28, 0.97));
+  background: var(--surface-solid);
   border-top: 1px solid var(--border-mid);
-  box-shadow: 0 -12px 40px rgba(2, 3, 14, 0.6);
-  -webkit-backdrop-filter: blur(16px);
-  backdrop-filter: blur(16px);
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 .starters__bar::before {
   content: '';
@@ -55,7 +55,7 @@
   right: 0;
   top: -1px;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(95, 214, 236, 0.7), rgba(157, 134, 255, 0.7), transparent);
+  background: var(--surface-solid);
 }
 .starters__bar-inner {
   max-width: var(--page-max);
@@ -72,7 +72,7 @@
   place-items: center;
   width: 68px;
   height: 68px;
-  border-radius: var(--radius-md);
+  border-radius: 0;
   border: 2px dashed var(--border-mid);
   background: var(--surface-sunken);
   color: var(--text-3);
@@ -83,8 +83,8 @@
   padding: 0;
   border-style: solid;
   border-color: color-mix(in srgb, var(--el) 70%, transparent);
-  background: radial-gradient(closest-side, color-mix(in srgb, var(--el) 35%, transparent), var(--surface-sunken));
-  box-shadow: 0 0 18px color-mix(in srgb, var(--el) 35%, transparent);
+  background: var(--surface-sunken);
+  box-shadow: none;
   animation: pop-in var(--dur-slow) var(--ease-spring) both;
   transition: transform var(--dur-fast) var(--ease-out);
 }
@@ -107,7 +107,7 @@
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  filter: drop-shadow(0 0 12px rgba(95, 214, 236, 0.45));
+  filter: none;
 }
 .starters__count-label { font-size: var(--text-sm); color: var(--text-2); font-weight: var(--weight-medium); }
 .starters__confirm { margin-left: auto; }
