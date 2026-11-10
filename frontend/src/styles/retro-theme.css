@@ -372,3 +372,167 @@ button.enc-card:hover { border-color: #f0d081; box-shadow: inset 0 0 0 2px #5774
 @media (prefers-reduced-motion: reduce) {
   .mcard, .enc-card, .dash-shortcut, .team-card, .hrow, .run-row { transition: none; }
 }
+
+/* ================================================================
+   UI POLISH / spacing and small 16-bit motion details
+   Presentation-only rules: no changes to JSX, state, navigation or APIs.
+   ================================================================ */
+
+/* Auth: one continuous RPG dialogue window. The former outer border had no
+   inner padding, while the inner form had its own frame; that made the heading
+   and the labels appear to use unrelated left margins. */
+.auth__panel {
+  min-width: 0;
+  padding: clamp(20px, 2.4vw, 28px);
+  gap: var(--space-5);
+  background: #192b3a;
+  border-color: #ebd9aa;
+  box-shadow: inset 0 0 0 3px #466777, 5px 5px 0 #070d14;
+}
+.auth__panel > .stack:first-child {
+  min-width: 0;
+  gap: var(--space-2);
+}
+.auth__panel .eyebrow {
+  line-height: 1.35;
+  letter-spacing: 0.045em;
+  overflow-wrap: break-word;
+}
+.auth__panel .auth__title {
+  max-width: 100%;
+  font-size: clamp(1.5rem, 2.3vw, 2rem);
+  line-height: 1.22;
+  letter-spacing: 0;
+  overflow-wrap: break-word;
+}
+.auth__panel > .stack:first-child > .muted {
+  line-height: 1.5;
+  max-width: 42ch;
+}
+/* Remove the redundant inner frame: fields, title and footer now share the
+   same inset from the outer frame, without changing form element order. */
+.auth__panel > form.panel {
+  min-width: 0;
+  margin: 0;
+  padding: var(--space-5) 0 0;
+  gap: var(--space-4);
+  background: transparent;
+  border: 0;
+  border-top: 2px solid #526f79;
+  box-shadow: none;
+}
+.auth__panel .field { min-width: 0; gap: 6px; }
+.auth__panel .field__label {
+  display: block;
+  line-height: 1.35;
+  margin: 0;
+}
+.auth__panel .field__hint,
+.auth__panel .field__error { line-height: 1.4; overflow-wrap: break-word; }
+.auth__panel .input {
+  display: block;
+  min-width: 0;
+  min-height: 50px;
+  padding-block: 10px;
+  line-height: 1.35;
+}
+.auth__panel .btn--block {
+  min-width: 0;
+  min-height: 52px;
+  padding-block: 10px;
+  line-height: 1.35;
+  white-space: normal;
+  text-align: center;
+}
+.auth__panel .auth__switch {
+  padding-top: var(--space-4);
+  border-top: 2px dashed #45626d;
+  line-height: 1.5;
+  overflow-wrap: break-word;
+}
+@media (max-width: 600px) {
+  .auth__panel-wrap { padding: var(--space-5) var(--space-4); gap: var(--space-5); }
+  .auth__panel { padding: var(--space-5); }
+  .auth__panel .auth__title { font-size: clamp(1.45rem, 5.5vw, 1.85rem); }
+}
+@media (max-width: 360px) {
+  .auth__panel-wrap { padding-inline: var(--space-3); }
+  .auth__panel { padding: var(--space-4); }
+}
+
+/* Allow long names and instructions to wrap inside narrow framed panels.
+   The original layout's flex/grid columns and component order stay intact. */
+.panel, .dialog, .auth__panel, .dash-hero { min-width: 0; }
+.panel__title, .dash-shortcut__title { line-height: 1.3; overflow-wrap: break-word; }
+.page-header__subtitle, .dash-shortcut__text { line-height: 1.5; }
+
+/* Pixel-stepped, short-lived entrances: they run only when a page mounts.
+   They never delay, disable or intercept user interactions. */
+@keyframes rpg-window-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.auth__panel {
+  animation: rpg-window-in 260ms steps(4, end) both;
+}
+.page > .page-header,
+.page > .dash-hero,
+.page > .panel {
+  animation: rpg-window-in 220ms steps(4, end) both;
+}
+
+/* Tiny ambient ink/teal pulse on the decorative login constellation.
+   The monster sprites themselves retain their existing float animation. */
+@keyframes rpg-ring-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+.auth__ring { animation: rpg-ring-pulse 5.2s steps(4, end) infinite; }
+.auth__ring--inner { animation-delay: -2.6s; }
+.auth__orbit .sprite--float .sprite__img {
+  animation-timing-function: steps(6, end);
+  animation-duration: 4.4s;
+}
+
+/* Responsive 1-pixel glint on enabled primary actions; appears on hover only. */
+.btn--primary:not(:disabled)::after,
+.btn--gold:not(:disabled)::after {
+  content: '';
+  position: absolute;
+  right: 10px;
+  top: 9px;
+  width: 4px;
+  height: 4px;
+  background: #fff6d6;
+  box-shadow: 4px 4px 0 #b18b4c;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 90ms steps(1, end);
+}
+.btn--primary:not(:disabled):hover::after,
+.btn--gold:not(:disabled):hover::after { opacity: 1; }
+
+/* A small selection cue in the HUD, without moving the navigation. */
+.topnav__link.active::after {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  left: 12px;
+  right: 12px;
+  height: 2px;
+  background: #f1cf80;
+  pointer-events: none;
+}
+
+/* Accessibility: all newly introduced movement and transient glints are
+   suppressed for users who request reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  .auth__panel,
+  .page > .page-header,
+  .page > .dash-hero,
+  .page > .panel,
+  .auth__ring,
+  .auth__orbit .sprite--float .sprite__img { animation: none !important; }
+  .btn--primary:not(:disabled)::after,
+  .btn--gold:not(:disabled)::after { transition: none; }
+}

@@ -32,7 +32,7 @@ services:
     <<: *hardening
     restart: unless-stopped
     ports:
-      - "8443:8443"
+      - "127.0.0.1:8443:8443"
     networks:
       - edge
       - backend
