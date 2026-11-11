@@ -8,9 +8,9 @@
   font-size: var(--text-xs);
   font-weight: var(--weight-bold);
   letter-spacing: 0.03em;
-  color: color-mix(in srgb, var(--el) 85%, white);
-  background: color-mix(in srgb, var(--el) 16%, rgba(8, 10, 30, 0.75));
-  border: 1px solid color-mix(in srgb, var(--el) 45%, transparent);
+  color: var(--el, var(--accent));
+  background: var(--surface-sunken);
+  border: var(--stroke-fine) solid var(--el, var(--accent));
   white-space: nowrap;
 }
 .element-badge--sm { height: 24px; gap: 4px; padding: 0 8px 0 6px; }
@@ -19,8 +19,7 @@
 .element-badge[data-element='chaos'] {
   border-color: transparent;
   background:
-    linear-gradient(rgba(30, 10, 34, 0.9), rgba(30, 10, 34, 0.9)) padding-box,
-    var(--el-chaos-gradient) border-box;
+    var(--surface-sunken);
 }
 
 .rarity-badge {
@@ -35,8 +34,8 @@
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--rarity);
-  background: color-mix(in srgb, var(--rarity) 12%, rgba(8, 10, 30, 0.75));
-  border: 1px solid color-mix(in srgb, var(--rarity) 40%, transparent);
+  background: var(--surface-sunken);
+  border: var(--stroke-fine) solid var(--rarity, var(--text-3));
   white-space: nowrap;
 }
 .rarity-badge--sm { height: 24px; gap: 5px; padding: 0 8px 0 7px; letter-spacing: 0.04em; }
@@ -45,17 +44,16 @@
   width: 7px;
   height: 7px;
   transform: rotate(45deg);
-  border-radius: 1.5px;
+  border-radius: var(--radius-xs);
   background: var(--rarity);
-  box-shadow: 0 0 6px color-mix(in srgb, var(--rarity) 70%, transparent);
+  box-shadow: none;
 }
 .rarity-badge[data-rarity='legendary'] {
   border-color: transparent;
   background:
-    linear-gradient(rgba(36, 26, 8, 0.92), rgba(36, 26, 8, 0.92)) padding-box,
-    var(--legendary-shine) border-box;
-  animation: shine-spin 4s linear infinite;
-  text-shadow: 0 0 10px rgba(255, 210, 122, 0.5);
+    var(--surface-sunken);
+  animation: none;
+  text-shadow: var(--shadow-text);
 }
 
 .level-badge {
@@ -66,8 +64,8 @@
   padding: 0 9px;
   line-height: 26px;
   border-radius: var(--radius-sm);
-  background: rgba(6, 8, 26, 0.78);
-  border: 1px solid var(--border-mid);
+  background: var(--bg-0);
+  border: var(--stroke-fine) solid var(--border-mid);
   font-weight: var(--weight-black);
   font-size: var(--text-sm);
   color: var(--text-1);

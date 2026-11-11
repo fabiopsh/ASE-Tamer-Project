@@ -7,6 +7,10 @@ Specification: [`docs/plan/09-frontend.md`](../docs/plan/09-frontend.md).
 Stack: Vite + React + TypeScript, `react-router-dom`, plain CSS, fonts self-hosted from npm (`@fontsource-variable/*`).
 All versions are exact in `package.json`; `package-lock.json` is committed.
 
+The **Archivio d’ambra** reskin uses metric-compatible Amber pixel fonts derived from the bundled OFL sources.
+Visual tokens, font regeneration, motion, accessibility and layout verification are documented in
+[`docs/amber-reskin.md`](docs/amber-reskin.md).
+
 ## Requirements
 
 - Node.js 22.12 or newer (developed with Node 24) and npm.

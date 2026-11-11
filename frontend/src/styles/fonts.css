@@ -1,0 +1,11 @@
+/* Amber retains the source advances, kerning, line metrics and Italian cmap. */
+@font-face { font-family: 'Amber UI'; src: url('../assets/fonts/amber-ui-450.woff2') format('woff2'); font-weight: 450; font-style: normal; font-display: block; }
+@font-face { font-family: 'Amber UI'; src: url('../assets/fonts/amber-ui-550.woff2') format('woff2'); font-weight: 550; font-style: normal; font-display: block; }
+@font-face { font-family: 'Amber UI'; src: url('../assets/fonts/amber-ui-700.woff2') format('woff2'); font-weight: 700; font-style: normal; font-display: block; }
+@font-face { font-family: 'Amber UI'; src: url('../assets/fonts/amber-ui-800.woff2') format('woff2'); font-weight: 800; font-style: normal; font-display: block; }
+@font-face { font-family: 'Amber UI'; src: url('../assets/fonts/amber-ui-900.woff2') format('woff2'); font-weight: 900; font-style: normal; font-display: block; }
+@font-face { font-family: 'Amber Display'; src: url('../assets/fonts/amber-display-450.woff2') format('woff2'); font-weight: 450; font-style: normal; font-display: block; }
+@font-face { font-family: 'Amber Display'; src: url('../assets/fonts/amber-display-550.woff2') format('woff2'); font-weight: 550; font-style: normal; font-display: block; }
+@font-face { font-family: 'Amber Display'; src: url('../assets/fonts/amber-display-700.woff2') format('woff2'); font-weight: 700; font-style: normal; font-display: block; }
+@font-face { font-family: 'Amber Display'; src: url('../assets/fonts/amber-display-800.woff2') format('woff2'); font-weight: 800; font-style: normal; font-display: block; }
+@font-face { font-family: 'Amber Display'; src: url('../assets/fonts/amber-display-900.woff2') format('woff2'); font-weight: 900; font-style: normal; font-display: block; }

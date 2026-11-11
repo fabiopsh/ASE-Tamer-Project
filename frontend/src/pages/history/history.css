@@ -15,10 +15,10 @@
   padding: var(--space-2) var(--space-4) var(--space-2) var(--space-2);
   color: var(--text-1);
   border-radius: var(--radius-md);
-  border: 1px solid var(--border-soft);
-  border-left: 4px solid var(--tone);
-  background: linear-gradient(90deg, color-mix(in srgb, var(--el) 10%, transparent), transparent 40%), var(--surface-1);
-  transition: background-color var(--dur-base), transform var(--dur-fast), border-color var(--dur-base);
+  border: var(--stroke-fine) solid var(--border-soft);
+  border-left: var(--stroke-track) solid var(--tone);
+  background: var(--surface-solid);
+  transition: transform var(--dur-base) var(--ease-out);
 }
 .hrow:hover { text-decoration: none; background-color: var(--surface-2); transform: translateX(2px); }
 .hrow[data-outcome='victory'] { --tone: var(--success); }
@@ -39,8 +39,8 @@
   font-weight: var(--weight-black);
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #2a0a00;
-  background: linear-gradient(135deg, #ffe39d, #ff9f43);
+  color: var(--text-on-accent);
+  background: var(--gold);
 }
 .hrow__side { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; text-align: right; }
 .hrow__xp { font-weight: var(--weight-black); color: var(--accent-2); font-size: var(--text-sm); }
@@ -73,12 +73,12 @@
   position: absolute;
   inset: -30% -10% auto;
   height: 300px;
-  background: radial-gradient(circle, color-mix(in srgb, var(--el) 32%, transparent), transparent 65%);
+  background: none;
   pointer-events: none;
 }
 .hd-face__name { position: relative; font-size: var(--text-2xl); }
 
-.hd-tech summary { cursor: pointer; color: var(--text-2); font-weight: var(--weight-bold); font-size: var(--text-sm); }
+.hd-tech summary { cursor: var(--cursor-pointer); color: var(--text-2); font-weight: var(--weight-bold); font-size: var(--text-sm); }
 .hd-tech .kv { margin-top: var(--space-3); }
 .hd-tech__seed { overflow-wrap: anywhere; }
 
@@ -90,7 +90,7 @@
   gap: var(--space-3);
   padding: var(--space-1) var(--space-3) var(--space-1) var(--space-2);
   border-radius: var(--radius-md);
-  border: 1px solid var(--border-soft);
+  border: var(--stroke-fine) solid var(--border-soft);
   background: var(--surface-sunken);
 }
 .hd-team__info { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
@@ -103,9 +103,9 @@
   place-items: center;
   width: 26px;
   height: 26px;
-  border-radius: 50%;
+  border-radius: var(--radius-xs);
   font-weight: var(--weight-black);
   font-size: var(--text-sm);
   color: var(--text-on-accent);
-  background: color-mix(in srgb, var(--el) 80%, white);
+  background: var(--surface-solid);
 }

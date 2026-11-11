@@ -11,17 +11,17 @@
   width: 100%;
   height: 100%;
   image-rendering: pixelated;
-  image-rendering: crisp-edges;
-  filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.45));
-  transition: transform var(--dur-slow) var(--ease-spring), filter var(--dur-base) var(--ease-out);
+  image-rendering: pixelated;
+  filter: var(--shadow-sprite);
+  transition: transform var(--dur-base) var(--ease-cursor);
 }
 .sprite__aura {
   position: absolute;
   inset: 8%;
   z-index: 0;
-  border-radius: 50%;
-  background: radial-gradient(circle, color-mix(in srgb, var(--el) 55%, transparent) 0%, transparent 68%);
-  filter: blur(6px);
+  border-radius: var(--radius-xs);
+  background: none;
+  filter: none;
   opacity: 0.75;
 }
 .sprite__fallback {
@@ -31,15 +31,11 @@
   place-items: center;
   width: 78%;
   height: 78%;
-  border-radius: 50%;
+  border-radius: var(--radius-xs);
   color: var(--text-3);
-  background: rgba(150, 160, 255, 0.07);
-  border: 1px dashed var(--border-mid);
+  background: var(--surface-sunken);
+  border: var(--stroke-fine) dashed var(--border-mid);
 }
-.sprite--float .sprite__img { animation: sprite-float 3.2s ease-in-out infinite; }
-@keyframes sprite-float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-6%); }
-}
-.sprite--dim .sprite__img { filter: grayscale(1) brightness(0.6); }
+.sprite--float .sprite__img { animation: none; }
+.sprite--dim .sprite__img { filter: grayscale(1); opacity: var(--opacity-muted); }
 .sprite--dim .sprite__aura { opacity: 0.15; }
