@@ -6,15 +6,13 @@
   padding: var(--space-4);
   border-radius: var(--radius-md);
   background:
-    linear-gradient(135deg, rgba(157, 134, 255, 0.12), transparent 60%),
     var(--surface-sunken);
-  border: 1px solid var(--border-soft);
+  border: var(--stroke-fine) solid var(--border-soft);
 }
 .ability-card[data-scope='legendary'] {
-  border-color: rgba(255, 210, 122, 0.45);
+  border-color: var(--gold);
   background:
-    linear-gradient(135deg, rgba(255, 210, 122, 0.14), transparent 60%),
-    var(--surface-sunken);
+    var(--bg-0);
 }
 .ability-card__label {
   font-size: var(--text-xs);

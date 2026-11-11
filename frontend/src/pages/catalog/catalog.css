@@ -7,9 +7,9 @@
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-md);
   background: var(--surface-sunken);
-  border: 1px solid var(--border-soft);
+  border: var(--stroke-fine) solid var(--border-soft);
 }
 .matchups__row dt { font-weight: var(--weight-bold); color: var(--text-2); }
 .matchups__row dd { margin: 0; }
-.matchups__row--strong { border-left: 3px solid var(--success); }
-.matchups__row--weak { border-left: 3px solid var(--danger); }
+.matchups__row--strong { border-left: var(--stroke-marker) solid var(--success); }
+.matchups__row--weak { border-left: var(--stroke-marker) solid var(--danger); }

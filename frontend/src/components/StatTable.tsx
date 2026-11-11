@@ -3,10 +3,10 @@ import type { GrowthBlock, StatBlock } from '../api/types';
 import './stat-table.css';
 
 const STATS: { key: keyof StatBlock; label: string; short: string; color: string }[] = [
-  { key: 'hp', label: 'HP', short: 'HP', color: '#5fe3a1' },
-  { key: 'attack', label: 'Attack', short: 'ATK', color: '#ff7a8f' },
-  { key: 'defense', label: 'Defense', short: 'DEF', color: '#79b8ff' },
-  { key: 'speed', label: 'Speed', short: 'SPD', color: '#ffd27a' },
+  { key: 'hp', label: 'HP', short: 'HP', color: 'var(--success)' },
+  { key: 'attack', label: 'Attack', short: 'ATK', color: 'var(--danger)' },
+  { key: 'defense', label: 'Defense', short: 'DEF', color: 'var(--info)' },
+  { key: 'speed', label: 'Speed', short: 'SPD', color: 'var(--gold)' },
 ];
 
 interface StatTableProps {

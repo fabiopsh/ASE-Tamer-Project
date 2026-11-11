@@ -16,18 +16,18 @@
   gap: var(--space-3);
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-sm);
-  background: rgba(8, 10, 32, 0.55);
-  border: 1px solid var(--border-soft);
-  border-left: 3px solid var(--tone);
+  background: var(--surface-sunken);
+  border: var(--stroke-fine) solid var(--border-soft);
+  border-left: var(--stroke-marker) solid var(--tone);
   font-size: var(--text-sm);
   line-height: 1.4;
 }
 .blog-line--team { --tone: var(--accent-2); }
-.blog-line--wild { --tone: #ff9a7a; }
-.blog-line--strong { --tone: var(--gold); background: linear-gradient(90deg, rgba(255, 210, 122, 0.12), rgba(8, 10, 32, 0.55) 60%); }
+.blog-line--wild { --tone: var(--danger); }
+.blog-line--strong { --tone: var(--gold); background: var(--surface-sunken); }
 .blog-line--weak { --tone: var(--text-3); }
 .blog-line--miss { --tone: var(--info); }
-.blog-line--ko { --tone: var(--danger); background: linear-gradient(90deg, rgba(255, 111, 142, 0.14), rgba(8, 10, 32, 0.55) 60%); }
+.blog-line--ko { --tone: var(--danger); background: var(--surface-sunken); }
 .blog-line--switch { --tone: var(--accent-strong); }
 .blog-line--flee { --tone: var(--warning); }
 .blog-line--end { --tone: var(--success); font-weight: var(--weight-bold); }
@@ -45,19 +45,20 @@
   border-radius: var(--radius-pill);
   font-weight: var(--weight-black);
   font-size: var(--text-sm);
-  color: #ffd9de;
-  background: rgba(255, 111, 142, 0.16);
-  border: 1px solid rgba(255, 111, 142, 0.35);
+  color: var(--danger);
+  background: var(--bg-0);
+  border: var(--stroke-fine) solid var(--accent);
+  border-color: var(--danger);
 }
 
-.blog-line--fresh { animation: blog-in 320ms var(--ease-out) backwards; }
+.blog-line--fresh { animation: blog-in var(--dur-slow) var(--ease-out) backwards; }
 @keyframes blog-in {
   from { opacity: 0; transform: translateX(-10px); }
   to { opacity: 1; transform: none; }
 }
 
 .blog-round { display: flex; flex-direction: column; gap: var(--space-2); }
-.blog-round + .blog-round { padding-top: var(--space-4); border-top: 1px solid var(--border-soft); }
+.blog-round + .blog-round { padding-top: var(--space-4); border-top: var(--stroke-fine) solid var(--border-soft); }
 .blog-round__turn {
   display: flex;
   gap: 6px;

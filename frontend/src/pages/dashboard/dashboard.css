@@ -7,9 +7,8 @@
   padding: var(--space-8);
   overflow: hidden;
   background:
-    radial-gradient(600px 260px at 0% 0%, rgba(157, 134, 255, 0.25), transparent 70%),
-    radial-gradient(500px 240px at 100% 100%, rgba(95, 214, 236, 0.18), transparent 70%),
     var(--surface-1);
+  box-shadow: var(--frame-hero);
 }
 .dash-hero__text { display: flex; flex-direction: column; gap: var(--space-3); max-width: 46rem; min-width: 0; }
 .dash-hero__title { font-size: var(--text-3xl); }
@@ -21,7 +20,7 @@
   gap: var(--space-2);
   margin-left: auto;
 }
-.dash-hero__member .sprite__img { animation-delay: calc(var(--i) * 0.5s); }
+.dash-hero__member .sprite__img { animation-delay: var(--dur-none); }
 @media (max-width: 720px) {
   .dash-hero__party { display: none; }
 }
@@ -50,7 +49,7 @@
   left: 6%;
   right: 6%;
   height: 2px;
-  background: linear-gradient(90deg, var(--border-mid), var(--border-soft));
+  background: var(--surface-solid);
 }
 .stage-track__node {
   position: relative;
@@ -64,25 +63,26 @@
   place-items: center;
   width: 40px;
   height: 40px;
-  border-radius: 50%;
+  border-radius: var(--radius-xs);
   font-weight: var(--weight-black);
   color: var(--text-3);
   background: var(--surface-solid);
-  border: 2px solid var(--border-mid);
+  border: var(--stroke-medium) solid var(--border-mid);
 }
 .stage-track__label { font-size: var(--text-xs); font-weight: var(--weight-bold); color: var(--text-3); white-space: nowrap; }
 .stage-track__node[data-state='done'] .stage-track__dot {
   color: var(--text-on-accent);
-  background: linear-gradient(135deg, #8ff0c4, var(--success));
+  background: var(--success);
   border-color: transparent;
+  box-shadow: var(--shadow-1);
 }
 .stage-track__node[data-state='done'] .stage-track__label { color: var(--text-2); }
 .stage-track__node[data-state='current'] .stage-track__dot {
   color: var(--text-on-accent);
-  background: var(--accent-gradient);
+  background: var(--accent);
   border-color: transparent;
-  box-shadow: 0 0 0 4px rgba(95, 214, 236, 0.2), 0 0 24px rgba(157, 134, 255, 0.7);
-  animation: orb-pulse 2.4s ease-in-out infinite;
+  box-shadow: var(--frame-current);
+  animation: none;
 }
 .stage-track__node[data-state='current'] .stage-track__label { color: var(--text-1); }
 @media (max-width: 640px) {
@@ -104,12 +104,12 @@
   padding: var(--space-4);
   border-radius: var(--radius-md);
   background: var(--surface-sunken);
-  border: 1px solid var(--border-soft);
+  border: var(--stroke-fine) solid var(--border-soft);
 }
 .run-stat[data-highlight] {
-  border-color: rgba(255, 210, 122, 0.55);
-  background: linear-gradient(135deg, rgba(255, 210, 122, 0.14), transparent), var(--surface-sunken);
-  box-shadow: 0 0 22px rgba(255, 190, 80, 0.15);
+  border-color: var(--gold);
+  background: var(--surface-solid);
+  box-shadow: none;
 }
 .run-stat__label {
   font-size: var(--text-xs);
@@ -136,16 +136,16 @@
   padding: var(--space-5);
   border-radius: var(--radius-lg);
   background: var(--surface-1);
-  border: 1px solid var(--border-soft);
+  border: var(--stroke-fine) solid var(--border-soft);
   color: var(--text-1);
-  box-shadow: var(--shadow-1);
-  transition: transform var(--dur-base) var(--ease-out), border-color var(--dur-base), box-shadow var(--dur-base);
+  box-shadow: none;
+  transition: transform var(--dur-base) var(--ease-out);
 }
 .dash-shortcut:hover {
   text-decoration: none;
-  transform: translateY(-3px);
-  border-color: rgba(157, 134, 255, 0.5);
-  box-shadow: var(--shadow-2), 0 0 26px rgba(157, 134, 255, 0.2);
+  transform: none;
+  border-color: var(--accent);
+  box-shadow: var(--frame-selected);
 }
 .dash-shortcut__icon {
   flex: none;
@@ -155,8 +155,8 @@
   height: 52px;
   border-radius: var(--radius-md);
   color: var(--accent-2);
-  background: radial-gradient(circle at 30% 25%, rgba(95, 214, 236, 0.22), rgba(157, 134, 255, 0.1) 70%), var(--surface-sunken);
-  border: 1px solid rgba(95, 214, 236, 0.25);
+  background: var(--surface-solid);
+  border: var(--stroke-fine) solid var(--accent);
 }
 .dash-shortcut__body { display: flex; flex-direction: column; gap: 2px; }
 .dash-shortcut__title { font-family: var(--font-display); font-weight: var(--weight-bold); font-size: var(--text-lg); }

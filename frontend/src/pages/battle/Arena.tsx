@@ -3,6 +3,7 @@ import type { Battle, BattleEvent, BattleMember } from '../../api/types';
 import { ElementBadge, LevelBadge, RarityBadge } from '../../components/Badges';
 import { HpBar } from '../../components/HpBar';
 import { Sprite } from '../../components/Sprite';
+import { readMotionTokens } from '../../lib/motion';
 import type { ShownState } from './battleView';
 
 interface ArenaProps {
@@ -29,6 +30,7 @@ export function Arena({ battle, shown, fx, caption, captionDetail, onSkip, revea
   const wildRef = useRef<HTMLDivElement>(null);
   const teamRef = useRef<HTMLDivElement>(null);
   const arenaRef = useRef<HTMLDivElement>(null);
+  const captionRef = useRef<HTMLParagraphElement>(null);
   const active: BattleMember | undefined = shown.team.find((m) => m.position === shown.activePosition);
 
   const ev = (fx?.event ?? null) as Loose | null;
@@ -47,38 +49,60 @@ export function Arena({ battle, shown, fx, caption, captionDetail, onSkip, revea
     const attacker = fromWild ? wildRef.current : teamRef.current;
     const target = fromWild ? teamRef.current : wildRef.current;
     const dx = fromWild ? -1 : 1;
-    attacker?.animate(
+    const motion = readMotionTokens();
+    const animations: Animation[] = [];
+    const animate = (node: HTMLElement | null, frames: Keyframe[], options: KeyframeAnimationOptions) => {
+      const animation = node?.animate(frames, options);
+      if (animation) animations.push(animation);
+    };
+    animate(
+      attacker,
       [
         { transform: 'translate(0, 0)' },
-        { transform: `translate(${dx * 38}px, ${-dx * 22}px) scale(1.06)`, offset: 0.35 },
+        { transform: `translate(${dx * 32}px, ${-dx * 16}px)`, offset: 0.5 },
         { transform: 'translate(0, 0)' },
       ],
-      { duration: 360, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)' },
+      { duration: motion.slow, easing: motion.easing },
     );
     if (e.dodged === true) {
-      target?.animate(
-        [{ transform: 'translateX(0)' }, { transform: `translateX(${dx * 34}px)`, offset: 0.4 }, { transform: 'translateX(0)' }],
-        { duration: 380, delay: 120, easing: 'ease-out' },
+      animate(
+        target,
+        [{ transform: 'translateX(0)' }, { transform: `translateX(${dx * 32}px)`, offset: 0.5 }, { transform: 'translateX(0)' }],
+        { duration: motion.slow, delay: motion.fast, easing: motion.easing },
       );
     } else {
-      target?.animate(
+      animate(
+        target,
         [
-          { transform: 'translateX(0)', filter: 'brightness(1)' },
-          { transform: 'translateX(-9px)', filter: 'brightness(2.6) saturate(0.2)', offset: 0.2 },
-          { transform: 'translateX(8px)', filter: 'brightness(1.4)', offset: 0.45 },
-          { transform: 'translateX(-5px)', offset: 0.7 },
-          { transform: 'translateX(0)', filter: 'brightness(1)' },
+          { transform: 'translateX(0)', opacity: 1 },
+          { transform: 'translateX(-8px)', opacity: 0.35, offset: 0.25 },
+          { transform: 'translateX(8px)', opacity: 1, offset: 0.5 },
+          { transform: 'translateX(-4px)', opacity: 0.65, offset: 0.75 },
+          { transform: 'translateX(0)', opacity: 1 },
         ],
-        { duration: 420, delay: 140, easing: 'ease-out' },
+        { duration: motion.slow, delay: motion.fast, easing: motion.frame },
       );
       if (e.effectiveness === 'strong') {
-        arenaRef.current?.animate(
-          [{ transform: 'translate(0,0)' }, { transform: 'translate(-4px, 3px)' }, { transform: 'translate(4px, -2px)' }, { transform: 'translate(0,0)' }],
-          { duration: 260, delay: 140 },
+        animate(
+          arenaRef.current,
+          [{ transform: 'translate(0,0)' }, { transform: 'translate(-4px, 4px)' }, { transform: 'translate(4px, -4px)' }, { transform: 'translate(0,0)' }],
+          { duration: motion.base, delay: motion.fast, easing: motion.frame },
         );
       }
     }
+    return () => animations.forEach((animation) => animation.cancel());
   }, [fx, reducedMotion]);
+
+  // Keep the existing event-by-event dialogue and its live-region text intact.
+  useEffect(() => {
+    if (reducedMotion) return;
+    const motion = readMotionTokens();
+    const animation = captionRef.current?.animate(
+      [{ opacity: 0 }, { opacity: 1 }],
+      { duration: motion.fast, easing: motion.frame },
+    );
+    return () => animation?.cancel();
+  }, [caption, reducedMotion]);
 
   const wildSize = compact ? 128 : 192;
   const teamSize = compact ? 128 : 192;
@@ -162,7 +186,7 @@ export function Arena({ battle, shown, fx, caption, captionDetail, onSkip, revea
       {fx && (fx.event as unknown as Loose).type === 'knockout' && <span key={`ko-${fx.key}`} className="arena__flash arena__flash--ko" aria-hidden="true" />}
 
       <div className="arena__caption" aria-live="polite">
-        <p className="arena__caption-text">{caption}</p>
+        <p ref={captionRef} className="arena__caption-text">{caption}</p>
         {captionDetail && <p className="arena__caption-detail">{captionDetail}</p>}
         {revealing && <span className="arena__skip">Click to skip ▸</span>}
       </div>
