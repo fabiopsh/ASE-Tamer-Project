@@ -1,8 +1,7 @@
 /**
  * fetch wrapper for the gateway API (docs/plan/09-frontend.md).
  *
- * - Base URL from VITE_GATEWAY_URL (default https://localhost:8443). "/" means same origin: the Docker image
- *   is served by the gateway, so every call is relative.
+ * - Base URL from VITE_GATEWAY_URL (default https://localhost:8443).
  * - JSON bodies by default; `form` bodies are sent as application/x-www-form-urlencoded (token endpoint).
  * - Errors are thrown as ApiError, parsed from {error, message, details} or the OAuth2 format.
  * - A 401 on an authenticated call runs the handler registered by the SessionProvider
@@ -88,8 +87,7 @@ export interface RequestOptions {
 }
 
 function buildUrl(path: string, query?: Query): string {
-  // The base is used only when GATEWAY_URL is empty (app served by the gateway itself)
-  const url = new URL(`${GATEWAY_URL}${path}`, window.location.origin);
+  const url = new URL(`${GATEWAY_URL}${path}`);
   if (query) {
     for (const [key, value] of Object.entries(query)) {
       if (value === undefined || value === null || value === '') continue;
@@ -170,7 +168,7 @@ export async function request<T>(path: string, opts: RequestOptions = {}): Promi
     throw new ApiError(
       0,
       'NETWORK_ERROR',
-      `Cannot reach the game server at ${GATEWAY_URL || window.location.origin}. Is it running, and is its certificate accepted?`,
+      `Cannot reach the game server at ${GATEWAY_URL}. Is it running, and is its certificate accepted?`,
     );
   }
 
