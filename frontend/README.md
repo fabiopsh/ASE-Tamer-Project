@@ -11,6 +11,15 @@ The **Archivio d’ambra** reskin uses metric-compatible Amber pixel fonts deriv
 Visual tokens, font regeneration, motion, accessibility and layout verification are documented in
 [`docs/amber-reskin.md`](docs/amber-reskin.md).
 
+## Run in Docker (default)
+
+`docker compose up --build` in the repository root builds this folder (`Dockerfile`: Vite build, then
+`nginx-unprivileged` over HTTPS) and starts it as the `frontend` container. It is not published: the gateway proxies
+every path that is not an API path (`/api/`, `/images/`, `/health`) to it, so the app and the API share the origin
+`https://localhost:8443`. The image is built with `VITE_GATEWAY_URL=/`, which makes every call relative.
+
+The sections below are for development with hot reload.
+
 ## Requirements
 
 - Node.js 22.12 or newer (developed with Node 24) and npm.

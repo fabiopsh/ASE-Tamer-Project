@@ -170,7 +170,7 @@ jobs:
         run: |
           docker compose build
           docker compose pull --ignore-buildable
-      - name: Trivy image scan (gateway, six services, init-secrets, postgres)
+      - name: Trivy image scan (gateway, frontend, six services, init-secrets, postgres)
         run: |
           status=0
           for image in $(docker compose config --images | sort -u); do

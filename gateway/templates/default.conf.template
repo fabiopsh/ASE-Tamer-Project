@@ -8,7 +8,8 @@ resolver 127.0.0.11 valid=10s ipv6=off;
 limit_req_zone $binary_remote_addr zone=auth:10m rate=${LOGIN_RATE_LIMIT};
 limit_req_status 429;
 
-# CORS: only the Vite dev server and preview are allowed (never *)
+# CORS: only the Vite dev server and preview are allowed (never *). The app served by the
+# frontend container is same-origin and needs no CORS.
 map $http_origin $cors_origin {
     default                  "";
     "http://localhost:5173"  $http_origin;
@@ -111,15 +112,21 @@ server {
         include /etc/nginx/snippets/proxy.conf;
     }
 
-    # Internal APIs and Quarkus endpoints are never exposed; neither is anything else
+    # Internal APIs and Quarkus endpoints are never exposed; unknown API paths stay JSON 404
     location /internal/ {
         return 404 '{"error":"NOT_FOUND","message":"Resource not found."}';
     }
     location /q/ {
         return 404 '{"error":"NOT_FOUND","message":"Resource not found."}';
     }
-    location / {
+    location /api/ {
         return 404 '{"error":"NOT_FOUND","message":"Resource not found."}';
+    }
+
+    # ---- frontend: every other path is the web app (same origin as the API) ----
+    location / {
+        set $upstream_host frontend;
+        include /etc/nginx/snippets/proxy.conf;
     }
 
     location @too_large {

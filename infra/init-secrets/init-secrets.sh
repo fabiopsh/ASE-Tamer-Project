@@ -15,14 +15,6 @@ CALLERS="players teams encounters tests"
 CA_DAYS=3650
 CERT_DAYS=825
 
-if [ -f "$OUT/.done" ]; then
-    echo "init-secrets: secrets already present, nothing to do"
-    exit 0
-fi
-
-# A previous run may have stopped half-way: start from an empty volume.
-find "$OUT" -mindepth 1 -delete
-
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
@@ -48,6 +40,21 @@ EXT
     cp "$OUT/ca/ca.crt" "$OUT/$dir/ca.crt"
 }
 
+if [ -f "$OUT/.done" ]; then
+    # Volumes created before the frontend container existed: add only its certificate.
+    if [ ! -f "$OUT/frontend/tls/server.crt" ]; then
+        echo "init-secrets: adding the frontend certificate"
+        issue_cert frontend frontend "DNS:frontend,DNS:localhost,IP:127.0.0.1"
+        chmod 0755 "$OUT/frontend" "$OUT/frontend/tls"
+        chmod 0644 "$OUT/frontend/ca.crt" "$OUT/frontend/tls/server.crt" "$OUT/frontend/tls/server.key"
+    fi
+    echo "init-secrets: secrets already present, nothing to do"
+    exit 0
+fi
+
+# A previous run may have stopped half-way: start from an empty volume.
+find "$OUT" -mindepth 1 -delete
+
 echo "init-secrets: generating local CA"
 mkdir -p "$OUT/ca"
 openssl req -x509 -new -newkey rsa:4096 -nodes -sha256 -days "$CA_DAYS" \
@@ -62,6 +69,9 @@ openssl pkey -in "$TMP/jwt-private.pem" -pubout -out "$TMP/jwt-public.pem"
 
 echo "init-secrets: gateway certificate"
 issue_cert gateway localhost "DNS:localhost,IP:127.0.0.1,DNS:gateway"
+
+echo "init-secrets: frontend certificate"
+issue_cert frontend frontend "DNS:frontend,DNS:localhost,IP:127.0.0.1"
 
 # Client secrets are generated first because auth needs all of them.
 for client in $SERVICES tests; do

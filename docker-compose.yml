@@ -1,5 +1,6 @@
-# Monster Tamers - full backend (docs/plan/02-infrastructure.md, INFRA-6)
+# Monster Tamers - whole stack: gateway, web app, six services (docs/plan/02-infrastructure.md, INFRA-6)
 #   docker compose up --build        start everything (secrets generated on first start)
+#   then open https://localhost:8443
 #   docker compose down -v           stop and delete all data and secrets
 # Only the gateway publishes a port: https://localhost:8443
 # Requires Docker Compose >= 2.30 (volume subpath).
@@ -62,6 +63,31 @@ services:
         condition: service_healthy
       history:
         condition: service_healthy
+      frontend:
+        condition: service_healthy
+
+  # Web app (static files). Reached only through the gateway, which proxies every non-API path.
+  frontend:
+    build: frontend
+    image: tamer/frontend:dev
+    <<: *hardening
+    restart: unless-stopped
+    networks:
+      - backend
+    volumes:
+      - type: volume
+        source: secrets
+        target: /run/secrets
+        read_only: true
+        volume:
+          subpath: frontend
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "-o", "/dev/null", "--cacert", "/run/secrets/ca.crt", "https://localhost:8443/"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    depends_on:
+      <<: *after-secrets
 
   auth:
     build:
@@ -96,8 +122,9 @@ services:
         condition: service_healthy
 
   auth-db:
+    # One tag per database: parallel builds of a shared tag fail with "already exists"
     build: infra/postgres
-    image: tamer/postgres:dev
+    image: tamer/auth-db:dev
     user: "70:70"
     <<: *hardening
     restart: unless-stopped
@@ -167,7 +194,7 @@ services:
 
   players-db:
     build: infra/postgres
-    image: tamer/postgres:dev
+    image: tamer/players-db:dev
     user: "70:70"
     <<: *hardening
     restart: unless-stopped
@@ -234,7 +261,7 @@ services:
 
   monsters-db:
     build: infra/postgres
-    image: tamer/postgres:dev
+    image: tamer/monsters-db:dev
     user: "70:70"
     <<: *hardening
     restart: unless-stopped
@@ -303,7 +330,7 @@ services:
 
   teams-db:
     build: infra/postgres
-    image: tamer/postgres:dev
+    image: tamer/teams-db:dev
     user: "70:70"
     <<: *hardening
     restart: unless-stopped
@@ -375,7 +402,7 @@ services:
 
   encounters-db:
     build: infra/postgres
-    image: tamer/postgres:dev
+    image: tamer/encounters-db:dev
     user: "70:70"
     <<: *hardening
     restart: unless-stopped
@@ -442,7 +469,7 @@ services:
 
   history-db:
     build: infra/postgres
-    image: tamer/postgres:dev
+    image: tamer/history-db:dev
     user: "70:70"
     <<: *hardening
     restart: unless-stopped

@@ -164,6 +164,7 @@ flowchart LR
 ```
 ca/ca.crt, ca/ca.key                     local CA (ca.key stays here, mounted nowhere)
 gateway/ca.crt, gateway/tls/server.{crt,key}          CN/SAN: localhost, 127.0.0.1
+frontend/ca.crt, frontend/tls/server.{crt,key}        SAN: frontend (web app container, behind the gateway)
 <svc>/ca.crt                             for each of the 6 services
 <svc>/tls/server.{crt,key}               SAN: <svc>, localhost
 <svc>/jwt-public.pem                     all services
