@@ -1,0 +1,30 @@
+# Monster Tamers - web app, separate from the backend (which is headless).
+#   docker compose -f docker-compose.frontend.yml up -d --build     then open http://localhost:8080
+#   docker compose -f docker-compose.frontend.yml down
+# The app calls the gateway at VITE_GATEWAY_URL from the browser; the gateway must list this
+# origin in CORS_ALLOWED_ORIGINS (default: http://localhost:8080).
+
+name: tamer-frontend
+
+services:
+  frontend:
+    build:
+      context: frontend
+      args:
+        VITE_GATEWAY_URL: ${VITE_GATEWAY_URL:-https://localhost:8443}
+    image: tamer/frontend:dev
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    ports:
+      - "${FRONTEND_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "-o", "/dev/null", "http://localhost:8080/"]
+      interval: 10s
+      timeout: 3s
+      retries: 5

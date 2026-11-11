@@ -253,7 +253,7 @@ tests/client.env                         test client secret (used only with the 
   | `= /health` | `return 200 'ok'` (used to accept the self-signed cert in the browser) |
   | `/internal/`, `/q/`, anything else | `return 404` with JSON body `{"error":"NOT_FOUND",...}` |
 
-- [x] CORS: allowed origins `http://localhost:5173` (Vite dev) and `http://localhost:4173` (Vite preview), matched with a `map $http_origin $cors_origin { … }` so only listed origins are echoed in `Access-Control-Allow-Origin`; methods `GET, POST, PUT, PATCH, DELETE, OPTIONS`; headers `Authorization, Content-Type, X-Request-Id`; answer `OPTIONS` preflight with `204`. Never `*`.
+- [x] CORS: allowed origins match the anchored regex `CORS_ALLOWED_ORIGINS` (gateway `Dockerfile`, default `^http://localhost:(8080|5173|4173)$`: frontend container, Vite dev, Vite preview), matched with a `map $http_origin $cors_origin { "~${CORS_ALLOWED_ORIGINS}" $http_origin; }` so only allowed origins are echoed in `Access-Control-Allow-Origin`; methods `GET, POST, PUT, PATCH, DELETE, OPTIONS`; headers `Authorization, Content-Type, X-Request-Id`; answer `OPTIONS` preflight with `204`. Never `*`.
 - [x] Rate limiting: `limit_req_zone $binary_remote_addr zone=auth:10m rate=${LOGIN_RATE_LIMIT};` (default `10r/m`, burst 5, `limit_req_status 429`) on `/api/auth/token` and `/api/auth/register`. The test override raises it for Locust.
 - [x] Security headers: `Strict-Transport-Security "max-age=31536000"`, `X-Content-Type-Options nosniff`, `X-Frame-Options DENY`, `Referrer-Policy no-referrer`.
 - [x] HTTP port: none exposed (only 8443), so there is no plaintext listener at all.

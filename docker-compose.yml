@@ -1,8 +1,8 @@
-# Monster Tamers - whole stack: gateway, web app, six services (docs/plan/02-infrastructure.md, INFRA-6)
+# Monster Tamers - headless backend: gateway and six services (docs/plan/02-infrastructure.md, INFRA-6)
 #   docker compose up --build        start everything (secrets generated on first start)
-#   then open https://localhost:8443
 #   docker compose down -v           stop and delete all data and secrets
 # Only the gateway publishes a port: https://localhost:8443
+# The web app is a separate stack (docker-compose.frontend.yml) that calls the gateway with CORS.
 # Requires Docker Compose >= 2.30 (volume subpath).
 
 name: tamer
@@ -63,31 +63,6 @@ services:
         condition: service_healthy
       history:
         condition: service_healthy
-      frontend:
-        condition: service_healthy
-
-  # Web app (static files). Reached only through the gateway, which proxies every non-API path.
-  frontend:
-    build: frontend
-    image: tamer/frontend:dev
-    <<: *hardening
-    restart: unless-stopped
-    networks:
-      - backend
-    volumes:
-      - type: volume
-        source: secrets
-        target: /run/secrets
-        read_only: true
-        volume:
-          subpath: frontend
-    healthcheck:
-      test: ["CMD", "curl", "-fs", "-o", "/dev/null", "--cacert", "/run/secrets/ca.crt", "https://localhost:8443/"]
-      interval: 10s
-      timeout: 3s
-      retries: 5
-    depends_on:
-      <<: *after-secrets
 
   auth:
     build:

@@ -13,10 +13,23 @@ Visual tokens, font regeneration, motion, accessibility and layout verification 
 
 ## Run in Docker (default)
 
-`docker compose up --build` in the repository root builds this folder (`Dockerfile`: Vite build, then
-`nginx-unprivileged` over HTTPS) and starts it as the `frontend` container. It is not published: the gateway proxies
-every path that is not an API path (`/api/`, `/images/`, `/health`) to it, so the app and the API share the origin
-`https://localhost:8443`. The image is built with `VITE_GATEWAY_URL=/`, which makes every call relative.
+The frontend is its own stack, separate from the headless backend. From the repository root:
+
+```sh
+docker compose -f docker-compose.frontend.yml up -d --build
+```
+
+It serves the built app with `nginx-unprivileged` on <http://localhost:8080>. The browser then calls the gateway
+directly (`https://localhost:8443`, another origin), so the gateway must allow this origin with CORS
+(`CORS_ALLOWED_ORIGINS`, default `^http://localhost:(8080|5173|4173)$`). Options, as environment variables of the
+compose command:
+
+| Variable | Default | Effect |
+|---|---|---|
+| `VITE_GATEWAY_URL` | `https://localhost:8443` | Gateway URL baked into the build; it also sets the CSP `connect-src` and `img-src` |
+| `FRONTEND_PORT` | `8080` | Published port (add the new origin to `CORS_ALLOWED_ORIGINS` too) |
+
+The container is read-only, has no secret and no network access to the backend.
 
 The sections below are for development with hot reload.
 
@@ -61,7 +74,7 @@ The sections below are for development with hot reload.
    ```
 
    Expected: `dist/` is written with no type errors, then `Local: http://localhost:4173/`.
-   The gateway allows CORS only from `http://localhost:5173` and `http://localhost:4173`.
+   The gateway allows CORS from `http://localhost:8080`, `http://localhost:5173` and `http://localhost:4173`.
 
 Other scripts: `npm run lint` (ESLint, must report no problem), `npm run typecheck` (TypeScript only).
 

@@ -64,7 +64,7 @@ Navigation guard: after login, `GET /api/players/me`; if `starters_chosen` is fa
 - On `401`: clear the session and go to `/login` (P1). P2: try once `grant_type=refresh_token`, then fall back to login.
 - Logout: P1 clears storage; P2 also calls `POST /api/auth/logout`.
 - Self-signed certificate: the README tells the user to open `https://localhost:8443/health` once and accept it (or trust the exported CA).
-- CORS origins allowed by the gateway: `http://localhost:5173` (dev) and `http://localhost:4173` (`npm run preview`).
+- CORS origins allowed by the gateway: `http://localhost:8080` (frontend container, `docker-compose.frontend.yml`), `http://localhost:5173` (dev) and `http://localhost:4173` (`npm run preview`). Configurable with `CORS_ALLOWED_ORIGINS` on the gateway.
 
 ## Client-side assumptions (copy into the final report)
 

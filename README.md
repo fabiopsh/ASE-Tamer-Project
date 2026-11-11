@@ -12,16 +12,19 @@ You only need **Docker** (Docker Desktop, or Engine ≥ 26 with Compose ≥ 2.30
 ```bash
 git clone https://github.com/fabiopsh/ASE-Tamer-Project.git
 cd ASE-Tamer-Project
-docker compose up -d --build --wait
+docker compose up -d --build --wait                               # backend (API on https://localhost:8443)
+docker compose -f docker-compose.frontend.yml up -d --build       # frontend (http://localhost:8080)
 ```
 
-Open **https://localhost:8443** and create an account.
+1. Open **https://localhost:8443/health** once and accept the certificate (*Advanced → Proceed*). It is signed by a CA that is generated locally. To skip the warning, run `scripts/export-ca.sh` and add `tamer-ca.crt` to your trusted authorities.
+2. Open **http://localhost:8080** and create an account.
 
-The first build takes a few minutes, later starts take about 30 seconds. The certificate comes from a CA that is generated locally, so the browser warns once: choose *Advanced → Proceed*. To skip the warning, export the CA with `scripts/export-ca.sh` and add `tamer-ca.crt` to your trusted authorities.
+The first build takes a few minutes, later starts take about 30 seconds.
 
 ```bash
-docker compose down        # stop, keep your progress
-docker compose down -v     # stop and delete all data and generated secrets
+docker compose -f docker-compose.frontend.yml down   # stop the frontend
+docker compose down                                  # stop the backend, keep your progress
+docker compose down -v                               # stop and delete all data and generated secrets
 ```
 
 ## Screenshots
@@ -47,7 +50,8 @@ The catalogue has 100 monsters across several elements and rarities, each with i
 ## What we built
 
 - **Six microservices** (Quarkus, Java 21), one PostgreSQL database each.
-- **One entry point**: an Nginx gateway serves both the web app and the API on `https://localhost:8443`.
+- **Headless backend**: an Nginx gateway is the only entry point (`https://localhost:8443`) and serves just the API. Any client can use it. Browsers are allowed by CORS from a configurable list of origins.
+- **Separate frontend**: the web app runs in its own container and stack, and talks to the backend only through the public API.
 - **Server-side battles**: the client only sends the chosen action. Rewards go through idempotent service-to-service calls with an outbox.
 - **Security by default**: HTTPS on every hop, including the databases, with a local CA. OAuth2 tokens are JWTs (RS256), and every secret is generated at first start, so none is committed. Containers run as non-root with no capabilities, and login is rate-limited.
 - **Web client**: React, TypeScript and Vite, with a custom pixel-art theme.
@@ -57,23 +61,30 @@ The catalogue has 100 monsters across several elements and rarities, each with i
 
 ```mermaid
 flowchart LR
-    B[Browser] -- HTTPS :8443 --> G[Gateway<br/>Nginx]
-    G --> F[frontend<br/>React app]
-    G --> A[auth]
-    G --> P[players]
-    G --> M[monsters]
-    G --> T[teams]
-    G --> E[encounters]
-    G --> H[history]
-    A --- ADB[(auth-db)]
-    P --- PDB[(players-db)]
-    M --- MDB[(monsters-db)]
-    T --- TDB[(teams-db)]
-    E --- EDB[(encounters-db)]
-    H --- HDB[(history-db)]
+    subgraph FE[Frontend stack]
+        F[frontend<br/>Nginx + React app<br/>:8080]
+    end
+    B[Browser]
+    F -. loads the app .-> B
+    B -- "API calls (CORS), HTTPS :8443" --> G
+    subgraph BE[Backend stack, headless]
+        G[Gateway<br/>Nginx]
+        G --> A[auth]
+        G --> P[players]
+        G --> M[monsters]
+        G --> T[teams]
+        G --> E[encounters]
+        G --> H[history]
+        A --- ADB[(auth-db)]
+        P --- PDB[(players-db)]
+        M --- MDB[(monsters-db)]
+        T --- TDB[(teams-db)]
+        E --- EDB[(encounters-db)]
+        H --- HDB[(history-db)]
+    end
 ```
 
-Only the gateway publishes a port. Everything else runs on an internal Docker network, and `/internal/*` endpoints are never routed.
+In the backend only the gateway publishes a port. Services and databases run on an internal Docker network, and `/internal/*` endpoints are never routed. Allowed browser origins are set with `CORS_ALLOWED_ORIGINS` on the gateway (default: `localhost` on ports 8080, 5173 and 4173).
 
 | Service | Owns |
 |---|---|
@@ -83,7 +94,7 @@ Only the gateway publishes a port. Everything else runs on an internal Docker ne
 | `teams` | Teams and their validation |
 | `encounters` | Runs, stages, encounters, battle engine |
 | `history` | Permanent record of every finished battle |
-| `frontend` | Static web app (served through the gateway) |
+| `frontend` | Static web app (separate stack, calls the gateway from the browser) |
 
 ## Tests
 
@@ -108,6 +119,8 @@ API tests (Bruno) and load tests (Locust) run against the test stack. See [docs/
 <summary>Troubleshooting</summary>
 
 - **Port 8443 in use**: stop the other process, or change the gateway port in `docker-compose.yml`.
+- **Port 8080 in use**: start the frontend with `FRONTEND_PORT=8081`, and add `http://localhost:8081` to `CORS_ALLOWED_ORIGINS`.
+- **The app says *Cannot reach the game server***: the backend is not running, or the certificate of https://localhost:8443 was not accepted in this browser.
 - **`volume subpath` not supported**: update Docker (Compose ≥ 2.30).
 - **`init-secrets` exits with 255 on Windows**: scripts need LF line endings. Run `git add --renormalize .`.
 - **Certificate errors after `down -v`**: the CA was regenerated. Export it again with `scripts/export-ca.sh`.
