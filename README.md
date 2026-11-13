@@ -4,6 +4,17 @@
 
 Advanced Software Engineering lab project (University of Pisa, A.Y. 2026/27).
 
+## Group
+
+**Fantastic 4**
+
+| Name | Surname | Email |
+|---|---|---|
+| Giacomo | Cesaretti | giacomocesaretti03@gmail.com |
+| Federico | Lombardi | f.lombardi26@studenti.unipi.it |
+| Fabio | Piscitelli | f.piscitelli4@studenti.unipi.it |
+| Francesco | Polperio | f.polperio@studenti.unipi.it |
+
 Monster Tamers is a browser game built on microservices. A player registers, picks three starter monsters, builds a team and fights wild monsters and stage bosses in roguelike runs. Victories grant experience and new monsters for the collection.
 
 **Core loop.** Register and log in → choose 3 starters out of a pool of 10 common monsters → build a team of 1–3 monsters → pick an encounter of the current stage → fight turn by turn (`attack`, `switch`, `flee`) → on victory the wild monster joins the collection at its level and the team gains XP → after two wins the stage boss unlocks; beating it opens the next stage.
@@ -23,15 +34,56 @@ Monster Tamers is a browser game built on microservices. A player registers, pic
 
 ## Architecture
 
-```
-Browser (Vite + React) ──HTTPS──▶ gateway (Nginx, :8443) ──HTTPS──▶ auth · players · monsters · teams · encounters · history
-                                                                       │ each service has its own PostgreSQL (TLS)
-```
+![Architecture diagram](docs/architecture.svg)
+
+The diagram shows the planned architecture. All six services and the gateway are built; the features still missing are listed in [Implementation status](#implementation-status). A more detailed description (components, game rules, decisions) is in [`docs/architettura/architettura_backend.md`](docs/architettura/architettura_backend.md).
 
 - Six Quarkus (Java 21) services, one PostgreSQL database each, schema managed by Flyway.
 - Nginx is the only entry point (`https://localhost:8443`). Internal endpoints (`/internal/*`) are never routed.
 - HTTPS on every hop with a local CA. Certificates, JWT keys and passwords are generated at first start, so no secret is committed.
 - OAuth2 token endpoint and JWT (RS256), checked locally by every service.
+
+## OpenAPI specifications
+
+One OpenAPI file for the gateway (the public API, the one a client uses) and one for each microservice, all in [`docs/openapi/`](docs/openapi/):
+
+| Component | File |
+|---|---|
+| API Gateway (public API) | [`gateway.yaml`](docs/openapi/gateway.yaml) |
+| auth | [`auth.yaml`](docs/openapi/auth.yaml) |
+| players | [`players.yaml`](docs/openapi/players.yaml) |
+| monsters | [`monsters.yaml`](docs/openapi/monsters.yaml) |
+| teams | [`teams.yaml`](docs/openapi/teams.yaml) |
+| encounters | [`encounters.yaml`](docs/openapi/encounters.yaml) |
+| history | [`history.yaml`](docs/openapi/history.yaml) |
+
+## Implementation status
+
+Phase 1 (prototype) is complete. Phase 2 (final delivery, 15/12/2026) is in progress.
+
+**Working**
+- Registration and login (OAuth2 password grant, JWT RS256), service-to-service tokens (`client_credentials`).
+- Player profile, pool of 10 starters, choice of 3 starters at the start of each run.
+- Catalogue of 100 monsters with sprites, abilities and elements; personal collection with levels and XP.
+- Teams of 1–3 monsters with server-side validation (ownership, run, limit of five).
+- Roguelike runs with 8 stages, wild encounters, stage bosses, abandon and defeat reset.
+- Turn-based battle engine on the server (`attack`, `switch`, `flee`), elemental chart, simple abilities, rewards and XP through idempotent internal calls (outbox).
+- History of every finished battle with the full turn log.
+- HTTPS on every hop (local CA), a database per service, secrets generated at first start.
+- Web UI covering the whole core loop: login, starters, catalogue, collection, teams, encounters, battle, runs, history.
+- Tests: unit and service tests per service, Bruno API tests (component, integration, end-to-end), Locust load tests, CI with build, tests, Semgrep and Trivy.
+
+**Still missing (planned for Phase 2)**
+- Refresh token and logout (only the password grant exists).
+- Encryption at rest (encrypted username, hashed refresh tokens).
+- Complex abilities in the battle engine (`heal`, `reflect`, `stun` and similar are placeholders without effect).
+- Scheduled sweep of expired battles and a more robust reset saga (today recovery is lazy: it happens when the player next touches the run).
+- Integrity checks on the history (US-25).
+- Optional stories: profile editing (US-04) and monster nicknames (US-13).
+
+**Known limit.** If `encounters` restarts, battles in progress are closed as `interrupted` without reward and without losing the run. The service cannot be replicated on several instances.
+
+## Additional information
 
 Documents:
 
@@ -62,7 +114,7 @@ docker-compose.yml    the whole backend
 docker-compose.test.yml  test override: exposes each service on localhost
 ```
 
-## Get Started
+## Running instructions
 
 ### 1. Prerequisites
 
@@ -99,7 +151,20 @@ npm ci
 npm run dev                                # http://localhost:5173
 ```
 
-### 4. Run the tests
+### 4. Stop and reset
+
+```bash
+docker compose down        # stop, keep data
+docker compose down -v     # stop and delete all data and generated secrets
+```
+
+To regenerate only the certificates and keys, stop the stack and remove the `tamer_secrets` volume. The databases keep their old passwords, though, so in practice use `down -v`.
+
+## Testing instructions
+
+Once the backend is running (see above), the quickest manual check is the frontend: register, pick 3 starters, build a team, fight an encounter. The automated tests are:
+
+### Unit and service tests
 
 Unit and service tests (they need Docker, which starts a throw-away PostgreSQL):
 
@@ -107,7 +172,7 @@ Unit and service tests (they need Docker, which starts a throw-away PostgreSQL):
 mvn -f backend/pom.xml verify
 ```
 
-#### Running the API tests
+### API tests
 
 API tests with [Bruno](https://www.usebruno.com/) against the running containers (Node.js 20+ needed):
 
@@ -125,6 +190,8 @@ npm run test:e2e                           # core loop through the gateway
 regenerated with `npm run export`. Details, layout and the coverage matrix:
 [docs/tests/bruno/README.md](docs/tests/bruno/README.md).
 
+### Performance tests
+
 Performance tests with [Locust](https://locust.io/), against the gateway only (same test stack):
 
 ```bash
@@ -135,14 +202,9 @@ CA_PATH=.test-secrets/ca.crt locust -f docs/locust/locustfile.py --host https://
 
 Results and their analysis: [docs/locust/README.md](docs/locust/README.md).
 
-### 5. Stop and reset
+### Security scans
 
-```bash
-docker compose down        # stop, keep data
-docker compose down -v     # stop and delete all data and generated secrets
-```
-
-To regenerate only the certificates and keys, stop the stack and remove the `tamer_secrets` volume. The databases keep their old passwords, though, so in practice use `down -v`.
+Semgrep, Trivy and a self-attack script: [docs/security/README.md](docs/security/README.md).
 
 ## Ports
 

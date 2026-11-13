@@ -1,0 +1,115 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 640" font-family="Arial, Helvetica, sans-serif" font-size="14">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#444"/>
+    </marker>
+  </defs>
+  <rect width="980" height="640" fill="#ffffff"/>
+  <text x="490" y="28" text-anchor="middle" font-size="18" font-weight="bold" fill="#111">Monster Tamers - microservice architecture</text>
+
+  <!-- client -->
+  <rect x="340" y="45" width="300" height="48" rx="6" fill="#eef3fb" stroke="#35557f"/>
+  <text x="490" y="66" text-anchor="middle" fill="#111" font-weight="bold">Browser: Vite + React frontend</text>
+  <text x="490" y="84" text-anchor="middle" fill="#333" font-size="12">http://localhost:5173 (outside Docker)</text>
+  <line x1="490" y1="93" x2="490" y2="120" stroke="#444" stroke-width="1.5" marker-end="url(#a)"/>
+  <text x="500" y="112" fill="#333" font-size="12">HTTPS</text>
+
+  <!-- gateway -->
+  <rect x="290" y="122" width="400" height="52" rx="6" fill="#fff4dd" stroke="#a26a00"/>
+  <text x="490" y="144" text-anchor="middle" fill="#111" font-weight="bold">API Gateway (Nginx) - https://localhost:8443</text>
+  <text x="490" y="163" text-anchor="middle" fill="#333" font-size="12">routing, CORS, rate limit on login; /internal/* never routed</text>
+
+  <!-- gateway to services -->
+  <line x1="490" y1="174" x2="490" y2="200" stroke="#444" stroke-width="1.5"/>
+  <line x1="95" y1="200" x2="755" y2="200" stroke="#444" stroke-width="1.5"/>
+  <g stroke="#444" stroke-width="1.5" marker-end="url(#a)">
+    <line x1="95" y1="200" x2="95" y2="232"/>
+    <line x1="227" y1="200" x2="227" y2="232"/>
+    <line x1="359" y1="200" x2="359" y2="232"/>
+    <line x1="491" y1="200" x2="491" y2="232"/>
+    <line x1="623" y1="200" x2="623" y2="232"/>
+    <line x1="755" y1="200" x2="755" y2="232"/>
+  </g>
+
+  <!-- services -->
+  <g fill="#e6f4ea" stroke="#2d6a3e">
+    <rect x="30" y="234" width="130" height="64" rx="6"/>
+    <rect x="162" y="234" width="130" height="64" rx="6"/>
+    <rect x="294" y="234" width="130" height="64" rx="6"/>
+    <rect x="426" y="234" width="130" height="64" rx="6"/>
+    <rect x="558" y="234" width="130" height="64" rx="6"/>
+    <rect x="690" y="234" width="130" height="64" rx="6"/>
+  </g>
+  <g fill="#111" text-anchor="middle" font-weight="bold">
+    <text x="95" y="260">auth</text>
+    <text x="227" y="260">players</text>
+    <text x="359" y="260">monsters</text>
+    <text x="491" y="260">teams</text>
+    <text x="623" y="260">encounters</text>
+    <text x="755" y="260">history</text>
+  </g>
+  <g fill="#333" text-anchor="middle" font-size="11">
+    <text x="95" y="278">accounts, JWT</text>
+    <text x="95" y="291">service tokens</text>
+    <text x="227" y="278">profile, starters</text>
+    <text x="227" y="291">current run</text>
+    <text x="359" y="278">catalogue, collection</text>
+    <text x="359" y="291">levels, XP</text>
+    <text x="491" y="278">teams and</text>
+    <text x="491" y="291">validation</text>
+    <text x="623" y="278">runs, battle engine</text>
+    <text x="623" y="291">outbox</text>
+    <text x="755" y="278">finished battles</text>
+    <text x="755" y="291">and turn logs</text>
+  </g>
+
+  <!-- databases -->
+  <g fill="#f0f0f0" stroke="#666">
+    <rect x="30" y="500" width="130" height="40" rx="14"/>
+    <rect x="162" y="500" width="130" height="40" rx="14"/>
+    <rect x="294" y="500" width="130" height="40" rx="14"/>
+    <rect x="426" y="500" width="130" height="40" rx="14"/>
+    <rect x="558" y="500" width="130" height="40" rx="14"/>
+    <rect x="690" y="500" width="130" height="40" rx="14"/>
+  </g>
+  <g fill="#111" text-anchor="middle" font-size="12">
+    <text x="95" y="525">auth-db</text>
+    <text x="227" y="525">players-db</text>
+    <text x="359" y="525">monsters-db</text>
+    <text x="491" y="525">teams-db</text>
+    <text x="623" y="525">encounters-db</text>
+    <text x="755" y="525">history-db</text>
+  </g>
+  <g stroke="#666" stroke-width="1.2">
+    <line x1="95" y1="298" x2="95" y2="500"/>
+    <line x1="227" y1="298" x2="227" y2="500" stroke-dasharray="0"/>
+    <line x1="359" y1="298" x2="359" y2="500"/>
+    <line x1="491" y1="298" x2="491" y2="500"/>
+    <line x1="623" y1="298" x2="623" y2="500"/>
+    <line x1="755" y1="298" x2="755" y2="500"/>
+  </g>
+  <text x="30" y="556" fill="#333" font-size="12">PostgreSQL over TLS, one database per service</text>
+
+  <!-- internal calls -->
+  <g fill="none" stroke="#b03a2e" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#a)">
+    <path d="M623 298 V340 H359 V298" />
+    <path d="M623 298 V372 H491 V298" />
+    <path d="M623 298 V404 H755 V298" />
+    <path d="M623 298 V436 H227 V298" />
+    <path d="M95 298 V468 H227 V298" />
+  </g>
+  <g fill="#b03a2e" font-size="11">
+    <text x="365" y="334">encounters to monsters: stats, rewards, XP</text>
+    <text x="497" y="366">encounters to teams: team snapshot, reset</text>
+    <text x="629" y="398">encounters to history: save battle</text>
+    <text x="233" y="430">encounters to players: new run</text>
+    <text x="233" y="462">auth to players: create profile</text>
+  </g>
+
+  <!-- legend -->
+  <rect x="30" y="566" width="920" height="68" rx="6" fill="#fafafa" stroke="#bbb"/>
+  <line x1="45" y1="584" x2="85" y2="584" stroke="#b03a2e" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <text x="95" y="588" fill="#111" font-size="12">Service-to-service calls on /internal/* (HTTPS, service JWT issued by auth with client_credentials).</text>
+  <text x="45" y="607" fill="#111" font-size="12">All services: Quarkus (Java 21), Flyway migrations, JWT (RS256) checked locally by every service.</text>
+  <text x="45" y="624" fill="#111" font-size="12">Planned, not built yet: refresh token and logout in auth, encryption at rest, complex abilities in the battle engine.</text>
+</svg>
