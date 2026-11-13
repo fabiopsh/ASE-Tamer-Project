@@ -1,0 +1,113 @@
+/*
+ * Archivio d’ambra: enamel field instruments and stamped specimen records.
+ * Paint only: no layout, text sizing, border widths or container geometry here.
+ * The existing spacings, breakpoints, component tree and interaction model remain authoritative.
+ */
+
+/* The existing two background overlays can be suppressed without adding a settings flow. */
+html[data-atmosphere='off'] { --atmosphere-opacity: 0; }
+@media (prefers-contrast: more), (forced-colors: active), print {
+  :root { --atmosphere-opacity: 0; }
+}
+
+svg { stroke-linecap: square; stroke-linejoin: miter; }
+.logo__mark > path:first-of-type { fill: var(--bg-0); stroke: var(--accent); }
+.logo__mark > path:nth-of-type(2) { stroke: var(--accent-2); stroke-opacity: 1; }
+.logo__mark > circle { fill: var(--accent); }
+.logo__mark > path:last-of-type { stroke: var(--text-1); }
+.logo__word--accent, .gradient-text, .starters__count-value[data-full] {
+  background: none;
+  -webkit-background-clip: border-box;
+  background-clip: border-box;
+  color: var(--accent);
+  filter: none;
+}
+
+/* Two inset score lines and a hard offset shadow form the shared instrument frame. */
+.panel:not(.skeleton)::before, .mcard:not(.mcard--skeleton)::before, .enc-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--frame-corners);
+  pointer-events: none;
+}
+.panel, .dash-shortcut, .enc-card, .mcard, .plate, .dialog, .toast, .empty-state, .action {
+  box-shadow: var(--frame-panel);
+}
+.topbar, .starters__bar { background: var(--bg-0); box-shadow: var(--shadow-1); }
+.topbar::after, .starters__bar::before { background: var(--accent); opacity: 1; }
+.hud__player, .run-chip { background: var(--surface-sunken); }
+.topnav__live, .resume-banner__pulse { box-shadow: none; animation: status-blink var(--dur-hold) var(--ease-frame) infinite alternate; }
+.divider, .stage-track::before { background: var(--border-mid); }
+.btn--primary, .btn--gold { box-shadow: var(--frame-button); }
+.btn:hover:not(:disabled):not([aria-disabled='true']) { filter: none; border-color: var(--accent); box-shadow: var(--frame-selected); }
+.btn--primary:hover:not(:disabled), .btn--gold:hover:not(:disabled) { background: var(--gold); color: var(--text-on-accent); box-shadow: var(--frame-button); }
+.btn:active:not(:disabled):not([aria-disabled='true']), .action:active:not(:disabled) { transform: translateY(2px); }
+.btn:disabled, .btn[aria-disabled='true'], .action:disabled, .mcard--disabled, .pagination__btn:disabled {
+  opacity: var(--opacity-disabled);
+  filter: none;
+  cursor: not-allowed;
+}
+.input, .select { box-shadow: var(--shadow-input); caret-color: var(--accent); }
+.input:focus-visible, .select:focus-visible { border-color: var(--accent-2); box-shadow: var(--focus-ring); }
+.input:disabled, .select:disabled { opacity: var(--opacity-disabled); cursor: not-allowed; }
+.chip[aria-pressed='true'], .team-pick__item[aria-checked='true'], .action[aria-pressed='true'] {
+  color: var(--text-1);
+  border-color: var(--accent);
+  background: var(--surface-2);
+  box-shadow: var(--frame-selected);
+}
+.chip:active:not(:disabled), .pagination__btn:active:not(:disabled), .team-pick__item:active:not(:disabled) { transform: translateY(2px); }
+
+/* Rare cards use double rules; legendary cards use the amber ink, never animated foil. */
+.mcard[data-rarity='legendary'], .mhero[data-rarity='legendary'] { background: var(--surface-solid); border-color: var(--gold); box-shadow: var(--frame-panel); animation: none; }
+.mcard__glow, .team-card__glow, .hd-face__glow, .sprite__aura, .reward__rays { opacity: 0; animation: none; }
+.mcard__pedestal, .mhero__pedestal { background: var(--bg-0); box-shadow: none; }
+.element-badge, .element-badge[data-element='chaos'] { color: var(--el); background: var(--surface-sunken); border-color: var(--el); }
+.rarity-badge, .rarity-badge[data-rarity='legendary'] { color: var(--rarity); background: var(--surface-sunken); border-color: var(--rarity); animation: none; text-shadow: none; }
+.mhero__ring, .auth__ring { border-style: dashed; border-color: var(--border-mid); box-shadow: none; }
+.dash-shortcut__icon, .coming-next__icon { background: var(--bg-0); color: var(--accent); border-color: var(--border-mid); box-shadow: none; }
+.dash-shortcut:active { transform: translateY(2px); }
+.run-stat[data-highlight], .run-strip__item--boss[data-state='ready'] { background: var(--bg-0); border-color: var(--gold); box-shadow: var(--rule-boss); }
+.team-card__slot, .slot__num, .team-slot { background: var(--el, var(--accent)); }
+.slot, .bench-mon, .wild-ability, .hrow { background: var(--surface-sunken); }
+.run-row:hover, .hrow:hover { transform: none; border-color: var(--accent); }
+.run-row:active, .hrow:active { transform: translateY(2px); }
+
+.banner, .toast { background: var(--surface-solid); border-color: var(--tone); box-shadow: var(--frame-notice); }
+.dialog:not([open]) { opacity: 0; }
+.battle-log:not(.is-open) .battle-log__body { opacity: 0; }
+@media (min-width: 1100px) { .battle-log:not(.is-open) .battle-log__body { opacity: 1; } }
+@starting-style { .dialog[open], .battle-log.is-open .battle-log__body { opacity: 0; } }
+
+/* Flat gauges retain the existing tracks and update only their compositor transforms. */
+.hpbar__track, .xpbar__track { background: var(--bg-0); box-shadow: none; }
+.hpbar__fill, .hpbar__ghost, .xpbar__fill { width: 100%; transform-origin: left; }
+.hpbar__fill, .plate .hpbar__fill { transition: transform var(--dur-base) var(--ease-out); }
+.blog-line--strong, .blog-line--ko { background: var(--surface-sunken); }
+
+/* Battle: a field survey plate. No floating particles, scaling or atmospheric glow. */
+.arena__sky, .arena--boss .arena__sky { background: var(--bg-0); }
+.arena--boss .arena__ground { box-shadow: var(--rule-horizon-boss); }
+.arena__platform, .arena__spot--team .arena__platform { background: var(--bg-0); box-shadow: var(--frame-platform); }
+.float-text__num, .float-text--strong .float-text__num, .float-text--weak .float-text__num, .float-text--miss { text-shadow: var(--shadow-text); }
+
+/* One compositor vocabulary: four frame cadences and integer translations. */
+@keyframes status-blink { from { opacity: 1; } to { opacity: var(--opacity-disabled); } }
+@keyframes loading-sweep { from { opacity: 0.4; } to { opacity: 0; } }
+
+/* Outline supplements component shadows, including selected/disabled navigation states. */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: var(--outline-focus);
+  outline-offset: var(--focus-offset);
+}
+:where(a, button, [role='button'], [role='radio'], summary):not(:disabled):not([aria-disabled='true']) { cursor: var(--cursor-pointer); }
+:where(button, [role='button'], [role='radio']):disabled,
+:where([role='button'], [role='radio'])[aria-disabled='true'] { cursor: not-allowed; }
+
+@media (prefers-reduced-motion: reduce) {
+  .hpbar__fill, .hpbar__ghost, .plate .hpbar__fill, .xpbar__fill { transition: none; }
+  .dialog, .battle-log__body { transition: none; }
+  .arena__caption-text, .arena__banner-text, .dialog[open], .topnav__live, .resume-banner__pulse,
+  .fullscreen-loader__orb, .skeleton::after { animation: none; }
+}

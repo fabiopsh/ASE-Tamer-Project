@@ -7,6 +7,32 @@ Specification: [`docs/plan/09-frontend.md`](../docs/plan/09-frontend.md).
 Stack: Vite + React + TypeScript, `react-router-dom`, plain CSS, fonts self-hosted from npm (`@fontsource-variable/*`).
 All versions are exact in `package.json`; `package-lock.json` is committed.
 
+The **Archivio d’ambra** reskin uses metric-compatible Amber pixel fonts derived from the bundled OFL sources.
+Visual tokens, font regeneration, motion, accessibility and layout verification are documented in
+[`docs/amber-reskin.md`](docs/amber-reskin.md).
+
+## Run in Docker (default)
+
+The frontend is its own stack, separate from the headless backend. From the repository root:
+
+```sh
+docker compose -f docker-compose.frontend.yml up -d --build
+```
+
+It serves the built app with `nginx-unprivileged` on <http://localhost:8080>. The browser then calls the gateway
+directly (`https://localhost:8443`, another origin), so the gateway must allow this origin with CORS
+(`CORS_ALLOWED_ORIGINS`, default `^http://localhost:(8080|5173|4173)$`). Options, as environment variables of the
+compose command:
+
+| Variable | Default | Effect |
+|---|---|---|
+| `VITE_GATEWAY_URL` | `https://localhost:8443` | Gateway URL baked into the build; it also sets the CSP `connect-src` and `img-src` |
+| `FRONTEND_PORT` | `8080` | Published port (add the new origin to `CORS_ALLOWED_ORIGINS` too) |
+
+The container is read-only, has no secret and no network access to the backend.
+
+The sections below are for development with hot reload.
+
 ## Requirements
 
 - Node.js 22.12 or newer (developed with Node 24) and npm.
@@ -48,7 +74,7 @@ All versions are exact in `package.json`; `package-lock.json` is committed.
    ```
 
    Expected: `dist/` is written with no type errors, then `Local: http://localhost:4173/`.
-   The gateway allows CORS only from `http://localhost:5173` and `http://localhost:4173`.
+   The gateway allows CORS from `http://localhost:8080`, `http://localhost:5173` and `http://localhost:4173`.
 
 Other scripts: `npm run lint` (ESLint, must report no problem), `npm run typecheck` (TypeScript only).
 

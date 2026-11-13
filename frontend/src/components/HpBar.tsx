@@ -33,8 +33,8 @@ export function HpBar({ hp, max, label = 'HP', size = 'md', showValue = true }: 
         aria-valuenow={value}
         aria-valuetext={`${value} of ${safeMax} HP`}
       >
-        <span className="hpbar__ghost" style={{ width: `${pct}%` }} />
-        <span className="hpbar__fill" style={{ width: `${pct}%` }} />
+        <span className="hpbar__ghost" style={{ transform: `scaleX(${pct / 100})` }} />
+        <span className="hpbar__fill" style={{ transform: `scaleX(${pct / 100})` }} />
       </span>
       {showValue && (
         <span className="hpbar__value num" aria-hidden="true">
@@ -71,7 +71,7 @@ export function XpBar({ xp, toNext, level }: XpBarProps) {
         aria-valuemax={maxed ? 1 : toNext}
         aria-valuenow={maxed ? 1 : xp}
       >
-        <span className="xpbar__fill" style={{ width: `${pct}%` }} />
+        <span className="xpbar__fill" style={{ transform: `scaleX(${pct / 100})` }} />
       </span>
     </div>
   );

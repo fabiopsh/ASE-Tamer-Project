@@ -1,10 +1,5 @@
 .mcard {
-  --card-body: linear-gradient(
-    165deg,
-    color-mix(in srgb, var(--el, var(--accent)) 20%, var(--surface-solid)) 0%,
-    var(--surface-solid) 55%,
-    #0f1236 100%
-  );
+  --card-body: var(--surface-solid);
   position: relative;
   display: flex;
   flex-direction: column;
@@ -13,10 +8,9 @@
   min-width: 0;
   padding: var(--space-3) var(--space-3) var(--space-4);
   border-radius: var(--radius-lg);
-  border: 2px solid transparent;
+  border: var(--stroke-medium) solid transparent;
   background:
-    var(--card-body) padding-box,
-    linear-gradient(160deg, color-mix(in srgb, var(--rarity, var(--rarity-common)) 70%, transparent), color-mix(in srgb, var(--rarity, var(--rarity-common)) 22%, transparent)) border-box;
+    var(--card-body);
   box-shadow: var(--shadow-1);
   color: var(--text-1);
   text-align: center;
@@ -24,20 +18,18 @@
   overflow: hidden;
   isolation: isolate;
   transition:
-    transform var(--dur-base) var(--ease-out),
-    box-shadow var(--dur-base) var(--ease-out),
-    opacity var(--dur-base) var(--ease-out),
-    filter var(--dur-base) var(--ease-out);
+    transform var(--dur-base) var(--ease-out), opacity var(--dur-base) var(--ease-out);
+  border-color: var(--rarity, var(--border-mid));
 }
 button.mcard { font: inherit; width: 100%; }
 
 .mcard[data-rarity='legendary'] {
-  background: var(--card-body) padding-box, var(--legendary-shine) border-box;
-  animation: shine-spin 5s linear infinite;
-  box-shadow: var(--shadow-1), 0 0 22px rgba(255, 210, 122, 0.18);
+  background: var(--card-body);
+  animation: none;
+  box-shadow: var(--shadow-1);
 }
 .mcard[data-rarity='rare'] {
-  box-shadow: var(--shadow-1), 0 0 16px rgba(98, 176, 255, 0.12);
+  box-shadow: var(--frame-panel);
 }
 
 .mcard__glow {
@@ -45,7 +37,7 @@ button.mcard { font: inherit; width: 100%; }
   inset: -30% -20% auto;
   height: 75%;
   z-index: -1;
-  background: radial-gradient(closest-side, color-mix(in srgb, var(--el, var(--accent)) 35%, transparent), transparent);
+  background: none;
   opacity: 0.55;
   transition: opacity var(--dur-base) var(--ease-out);
 }
@@ -76,8 +68,8 @@ button.mcard { font: inherit; width: 100%; }
   width: 64%;
   height: 14px;
   transform: translateX(-50%);
-  border-radius: 50%;
-  background: radial-gradient(closest-side, color-mix(in srgb, var(--el, var(--accent)) 45%, transparent), transparent);
+  border-radius: var(--radius-xs);
+  background: none;
   opacity: 0.8;
 }
 
@@ -102,28 +94,27 @@ button.mcard { font: inherit; width: 100%; }
 .mcard__level-inline { display: flex; justify-content: center; }
 
 /* ---------- interaction ---------- */
-.mcard--interactive { cursor: pointer; }
+.mcard--interactive { cursor: var(--cursor-pointer); }
 .mcard--interactive:hover {
-  transform: translateY(-4px);
+  transform: none;
   text-decoration: none;
-  box-shadow: var(--shadow-2), 0 0 28px color-mix(in srgb, var(--el, var(--accent)) 30%, transparent);
+  box-shadow: var(--frame-selected);
+  border-color: var(--accent);
 }
 .mcard--interactive:hover .mcard__glow { opacity: 0.9; }
-.mcard--interactive:hover .sprite__img { transform: scale(1.07) translateY(-3%); }
-.mcard--interactive:active { transform: translateY(-1px) scale(0.99); }
+.mcard--interactive:hover .sprite__img { transform: translateY(-4px); }
+.mcard--interactive:active { transform: translateY(2px); }
 .mcard--interactive:focus-visible {
-  box-shadow: var(--focus-ring), var(--shadow-2);
+  box-shadow: var(--frame-focus);
 }
 
 .mcard--selected {
   background:
-    var(--card-body) padding-box,
-    linear-gradient(160deg, var(--accent-2), var(--accent)) border-box;
+    var(--surface-2);
   box-shadow:
-    0 0 0 3px rgba(95, 214, 236, 0.25),
-    0 0 34px color-mix(in srgb, var(--el, var(--accent)) 45%, transparent),
-    var(--shadow-2);
+    var(--frame-selected);
   transform: translateY(-4px);
+  border-color: var(--accent);
 }
 .mcard--selected .mcard__glow { opacity: 1; }
 .mcard__check {
@@ -131,23 +122,20 @@ button.mcard { font: inherit; width: 100%; }
   place-items: center;
   width: 28px;
   height: 28px;
-  border-radius: 50%;
+  border-radius: var(--radius-xs);
   color: var(--text-on-accent);
-  background: var(--accent-gradient);
-  box-shadow: 0 0 14px rgba(95, 214, 236, 0.6);
+  background: var(--accent);
+  box-shadow: var(--shadow-1);
   animation: pop-in var(--dur-slow) var(--ease-spring) both;
 }
-@keyframes pop-in {
-  from { transform: scale(0.3); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
-}
+@keyframes pop-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 
 .mcard--disabled {
   cursor: not-allowed;
-  opacity: 0.45;
+  opacity: var(--opacity-disabled);
   filter: saturate(0.5);
 }
-.mcard--disabled:hover { transform: none; box-shadow: var(--shadow-1); }
+.mcard--disabled:hover { transform: none; box-shadow: var(--frame-panel); }
 .mcard--disabled:hover .sprite__img { transform: none; }
 
 .mcard--skeleton {

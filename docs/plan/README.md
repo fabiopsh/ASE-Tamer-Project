@@ -77,7 +77,7 @@ Decisions taken on 06/11/2026 while preparing this plan. They complement decisio
 |---|---|
 | `POST /api/auth/login` (JSON) | `POST /api/auth/token` (OAuth2, form-urlencoded) |
 | `POST /internal/auth/service-token` | `POST /internal/auth/token` with `grant_type=client_credentials` |
-| Nginx serves the static frontend on `/` | Frontend runs outside compose; Nginx only proxies the API, with CORS |
+| Nginx serves the static frontend on `/` | Frontend runs in its own compose stack (`docker-compose.frontend.yml`), separate from the headless backend; Nginx only proxies the API, with CORS |
 | HTTPS terminated at Nginx | HTTPS on every hop, including Postgres |
 | Monster earned at level 1 (old US-12 AC) | Earned at the wild monster's level (already in architecture §8) |
 | Ownership violation → 403 (US-05 AC) | → 404 |

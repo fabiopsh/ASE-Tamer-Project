@@ -1,7 +1,8 @@
-# Monster Tamers - full backend (docs/plan/02-infrastructure.md, INFRA-6)
+# Monster Tamers - headless backend: gateway and six services (docs/plan/02-infrastructure.md, INFRA-6)
 #   docker compose up --build        start everything (secrets generated on first start)
 #   docker compose down -v           stop and delete all data and secrets
 # Only the gateway publishes a port: https://localhost:8443
+# The web app is a separate stack (docker-compose.frontend.yml) that calls the gateway with CORS.
 # Requires Docker Compose >= 2.30 (volume subpath).
 
 name: tamer
@@ -96,8 +97,9 @@ services:
         condition: service_healthy
 
   auth-db:
+    # One tag per database: parallel builds of a shared tag fail with "already exists"
     build: infra/postgres
-    image: tamer/postgres:dev
+    image: tamer/auth-db:dev
     user: "70:70"
     <<: *hardening
     restart: unless-stopped
@@ -167,7 +169,7 @@ services:
 
   players-db:
     build: infra/postgres
-    image: tamer/postgres:dev
+    image: tamer/players-db:dev
     user: "70:70"
     <<: *hardening
     restart: unless-stopped
@@ -234,7 +236,7 @@ services:
 
   monsters-db:
     build: infra/postgres
-    image: tamer/postgres:dev
+    image: tamer/monsters-db:dev
     user: "70:70"
     <<: *hardening
     restart: unless-stopped
@@ -303,7 +305,7 @@ services:
 
   teams-db:
     build: infra/postgres
-    image: tamer/postgres:dev
+    image: tamer/teams-db:dev
     user: "70:70"
     <<: *hardening
     restart: unless-stopped
@@ -375,7 +377,7 @@ services:
 
   encounters-db:
     build: infra/postgres
-    image: tamer/postgres:dev
+    image: tamer/encounters-db:dev
     user: "70:70"
     <<: *hardening
     restart: unless-stopped
@@ -442,7 +444,7 @@ services:
 
   history-db:
     build: infra/postgres
-    image: tamer/postgres:dev
+    image: tamer/history-db:dev
     user: "70:70"
     <<: *hardening
     restart: unless-stopped

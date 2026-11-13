@@ -1,8 +1,9 @@
-# Monster Tamers — ASE Lab Project
+# Monster Tamers
 
 [![CI](https://github.com/fabiopsh/ASE-Tamer-Project/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/fabiopsh/ASE-Tamer-Project/actions/workflows/ci.yml)
 
-Advanced Software Engineering lab project (University of Pisa, A.Y. 2026/27).
+A roguelike monster-taming browser game built on microservices.
+Advanced Software Engineering lab project, University of Pisa, A.Y. 2026/27.
 
 ## Group
 
@@ -16,21 +17,57 @@ Advanced Software Engineering lab project (University of Pisa, A.Y. 2026/27).
 | Francesco | Polperio | f.polperio@studenti.unipi.it |
 
 Monster Tamers is a browser game built on microservices. A player registers, picks three starter monsters, builds a team and fights wild monsters and stage bosses in roguelike runs. Victories grant experience and new monsters for the collection.
+## Quick start
 
-**Core loop.** Register and log in → choose 3 starters out of a pool of 10 common monsters → build a team of 1–3 monsters → pick an encounter of the current stage → fight turn by turn (`attack`, `switch`, `flee`) → on victory the wild monster joins the collection at its level and the team gains XP → after two wins the stage boss unlocks; beating it opens the next stage.
+You only need **Docker** (Docker Desktop, or Engine ≥ 26 with Compose ≥ 2.30).
 
-**Roguelike runs.** A run has 8 stages of growing difficulty. A defeat (or abandoning the run) ends it: the collection of that run is archived, teams are removed and the player chooses new starters for a new run. Past runs, their monsters and their battle history stay visible. Beating the stage 8 boss wins the run.
+```bash
+git clone https://github.com/fabiopsh/ASE-Tamer-Project.git
+cd ASE-Tamer-Project
+docker compose up -d --build --wait                               # backend (API on https://localhost:8443)
+docker compose -f docker-compose.frontend.yml up -d --build       # frontend (http://localhost:8080)
+```
 
-**Fair play.** The server computes every battle: the client only sends the chosen action. Rewards and XP are granted by internal service-to-service calls, which are idempotent, and every finished battle is stored in the history with its full turn log.
+1. Open **https://localhost:8443/health** once and accept the certificate (*Advanced → Proceed*). It is signed by a CA that is generated locally. To skip the warning, run `scripts/export-ca.sh` and add `tamer-ca.crt` to your trusted authorities.
+2. Open **http://localhost:8080** and create an account.
 
-| Service | Responsibility |
+The first build takes a few minutes, later starts take about 30 seconds.
+
+```bash
+docker compose -f docker-compose.frontend.yml down   # stop the frontend
+docker compose down                                  # stop the backend, keep your progress
+docker compose down -v                               # stop and delete all data and generated secrets
+```
+
+## Screenshots
+
+| | |
 |---|---|
-| `auth` | Accounts, passwords (bcrypt), OAuth2 token endpoint, JWT signing, service clients |
-| `players` | Game profile, starter pool, pointer to the current run |
-| `monsters` | Catalogue of 100 monsters, abilities, sprites, personal collections, levels and XP |
-| `teams` | Teams and their validation (size, ownership, run, limit of five) |
-| `encounters` | Runs and stages, encounter templates, battle engine, end-of-battle outbox |
-| `history` | Permanent record of every finished battle |
+| ![Camp](docs/screenshots/dashboard.png) | ![Encounters](docs/screenshots/encounters.png) |
+| **Camp**: run progress across the 8 stages | **Encounters**: pick a place and a team |
+| ![Battle](docs/screenshots/battle.png) | ![Team editor](docs/screenshots/team-editor.png) |
+| **Battle**: turn by turn, computed by the server | **Teams**: up to three monsters, in battle order |
+
+## The game
+
+1. Register and pick **3 starters** from a pool of 10.
+2. Build a **team** of 1–3 monsters.
+3. Choose an **encounter** in the current stage and fight with *Attack*, *Switch* or *Flee*.
+4. When you win, the wild monster **joins your collection** and your team gains **XP**.
+5. Two wins unlock the **stage boss**. Beat it to reach the next stage. There are 8 stages in all.
+6. A defeat ends the **run**: you pick new starters and start again. Past runs and battles stay in your history.
+
+The catalogue has 100 monsters across several elements and rarities, each with its own ability.
+
+## What we built
+
+- **Six microservices** (Quarkus, Java 21), one PostgreSQL database each.
+- **Headless backend**: an Nginx gateway is the only entry point (`https://localhost:8443`) and serves just the API. Any client can use it. Browsers are allowed by CORS from a configurable list of origins.
+- **Separate frontend**: the web app runs in its own container and stack, and talks to the backend only through the public API.
+- **Server-side battles**: the client only sends the chosen action. Rewards go through idempotent service-to-service calls with an outbox.
+- **Security by default**: HTTPS on every hop, including the databases, with a local CA. OAuth2 tokens are JWTs (RS256), and every secret is generated at first start, so none is committed. Containers run as non-root with no capabilities, and login is rate-limited.
+- **Web client**: React, TypeScript and Vite, with a custom pixel-art theme.
+- **Quality**: unit and service tests, API tests (Bruno: component, integration, end-to-end), load tests (Locust), and CI with Semgrep and Trivy.
 
 ## Architecture
 
@@ -38,10 +75,7 @@ Monster Tamers is a browser game built on microservices. A player registers, pic
 
 The diagram shows the planned architecture. All six services and the gateway are built; the features still missing are listed in [Implementation status](#implementation-status). A more detailed description (components, game rules, decisions) is in [`docs/architettura/architettura_backend.md`](docs/architettura/architettura_backend.md).
 
-- Six Quarkus (Java 21) services, one PostgreSQL database each, schema managed by Flyway.
-- Nginx is the only entry point (`https://localhost:8443`). Internal endpoints (`/internal/*`) are never routed.
-- HTTPS on every hop with a local CA. Certificates, JWT keys and passwords are generated at first start, so no secret is committed.
-- OAuth2 token endpoint and JWT (RS256), checked locally by every service.
+In the backend only the gateway publishes a port. Services and databases run on an internal Docker network, and `/internal/*` endpoints are never routed. Allowed browser origins are set with `CORS_ALLOWED_ORIGINS` on the gateway (default: `localhost` on ports 8080, 5173 and 4173).
 
 ## OpenAPI specifications
 
@@ -89,15 +123,13 @@ Documents:
 
 | What | Where |
 |---|---|
-| Implementation plan and decision log (the reference for development) | [`docs/plan/`](docs/plan/README.md) |
-| Architecture and game rules | [`docs/architettura/architettura_backend.md`](docs/architettura/architettura_backend.md) |
-| OpenAPI: gateway (public API) and every service | [`docs/openapi/`](docs/openapi/) |
-| Backlog with acceptance criteria, dependencies and tests | [`docs/backlog/acceptance_criteria.md`](docs/backlog/acceptance_criteria.md), [`Monster_Tamers_Backlog_completed.xlsx`](docs/backlog/Monster_Tamers_Backlog_completed.xlsx) |
-| API tests: Bruno sources and exported JSON | [`docs/tests/bruno/`](docs/tests/bruno/README.md), [`docs/tests/json/`](docs/tests/json/) |
-| Performance tests (Locust) | [`docs/locust/`](docs/locust/README.md) |
-| CI workflow (copy) | [`docs/ci/ci.yml`](docs/ci/ci.yml) |
-| Security analysis and self-attack | [`docs/security/`](docs/security/README.md) |
-| Official requirements | [`docs/Monster_Tamer_Functional_Requirements.pdf`](docs/Monster_Tamer_Functional_Requirements.pdf) |
+| `auth` | Accounts, passwords (bcrypt), OAuth2 token endpoint, JWT signing |
+| `players` | Player profile, starter pool, current run |
+| `monsters` | Catalogue, abilities, sprites, collections, levels and XP |
+| `teams` | Teams and their validation |
+| `encounters` | Runs, stages, encounters, battle engine |
+| `history` | Permanent record of every finished battle |
+| `frontend` | Static web app (separate stack, calls the gateway from the browser) |
 
 ## Repository layout
 
@@ -127,23 +159,33 @@ docker-compose.test.yml  test override: exposes each service on localhost
 ### 2. Build and run the backend
 
 ```bash
-git clone <repository-url>
-cd ASE-Tamer-Project
-docker compose up --build
+mvn -f backend/pom.xml verify                     # unit and service tests (Java 21, Maven, Docker)
 ```
 
-The first start builds the images (a few minutes) and generates every secret into the `secrets` Docker volume. Wait until all containers are `healthy`, for example with `docker compose up -d --build --wait`.
+API tests (Bruno) and load tests (Locust) run against the test stack. See [docs/tests/bruno](docs/tests/bruno/README.md) and [docs/locust](docs/locust/README.md).
 
-The gateway listens on **https://localhost:8443**. Check it with:
+## More
 
-```bash
-scripts/export-ca.sh                       # writes ./tamer-ca.crt (the local CA)
-curl --cacert tamer-ca.crt https://localhost:8443/health
-```
+| | |
+|---|---|
+| Architecture and game rules | [docs/architettura](docs/architettura/architettura_backend.md) |
+| Implementation plan and decisions | [docs/plan](docs/plan/README.md) |
+| OpenAPI specs | [docs/openapi](docs/openapi/) |
+| Security analysis | [docs/security](docs/security/README.md) |
+| Backlog and acceptance criteria | [docs/backlog](docs/backlog/acceptance_criteria.md) |
+| Frontend development (hot reload, mock server) | [frontend/README.md](frontend/README.md) |
 
-In the browser, open https://localhost:8443/health once and accept the certificate. You can also import `tamer-ca.crt` as a trusted authority.
+<details>
+<summary>Troubleshooting</summary>
 
-### 3. Run the frontend
+- **Port 8443 in use**: stop the other process, or change the gateway port in `docker-compose.yml`.
+- **Port 8080 in use**: start the frontend with `FRONTEND_PORT=8081`, and add `http://localhost:8081` to `CORS_ALLOWED_ORIGINS`.
+- **The app says *Cannot reach the game server***: the backend is not running, or the certificate of https://localhost:8443 was not accepted in this browser.
+- **`volume subpath` not supported**: update Docker (Compose ≥ 2.30).
+- **`init-secrets` exits with 255 on Windows**: scripts need LF line endings. Run `git add --renormalize .`.
+- **Certificate errors after `down -v`**: the CA was regenerated. Export it again with `scripts/export-ca.sh`.
+- **A service stays `unhealthy`**: check `docker compose logs <service>`.
+- **`429 Too Many Requests` on login**: login and registration allow 10 requests per minute per IP.
 
 ```bash
 cd frontend

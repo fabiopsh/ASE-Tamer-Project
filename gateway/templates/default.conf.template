@@ -8,11 +8,12 @@ resolver 127.0.0.11 valid=10s ipv6=off;
 limit_req_zone $binary_remote_addr zone=auth:10m rate=${LOGIN_RATE_LIMIT};
 limit_req_status 429;
 
-# CORS: only the Vite dev server and preview are allowed (never *)
+# CORS: the backend is headless, browser clients call it from their own origin.
+# Only origins matching CORS_ALLOWED_ORIGINS (regex, set in the Dockerfile or compose) are echoed
+# back; never *. Default: the frontend container (8080), Vite dev (5173) and preview (4173).
 map $http_origin $cors_origin {
-    default                  "";
-    "http://localhost:5173"  $http_origin;
-    "http://localhost:4173"  $http_origin;
+    default                      "";
+    "~${CORS_ALLOWED_ORIGINS}"   $http_origin;
 }
 
 log_format tamer '$remote_addr [$time_local] "$request" $status $body_bytes_sent '

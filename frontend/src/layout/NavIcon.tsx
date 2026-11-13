@@ -10,15 +10,15 @@ export type NavIconName =
   | 'logout';
 
 const PATHS: Record<NavIconName, string> = {
-  home: 'M4 11.5 12 5l8 6.5V20a1 1 0 0 1-1 1h-4.5v-6h-5v6H5a1 1 0 0 1-1-1Z',
-  catalog: 'M5 4.5h10.5A3.5 3.5 0 0 1 19 8v11.5H8.5A3.5 3.5 0 0 1 5 16ZM5 16a3.5 3.5 0 0 1 3.5-3.5H19M9 8h6',
-  collection: 'M12 3.5 20 8v8l-8 4.5L4 16V8Zm0 0v17M4 8l8 4.5L20 8',
-  teams: 'M8.5 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm7.5 0a2.5 2.5 0 1 0 0-5M3 19.5c.6-3.3 2.8-5 5.5-5s4.9 1.7 5.5 5M15.5 14.5c2.6 0 4.6 1.5 5.2 5',
-  encounters: 'M12 3a7 7 0 0 1 7 7c0 5-7 11-7 11S5 15 5 10a7 7 0 0 1 7-7Zm0 4.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5Z',
-  battle: 'M5 19 15.5 8.5M14 4h6v6M4.5 14.5l5 5M19 19 8.5 8.5M10 4H4v6M14.5 14.5l5 5',
-  runs: 'M5 21V4M5 4.5h12.5l-2.5 4 2.5 4H5',
-  history: 'M4 12a8 8 0 1 0 2.4-5.7L4 8.5M4 4v4.5h4.5M12 8v4.5l3 2',
-  logout: 'M14.5 4H18a1.5 1.5 0 0 1 1.5 1.5v13A1.5 1.5 0 0 1 18 20h-3.5M10 16.5 5.5 12 10 7.5M5.5 12H15',
+  home: 'M4 10h4V6h8v4h4v10h-6v-6h-4v6H4Zm6-6h4',
+  catalog: 'M5 4h14v16H5Zm0 12h14M9 8h6M9 11h4',
+  collection: 'M4 4h16v16H4Zm0 8h16M0 14h4m4-2h8M8 18h8',
+  teams: 'M3 8h6v6H3Zm12 0h6v6h-6ZM9 3h6v5H9ZM6 14v5h12v-5M12 8v11',
+  encounters: 'M8 3h8v3h3v10h-3v3h-3v3h-2v-3H8v-3H5V6h3Zm2 5h4v4h-4Z',
+  battle: 'M4 4h4v4h4v4h4v4h4v4h-4v-4h-4v-4H8V8H4Zm16 0h-4v4h-4m-4 4v4H4v4',
+  runs: 'M4 20v-4h4v-4h4V8h4V4h4M4 4v6M1 7h6',
+  history: 'M8 4h8v3h4v10h-4v3H8v-3H4v-7M1 4v6h7M12 8v5h4',
+  logout: 'M14 4h6v16h-6M10 8H6v4H2l4 4h4M6 12h10',
 };
 
 export function NavIcon({ name, size = 20 }: { name: NavIconName; size?: number }) {
@@ -29,9 +29,9 @@ export function NavIcon({ name, size = 20 }: { name: NavIconName; size?: number 
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.9"
-      strokeLinecap="round"
-      strokeLinejoin="round"
+      strokeWidth="2"
+      strokeLinecap="square"
+      strokeLinejoin="miter"
       aria-hidden="true"
     >
       <path d={PATHS[name]} />
