@@ -17,6 +17,9 @@ RUN --mount=type=cache,target=/root/.m2 mvn -B -q -pl players -am package -Dskip
 
 # ---- runtime stage: non-root (requirements §6) ----
 FROM registry.access.redhat.com/ubi9/openjdk-21-runtime:1.24
+# Apply RHEL security fixes published after the base image was built (Trivy image scan, CI-2)
+USER root
+RUN microdnf -y update --nodocs && microdnf clean all
 COPY --from=build --chown=185 /src/players/target/quarkus-app/lib/ /deployments/lib/
 COPY --from=build --chown=185 /src/players/target/quarkus-app/*.jar /deployments/
 COPY --from=build --chown=185 /src/players/target/quarkus-app/app/ /deployments/app/

@@ -56,7 +56,18 @@ No ERROR findings.
 | DS-0031 secret in `ENV` (CRITICAL) | `gateway/Dockerfile` | False positive on the name `AUTH_RATE_*`: renamed `LOGIN_RATE_LIMIT` / `LOGIN_RATE_BURST` |
 | Trivy fs: Maven Central `429 Too Many Requests` | `backend/pom.xml` | Not a vulnerability: Trivy downloaded every parent pom. Now it reads `~/.m2` with `--offline-scan` |
 
-`.trivyignore` is empty. **To verify** on a machine with enough memory: the image scan after the
+### Trivy — 13/11/2026
+
+The image scan failed on `main` with 27 HIGH findings in each of the six service images. They are
+RHEL 9 packages of the base image `ubi9/openjdk-21-runtime:1.24`, whose fixes were published after
+the last build of the base image (10/11/2026).
+
+| Finding | Where | Decision |
+|---|---|---|
+| expat, libxml2, python3, python3-libs, libblkid, libmount, libsmartcols, libuuid (13 HIGH) | the six service images | **Fixed**: `microdnf -y update` in the runtime stage of every service Dockerfile |
+| krb5-libs 1.21.1-10.el9_8.1: CVE-2026-107364, -112315 … -112323, -118380, -119079, -71199, -71200 (14 HIGH) | the six service images | **Accepted until 30/11/2026** in `.trivyignore`. The fix (`el9_9.2`) is only in the subscription RHEL repositories, not in the public UBI ones, so the update cannot install it. The package cannot be removed (libcurl, cyrus-sasl and cups-libs link it). Every CVE is in the KDC or kadmind, Kerberos server daemons not present in the images, or in Kerberos authentication, which no service uses. The entries expire so that the CI checks again |
+
+`.trivyignore` holds only the krb5-libs entries above. **To verify** on a machine with enough memory: the image scan after the
 fixes above, and `trivy fs` with the offline mode.
 
 ## Self-attack (SEC-1)
