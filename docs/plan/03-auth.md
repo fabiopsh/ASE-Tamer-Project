@@ -10,8 +10,9 @@ Accounts, credentials and tokens. User stories: **US-01, US-02, US-05** (P2 comp
 |---|---|---|---|---|
 | POST | `/api/auth/register` | public | P1 | JSON `{username, password}` → `201 {player_id, username}` |
 | POST | `/api/auth/token` | public | P1 / P2 | OAuth2 token endpoint, form-urlencoded. `grant_type=password` (P1), `grant_type=refresh_token` (P2) |
-| POST | `/api/auth/logout` | player | P2 | Form `refresh_token=…` → `204`, revokes it |
+| POST | `/api/auth/logout` | refresh-token credential | P2 | Form `refresh_token=…` → `204`, revokes its family; works after access-token expiry |
 | POST | `/internal/auth/token` | client credentials | P1 | `grant_type=client_credentials`, `client_id`, `client_secret` → service token |
+| GET | `/internal/auth/authorize` | bearer, original method/path from gateway | P2 | Private gateway adapter: 204 allowed, 401 invalid token, 403 wrong role (INFRA-9) |
 
 ### Token endpoint (RFC 6749 §4.3 and §6)
 
@@ -30,7 +31,7 @@ Success `200`, headers `Cache-Control: no-store`, `Pragma: no-cache`:
 {
   "access_token": "eyJ...",
   "token_type": "Bearer",
-  "expires_in": 900,
+  "expires_in": 300,
   "refresh_token": "kP3...",          // P2 only
   "scope": "player"
 }
@@ -57,7 +58,7 @@ Errors (RFC 6749 §5.2), status 400:
 | `upn` | username | `client_id` |
 | `groups` | `["player"]` | `["service"]` |
 | `iat`, `exp`, `jti` | yes | yes |
-| Lifetime | P1: `TAMER_ACCESS_TOKEN_TTL` default 3600 s; P2: 900 s (with refresh) | 300 s |
+| Lifetime | P1: `TAMER_ACCESS_TOKEN_TTL` default 3600 s; P2: **300 s**, with refresh (P-22) | 300 s |
 
 ## Database (`auth-db`)
 
@@ -158,7 +159,7 @@ sequenceDiagram
 - [x] Sign with `Jwt.issuer("tamer-auth").audience("tamer-api").subject(id).upn(username).groups(Set.of("player")).expiresIn(ttl).jws().keyId("tamer-1").sign()` using `smallrye.jwt.sign.key.location=/run/secrets/jwt-private.pem`.
 - [x] Update `last_login`.
 - [x] `Cache-Control: no-store` on every token response.
-- [ ] Check the Access Security lab slides for any extra constraint (scopes, endpoint names) and align.
+- [ ] Complete the P2 Access Security follow-up tracked in AUTH-7, INFRA-9/10, TEST-5 and CI-3/4. Keep the OAuth2 form-urlencoded contract and `400 invalid_grant` for incorrect login credentials; protected API calls use 401/403 as specified in the conventions.
 
 **Done when**
 
@@ -221,15 +222,32 @@ Write in [`docs/backlog/acceptance_criteria.md`](../backlog/acceptance_criteria.
 
 ## AUTH-7 — Refresh tokens and logout · P2
 
-**Depends on:** AUTH-3
+**Status:** planned; expanded after the Access Security review of 17/11/2026. The existing table and response field do not constitute refresh/logout implementation.
 
-- [ ] Password grant also returns a refresh token: 32 random bytes (`SecureRandom`), base64url; DB stores only `SHA-256` hex; TTL 7 days; new `family_id`.
-- [ ] `grant_type=refresh_token`: look up by hash; if valid → revoke it, issue new access + refresh token with the same `family_id` (rotation).
-- [ ] **Reuse detection:** a revoked token presented again → revoke the whole family → `invalid_grant`.
-- [ ] `POST /api/auth/logout` revokes the presented token's family.
-- [ ] Scheduled cleanup (`quarkus-scheduler`, daily) of expired rows.
-- [ ] Access token TTL back to 900 s.
-- [ ] Tests for rotation, reuse, logout, expiry.
+**Depends on:** AUTH-3, INFRA-10. Coordinate with FE-3, INFRA-9, TEST-5 and CI-3.
+
+**API contract**
+
+Use [RFC 6749 §6](https://www.rfc-editor.org/rfc/rfc6749.html#section-6) for `POST /api/auth/token` with form `grant_type=refresh_token&refresh_token=…`. No unexpired access token is required. A successful password or refresh grant returns an access token (`expires_in=300`), an opaque refresh token, `token_type=Bearer` and `scope=player`, with `Cache-Control: no-store` and `Pragma: no-cache`. Service client-credentials grants keep their 300 s access token and do not receive refresh tokens.
+
+`POST /api/auth/logout` accepts form `refresh_token=…`. Possession of that credential authorizes revocation of its own family; the endpoint does not require a valid access token or accept a caller-selected `player_id`/`family_id`. A well-formed request returns 204 for known, unknown, expired or already-revoked tokens. If the token is known, revoke its whole family, including when an older rotated token is submitted. Missing/empty parameters return `400 invalid_request`; database failure returns 503, never a successful revocation response.
+
+**Implementation**
+
+- [ ] Implement the refresh-token entity/repository using the existing `refresh_tokens` schema. Generate 32 random bytes with `SecureRandom`, encode base64url and store only the SHA-256 hex digest. Keep passwords and both token types out of logs and error bodies.
+- [ ] Each password login creates a separate `family_id` with an absolute expiry 7 days after login. Rotation preserves that family and its original `expires_at`; it does not extend the session indefinitely.
+- [ ] Set the default and Compose override of `TAMER_ACCESS_TOKEN_TTL` to **300 s**, update token examples/OpenAPI, and assert `exp - iat = 300` and `expires_in = 300` in tests. Historical P1 3600 s settings are not the final configuration.
+- [ ] Add the refresh grant dispatch. A valid, unexpired, unrevoked token for an existing account is consumed once: revoke it and persist a fresh token in the same transaction before returning the new pair. Invalid, expired, revoked or unknown credentials produce the same `400 invalid_grant` without an account-existence disclosure.
+- [ ] **Reuse detection:** presenting a previously consumed token revokes every token in that family and returns `invalid_grant`. Other login families for the same player remain usable.
+- [ ] Serialize rotation, reuse handling and logout for the same player using an account-row database lock; re-read token state under the lock. Commit revocations even when returning an OAuth error, so exception rollback cannot undo reuse detection. A concurrent refresh/logout must not leave a usable descendant after revocation.
+- [ ] Implement idempotent family revocation for logout with the contract above, and rate-limit it alongside register/token. Do not wrap rotating grants in automatic HTTP retries: a lost response may follow a successful rotation.
+- [ ] Add daily scheduled cleanup of expired rows. Retain consumed/revoked rows until family expiry so reuse detection still works. Document the configured JWT clock skew alongside the 300 s lifetime.
+- [ ] Add service tests for issuance, hashes at rest, successful rotation, unknown/expired/revoked tokens, reuse revoking the family, independent sessions, concurrent refresh and refresh/logout, idempotent logout, logout after access-token expiry, and persistence failures.
+- [ ] Add component and gateway Bruno flows, UI integration (FE-3), API exports and acceptance-criteria references. Run the API flows in CI-3 through TEST-5.
+
+**Revocation boundary:** logout and reuse detection immediately prevent further refreshes. Already issued access JWTs remain valid until their 300 s expiry, subject to the configured clock skew, because services verify them locally. The gateway adapter performs the same signature/claim/policy checks; this task does not introduce an access-token denylist or database introspection on every API call.
+
+**Done when:** login, access-token expiry, refresh rotation, replay rejection and logout work through the gateway. A revoked family cannot create another access token; another login family is unaffected. The frontend clears its session on logout, handles expiry through refresh, and API/CI tests prove the revocation boundary above.
 
 ---
 

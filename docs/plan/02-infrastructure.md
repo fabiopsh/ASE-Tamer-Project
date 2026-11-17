@@ -359,6 +359,47 @@ tests/client.env                         test client secret (used only with the 
 
 ---
 
+## INFRA-9 — Gateway authentication and authorization · P2
+
+**Status:** planned after the Access Security review of 17/11/2026.
+
+**Depends on:** INFRA-5, INFRA-7, INFRA-10, AUTH-3
+
+**Description.** Authorize protected requests at the gateway before forwarding them, while keeping independent JWT checks in every backend service. Use Nginx [auth_request](https://nginx.org/en/docs/http/ngx_http_auth_request_module.html) with a private HTTPS adapter in `auth` (P-23).
+
+- [ ] Verify that the pinned gateway image includes `ngx_http_auth_request_module`; keep the existing non-root and image-scan requirements when enabling it if needed.
+- [ ] Add `GET /internal/auth/authorize` in auth. Validate the bearer token with the existing JWT verifier: fixed RS256, signature, required `exp`, `iss`, `aud` and `sub`, expiry and the configured issuer/audiences. Read roles only after verification and check the original method/path against INFRA-10.
+- [ ] The adapter returns 204 for an allowed request, 401 with `WWW-Authenticate: Bearer` for a missing/invalid token, and 403 for a valid token with the wrong role. This route validates the forwarded player/service JWT itself rather than requiring a second service credential.
+- [ ] Add an Nginx `internal` location for authorization subrequests. Forward `Authorization`, `X-Request-Id`, and gateway-supplied original URI/method headers; overwrite client-supplied metadata, omit the request body and clear its content length. Verify auth's TLS certificate using the local CA.
+- [ ] Enable the subrequest on protected API locations. Preserve the original bearer header on the eventual request to the backend; never accept an identity/role header as a substitute for the signed token.
+- [ ] Exempt only the policy's explicit public routes: POST register/token/logout, GET/HEAD images and gateway health, plus CORS preflight. Logout's own refresh-token check remains mandatory. Keep `/internal/*`, `/q/*` and the authorization location inaccessible from outside.
+- [ ] Preserve the 401/403 status and bearer challenge. Map adapter timeouts, TLS failures, connection failures and unexpected subrequest statuses to a JSON 503; never forward the protected request on these failures. Account for Nginx treating non-2xx/non-401/non-403 subrequest replies as errors.
+- [ ] Do not cache authorization replies. Document the operational tradeoff: the gateway now needs auth for protected requests, while direct service verification remains local.
+- [ ] Add TEST-5 checks with an upstream stub to prove that denied requests never reach a business service, as well as tests against the real stack.
+
+**Done when:** no token / invalid token / wrong role / valid token produce 401 / 401 / 403 / the normal API result through the gateway. Auth unavailable produces 503. Direct service calls enforce the same token/role rules, and spoofed original-method/path headers cannot bypass authorization.
+
+---
+
+## INFRA-10 — Single access policy · P2
+
+**Status:** planned after the Access Security review of 17/11/2026.
+
+**Depends on:** INFRA-7, AUTH-3
+
+**Description.** Replace independently maintained permission rules with one executable method/path/role table. Keep the existing `player` and `service` roles and the ownership checks; the lab's example Math/Text roles do not introduce new game roles.
+
+- [ ] Add canonical `backend/security/access-policy.json`, containing an explicit rule for every mapped business endpoint: HTTP method, anchored path pattern and allowed roles or a named credential/public exception. List methods explicitly and define deterministic matching; reject ambiguous rules.
+- [ ] Cover player APIs with `player`, internal business APIs with `service`, and the explicit token/register/image/logout/health exceptions described in the conventions. Give the gateway adapter its own bearer-validation rule so it does not recursively authorize itself.
+- [ ] Package the same canonical resource in every service through the parent build/Docker build context. Do not maintain a second JSON copy per service or a separate permission table for the gateway.
+- [ ] Write a reference policy reader/enforcer and copy it verbatim to the services under A9. Apply it after JWT authentication and before business-input validation; auth's gateway adapter uses the same matching and role rules. Audit existing `@RolesAllowed` annotations so they cannot contradict the policy or block credential-specific exceptions.
+- [ ] Fail startup for a missing/malformed policy, ambiguous rules or a mapped business endpoint without a rule. Keep unknown URLs as 404 and management routes private; do not turn an unmatched new business endpoint into an implicit public route.
+- [ ] Add consistency checks for the packaged resources and copied reader, plus role/method/path tests for every policy entry. Match the same canonical request path at the gateway adapter and backend so encoded paths, queries or spoofed headers cannot select a different rule.
+
+**Done when:** changing a permission requires one table edit, the adapter and direct services enforce it consistently, and CI rejects policy/resource drift or missing endpoint rules.
+
+---
+
 ## Implementation notes (06/11/2026)
 
 What changed with respect to the steps above while implementing INFRA-1…8. The code is the reference.

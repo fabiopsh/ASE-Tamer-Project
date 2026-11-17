@@ -6,6 +6,7 @@ This folder is the single reference for implementing the backend, the frontend, 
 - [`docs/design/area_giocatori_mostri.md`](../design/area_giocatori_mostri.md) — players and monsters data
 - [`docs/Monster_Tamer_Functional_Requirements.pdf`](../Monster_Tamer_Functional_Requirements.pdf) — official requirements
 - `docs/consegna/Monster_Tamers_Backlog.xlsx` — user stories
+- Access Security lab slides, 17/11/2026 — access-control follow-up tracked below (slides 23, 28–30 and 34)
 
 Where this plan and older documents disagree, **this plan wins** (see [Changes to the architecture](#changes-to-the-architecture)). The architecture document must be updated accordingly (task DOC-1).
 
@@ -14,7 +15,7 @@ Where this plan and older documents disagree, **this plan wins** (see [Changes t
 | File | Content | Issues |
 |---|---|---|
 | [01-conventions.md](01-conventions.md) | Repository layout, code structure, API/error/pagination format, security and resilience conventions | — |
-| [02-infrastructure.md](02-infrastructure.md) | Maven, Dockerfiles, secrets and certificates, Postgres, Nginx, compose | INFRA-1…8 |
+| [02-infrastructure.md](02-infrastructure.md) | Maven, Dockerfiles, secrets and certificates, Postgres, Nginx, compose, gateway authentication and access policy | INFRA-1…8 (P1), INFRA-9, INFRA-10 (P2) |
 | [03-auth.md](03-auth.md) | Accounts, OAuth2 token endpoint, JWT, service tokens | AUTH-1…8 |
 | [04-players.md](04-players.md) | Profile, starter pool, current run | PL-1 (+ US-04 in P2) |
 | [05-monsters.md](05-monsters.md) | Catalogue, images, collection, levels and XP | MO-1, MO-2 (+ US-13 in P2) |
@@ -22,8 +23,8 @@ Where this plan and older documents disagree, **this plan wins** (see [Changes t
 | [07-encounters.md](07-encounters.md) | Stage data, runs, battle engine, battle API, run reset | EN-1, EN-2, EN-3 (P1); EN-4…7 (P2) |
 | [08-history.md](08-history.md) | Encounter history, integrity | HI-1 (P1), HI-2 (P2) |
 | [09-frontend.md](09-frontend.md) | React UI | FE-1, FE-2 (P1), FE-3 (P2) |
-| [10-testing.md](10-testing.md) | Unit, component (Bruno), integration, e2e, Locust | TEST-1, TEST-2 (P1), TEST-3, TEST-4 (P2) |
-| [11-ci-security.md](11-ci-security.md) | GitHub Actions, Semgrep, Trivy, hardening | CI-1 (P1), CI-2, SEC-1 (P2) |
+| [10-testing.md](10-testing.md) | Unit, component (Bruno), integration, e2e, Locust, access-security regression and mutation checks | TEST-1, TEST-2 (P1), TEST-3…5 (P2) |
+| [11-ci-security.md](11-ci-security.md) | GitHub Actions, Semgrep, Trivy, access-security gate, dependency updates, hardening | CI-1 (P1), CI-2…4, SEC-1 (P2) |
 | [12-docs-delivery.md](12-docs-delivery.md) | Backlog, OpenAPI, report, delivery checklists | DOC-1, DOC-2 |
 
 ## Phases
@@ -31,9 +32,25 @@ Where this plan and older documents disagree, **this plan wins** (see [Changes t
 | Phase | Deadline | Scope |
 |---|---|---|
 | **P1 — Prototype** | 10/11/2026 (optional, feedback only) | All red user stories + green US-07, US-21, US-22. Internal HTTPS. All 8 stages. Simple abilities. CI build + test. Bruno collections for all 6 services |
-| **P2 — Final** | 15/12/2026 (mandatory) | Yellow US-05 (complete) and US-25. Refresh token and logout. Encryption at rest. Complex abilities. Robust reset saga and battle expiry sweep. Semgrep + Trivy. Locust. Report. Optional green stories (US-04, US-13) |
+| **P2 — Final** | 15/12/2026 (mandatory) | Yellow US-05 (complete) and US-25. Access Security follow-up: gateway authentication, shared access policy, 300 s access tokens, refresh rotation and server logout, API attack tests in CI, automatic dependency updates. Encryption at rest. Complex abilities. Robust reset saga and battle expiry sweep. Semgrep + Trivy. Locust. Report. Optional green stories (US-04, US-13) |
 
 Every task in the area files is tagged **P1** or **P2**.
+
+### Access Security follow-up (17/11/2026)
+
+These are **open P2 implementation tasks**. Existing P1 completion notes do not cover them.
+
+| Gap or requested behavior | Task | Acceptance condition |
+|---|---|---|
+| Validate tokens at the gateway as well as in each service | [INFRA-9](02-infrastructure.md#infra-9--gateway-authentication-and-authorization--p2) | The gateway rejects invalid tokens and wrong roles before forwarding; direct service calls remain protected |
+| One executable role/operation policy | [INFRA-10](02-infrastructure.md#infra-10--single-access-policy--p2) | One committed policy table supplies both the gateway authorization adapter and the service checks |
+| Short access tokens, refresh tokens and server logout | [AUTH-7](03-auth.md#auth-7--refresh-tokens-and-logout--p2), [FE-3](09-frontend.md#fe-3--final-polish--p2) | Access tokens last 300 s; refresh rotation, reuse detection and family revocation work through the API and UI |
+| Attack tests on real endpoints, including proof that disabled verification is detected | [TEST-5](10-testing.md#test-5--access-security-regression-and-mutation-checks--p2), [CI-3](11-ci-security.md#ci-3--access-security-pipeline-gate--p2) | Positive, 401 and 403 cases run against the gateway and services; controlled verification mutations are detected |
+| Automatic dependency updates, including auth | [CI-4](11-ci-security.md#ci-4--automated-dependency-updates--p2) | Scheduled dependency-update PRs are configured for the repository's package ecosystems and images |
+
+Implement INFRA-10 first, then INFRA-9 and AUTH-7, followed by FE-3, TEST-5 and CI-3. CI-4 is independent after CI-1/CI-2. Update OpenAPI, Bruno JSON exports, acceptance-criteria references and the final report when implementing these tasks.
+
+Keep the project's OAuth2 form-urlencoded endpoints and `400 invalid_grant` for wrong login credentials. The lab's endpoint names and example roles are adapted to this project; OpenID Connect, an external identity server and the AI-review bonus are outside this follow-up.
 
 ### P1 cut line
 
@@ -45,7 +62,7 @@ P1 is large for four days. If time runs out, finish in this order and move the r
 
 ## Decision log
 
-Decisions taken on 06/11/2026 while preparing this plan. They complement decisions A1–A9 and R1–R20 of the architecture document.
+Initial decisions were taken on 06/11/2026 while preparing this plan; P-22…24 were added after the Access Security review on 17/11/2026. They complement decisions A1–A9 and R1–R20 of the architecture document.
 
 | # | Topic | Decision |
 |---|---|---|
@@ -70,6 +87,9 @@ Decisions taken on 06/11/2026 while preparing this plan. They complement decisio
 | P-19 | Default display name | `Tamer-<first 6 hex of player_id>`; the username is never copied into `players` (keeps P-14 meaningful) |
 | P-20 | Battle robustness in P1 | Lazy recovery: a battle missing from memory is closed as `interrupted`, an idle one as `expired`, when the player next touches the run. Scheduled sweep in P2 |
 | P-21 | Bosses | Stage bosses are excluded from wild encounters, so each boss is obtainable only by beating it |
+| P-22 | Access Security alignment (17/11/2026) | In P2, player and service access tokens last **300 s**. Player sessions use rotating opaque refresh tokens with a **7-day absolute family lifetime** and server-side logout (AUTH-7) |
+| P-23 | Gateway authorization (P2) | Nginx uses a private HTTPS `auth_request` adapter in `auth`; protected requests are authorized before forwarding. Each backend service also verifies JWTs locally. If the adapter is unavailable, the gateway fails closed with 503 |
+| P-24 | Access policy (P2) | One canonical `backend/security/access-policy.json` table is packaged into the services. The adapter and service checks read it; the existing no-shared-Maven-module convention remains in force (INFRA-10) |
 
 ## Changes to the architecture
 

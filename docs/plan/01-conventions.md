@@ -17,6 +17,7 @@ backend/
     src/test/java/...
   monsters/seed/                   catalogue seed (generated, do not edit by hand)
   encounters/seed/                 stage templates seed
+  security/access-policy.json      canonical method/path/role policy (P2, INFRA-10; not a Maven module)
 gateway/
   Dockerfile
   templates/default.conf.template  nginx config with env substitution
@@ -125,13 +126,20 @@ Implementation: an `ApiException(status, code, message)` thrown by services, plu
 | Topic | Rule |
 |---|---|
 | Roles | JWT `groups` claim: `player` for users, `service` for services |
-| Public endpoints | `@RolesAllowed("player")`, except `/api/auth/token`, `/api/auth/register` and images (`@PermitAll`) |
-| Internal endpoints | `@RolesAllowed("service")` |
+| Public endpoints | Player APIs require `player`. Token/register and public images are exceptions; P2 logout authenticates with the submitted refresh token (AUTH-7) |
+| Internal endpoints | Require `service`, except the client-credentials token endpoint and the P2 gateway authorization adapter, which validate their own credentials |
 | JWT verification | Local, RS256, public key from `/run/secrets/jwt-public.pem`; issuer `tamer-auth`; audiences `tamer-api` (player) and `tamer-internal` (service) |
+| P2 gateway check | Before proxying protected APIs, Nginx delegates JWT/role validation to the private auth adapter (INFRA-9); services still verify independently |
+| P2 executable policy | `backend/security/access-policy.json` is the single method/path/role source for the adapter and services (INFRA-10); authenticate before checking roles and before business-input validation |
+| P2 token lifetime | Access tokens: 300 s. Refresh tokens: opaque, rotated on use, SHA-256 hashes at rest, 7-day absolute family expiry (AUTH-7) |
 | Input | Bean Validation on every DTO field (size, pattern, range); path/query params validated too; only parameterised queries (Panache) |
 | Secrets | Read from files mounted under `/run/secrets` (see INFRA-4); never in `application.properties`, env files or logs |
 | Logging | Never log passwords, tokens, secrets or full request bodies of auth endpoints |
 | Dev/test profiles | `%dev` and `%test` disable TLS and use Dev Services; `%prod` (containers) enforces TLS |
+
+The P1 `@RolesAllowed` checks remain the baseline until INFRA-10 is implemented. In P2, the policy reader follows the same reference-and-verbatim-copy convention as the other security helpers; its rule data comes only from the canonical JSON resource. Missing/invalid JWTs return 401 with `WWW-Authenticate: Bearer`; valid JWTs without an allowed role return 403. Ownership checks remain in the services and return 404 (P-11).
+
+The gateway authorization adapter is `GET /internal/auth/authorize` (INFRA-9). It accepts the caller's bearer token and the original method/path supplied by Nginx, then applies the shared policy. It is not routed to external clients. Token issuance and refresh do not require an existing access token; logout requires possession of the refresh token and remains usable after access-token expiry.
 
 ## Inter-service calls and resilience
 

@@ -61,8 +61,9 @@ Navigation guard: after login, `GET /api/players/me`; if `starters_chosen` is fa
   - never use `dangerouslySetInnerHTML`; all API text is rendered as React text;
   - Content-Security-Policy injected as `<meta>` in the production build (`transformIndexHtml` with `apply: 'build'`; the dev server needs inline scripts for hot reload): `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https://localhost:8443; connect-src https://localhost:8443; frame-ancestors 'none'; base-uri 'self'`;
   - no third-party scripts or CDNs.
-- On `401`: clear the session and go to `/login` (P1). P2: try once `grant_type=refresh_token`, then fall back to login.
-- Logout: P1 clears storage; P2 also calls `POST /api/auth/logout`.
+- On `401`: clear the session and go to `/login` (P1). P2: serialize `grant_type=refresh_token` for the stored session, save the rotated pair, then retry the rejected API request once; a failed refresh ends the session (FE-3, AUTH-7). A 403 does not trigger refresh.
+- P2 storage must preserve a refresh credential after access-token expiry so reload can restore the session. Never send a locally expired access token as if it were fresh, and never log either credential.
+- Logout: P1 clears storage; P2 sends the current refresh credential to `POST /api/auth/logout`, which works after access-token expiry. Clear local state even on failure, but do not report successful server revocation when the request failed.
 - Self-signed certificate: the README tells the user to open `https://localhost:8443/health` once and accept it (or trust the exported CA).
 - CORS origins allowed by the gateway: `http://localhost:8080` (frontend container, `docker-compose.frontend.yml`), `http://localhost:5173` (dev) and `http://localhost:4173` (`npm run preview`). Configurable with `CORS_ALLOWED_ORIGINS` on the gateway.
 
@@ -105,7 +106,21 @@ Navigation guard: after login, `GET /api/players/me`; if `starters_chosen` is fa
 
 ## FE-3 — Final polish · P2
 
-- [ ] Refresh token flow and server logout.
+**Depends on:** FE-1, FE-2, AUTH-7; coordinate access exceptions with INFRA-9/10.
+
+### Session refresh and server logout
+
+- [ ] Store the access expiry and rotated refresh token atomically using the existing session storage abstraction. Update `readSession()` so an expired access token does not delete a still-usable refresh credential; attempt session restoration before navigation guards redirect to login.
+- [ ] On access expiry or a protected request's 401, perform one refresh grant through the gateway. Save both new tokens before retrying the rejected request once; do not loop on repeated 401, refresh the login/refresh/logout requests themselves, or refresh on 403.
+- [ ] Coordinate refresh calls for the same stored family, including multiple API requests and browser tabs, so one consumed refresh token is not submitted twice. Re-read the latest stored pair after acquiring the session lock. Do not automatically retry a refresh after an ambiguous network failure.
+- [ ] For an invalid/expired/revoked refresh token, clear session and player state and return to login with the existing session-expired message. A late refresh response must not restore a session after logout; serialize logout with in-flight refresh and invalidate stale responses.
+- [ ] On logout, send the current refresh token as form data to `/api/auth/logout`, await the response, and clear local credentials/player state in all cases. If revocation fails, make that outcome visible; never equate local deletion with confirmed server revocation.
+- [ ] Verify login, automatic refresh with a 300 s access token, reload after access expiry, simultaneous requests/tabs, replay rejection, logout after expiry, offline logout and stale refresh responses. Add focused client tests for refresh serialization and logout races; exercise the API contract in TEST-5.
+
+**Session work is done when:** the UI stays logged in through successful rotation, rejects a revoked family, and cannot be logged back in by an old in-flight response after logout. Other login families remain usable.
+
+### Other final polish
+
 - [ ] Profile page for US-04 (if implemented).
 - [ ] Ability effects visible in the round log (`ability` events from EN-4).
 - [ ] History integrity badge using `GET /api/history/verify`.

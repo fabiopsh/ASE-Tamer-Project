@@ -14,9 +14,11 @@ What the requirements ask (§5):
 |---|---|---|---|---|
 | Unit | JUnit 5 | `backend/<svc>/src/test` (engine, formulas, validators) | yes | P1 |
 | Service (in-process) | `@QuarkusTest` + RestAssured, Dev Services Postgres, mocked REST clients | `backend/<svc>/src/test` | yes | P1 |
-| Component | Bruno against one service container (test override) | `docs/tests/bruno/services/<svc>/` | P2 (optional) | P1 |
-| Integration | Same Bruno public requests against the gateway | `docs/tests/bruno/services/*/00-setup` + `public` | P2 (optional) | P1 |
-| End-to-end | Bruno core-loop flow through the gateway | `docs/tests/bruno/e2e/` | P2 (optional) | P1 |
+| Component | Bruno against one service container (test override) | `docs/tests/bruno/services/<svc>/` | yes | P1 |
+| Integration | Same Bruno public requests against the gateway | `docs/tests/bruno/services/*/00-setup` + `public` | yes | P1 |
+| End-to-end | Bruno core-loop flow through the gateway | `docs/tests/bruno/e2e/` | yes | P1 |
+| Access security | Bruno on real services/gateway, gateway isolation and policy checks | TEST-5; `docs/tests/bruno/access/` | mandatory (CI-3) | P2 |
+| Verification mutation | Controlled disabled-verification variants in an isolated test stack | TEST-5, CI-3 | dedicated job on security-check changes or manual dispatch | P2 |
 | Performance | Locust against the gateway | `docs/locust/` | no | P2 |
 
 ## Running services for component tests (P-13)
@@ -69,6 +71,7 @@ docs/tests/bruno/
     monsters/…  teams/…  encounters/…  history/…
   e2e/
     01-register.bru … 14-collection-after-battle.bru, 15-17 negative block
+  access/                     P2: signed attack fixtures, direct-service/gateway matrix, refresh/logout
 docs/tests/json/               exported collections (deliverable, Postman v2.1)
 ```
 
@@ -86,7 +89,7 @@ Rules:
 
 | Service | Endpoints | Invalid cases to include |
 |---|---|---|
-| auth | register, token (password), internal token | duplicate username, short password, wrong password (same error as unknown user), unsupported grant, wrong client secret |
+| auth | register, token (password/refresh), logout, internal token, private gateway adapter | duplicate username, short password, wrong password (same error as unknown user), unsupported grant, wrong client secret; P2: refresh expiry/reuse, logout after access expiry, adapter 401/403 |
 | players | me, starters GET/POST, internal create, internal new-run | no token, 2 starters, starter outside pool, second choice, player token on internal |
 | monsters | monsters list/detail, abilities, elements, image, collection list/detail, every internal endpoint | bad filter, unknown id, foreign `owned_id`, level 51, reward retried (same id twice → one instance) |
 | teams | list, create, get, put, delete, validate, internal get, internal reset | 4 members, duplicate member, foreign monster, foreign team id, 6th team |
@@ -135,3 +138,48 @@ Plus a negative block: 15. `/internal/players` through the gateway → 404; 16. 
 
 - [ ] Fill the test references in `acceptance_criteria.md` for every AC.
 - [ ] Optional: `quarkus-jacoco` coverage report per service; target ≥ 70% lines on `service/` and `engine/` packages.
+
+## TEST-5 — Access-security regression and mutation checks · P2
+
+**Status:** planned after the Access Security review of 17/11/2026. Existing auth `/probe` tests and the malformed JWT in the e2e collection remain useful, but do not prove that every deployed service verifies signatures.
+
+**Depends on:** TEST-1, TEST-2, AUTH-7, FE-3, INFRA-9, INFRA-10. Executed by CI-3.
+
+### Real endpoint matrix
+
+- [ ] Add `docs/tests/bruno/access/` and explicit `test:access:component` / `test:access:integration` commands. Reuse the same negative requests against direct service URLs and the gateway where the route is public. Test the auth authorization adapter directly and through the gateway's protected routes.
+- [ ] Register unique test players before login, obtain real player/service credentials, and reuse tokens for ordinary requests. Keep all test users and signed attack fixtures local to the isolated test stack; do not add a production HTTP endpoint for signing arbitrary tokens or expose the private key to the host.
+- [ ] Generate fixtures with the test stack's signing key and otherwise valid claims. For a signature test, change only the signature or payload of a valid token; for issuer/audience/expiry tests, sign the changed claims correctly. A garbage token missing required claims cannot be the only forgery test.
+- [ ] Cover at least one real protected endpoint in **each** business service (`players`, `monsters`, `teams`, `encounters`, `history`), auth's adapter and all policy rules/methods. Use existing players/resources so a valid baseline reaches the intended operation rather than failing for missing data.
+
+| Case | Expected outcome |
+|---|---|
+| Valid player token and allowed operation | Normal API success |
+| No bearer token, malformed token, wrong signature, altered payload or token signed with another key | 401 and `WWW-Authenticate: Bearer` |
+| `alg:none` or HS256 using the public key as a secret | 401 |
+| Correctly signed token with expired `exp`, wrong `iss`/`aud`, or missing required `exp`/`iss`/`aud`/`sub` | 401; expiry fixture exceeds the configured clock skew |
+| Valid service token on a player operation / player token on an internal business operation | 403 directly; internal routes remain 404 through the gateway |
+| Valid service token on an allowed internal operation | Normal API success |
+| Public token/register/image/health routes and credential-authenticated logout | Reach their own handler without an access JWT; logout still validates its refresh credential |
+| Auth adapter unavailable due to connection, TLS or internal failure | Gateway 503, no protected upstream request; direct read-only service verification remains local |
+
+- [ ] Add a gateway isolation test with a controlled business-upstream stub and the real auth adapter. Assert that invalid/missing tokens and wrong roles produce no business-upstream call; allowed requests retain the bearer header. Test spoofed original-path/method headers and inaccessible internal/management/auth-check routes.
+- [ ] Make policy-resource equality, copied-reader consistency, rule coverage and unmapped-endpoint checks part of the normal test gate (INFRA-10).
+- [ ] Keep ephemeral fixture tokens in ignored test outputs, omit them from logs/artifacts, and export the new Bruno collections to JSON for delivery.
+
+### Refresh and logout flows
+
+- [ ] Test password login returning `expires_in=300` plus a refresh token; service grants must not receive refresh credentials. Verify hashed refresh storage in auth's service tests.
+- [ ] Test successful refresh after access expiry, changed access/refresh tokens, preserved absolute family expiry, expiry/unknown-token errors, and reuse of a consumed token revoking the whole family. Confirm that an independent login family is unaffected.
+- [ ] Test logout through the gateway without an access token and after access expiry, repeat/unknown-token 204 behavior, missing-parameter 400, database-failure 503, and inability to refresh any token from the revoked family.
+- [ ] Test concurrent refresh and refresh/logout transactions; after family revocation no descendant can refresh. Verify that the pre-logout access JWT can still work until expiry and is then rejected, within the configured clock skew.
+- [ ] Add FE-3 client tests for session restoration, one refresh per family, a single API retry, 403 behavior, failed revocation feedback and logout winning over stale refresh responses. Update acceptance-criteria test references and token examples.
+
+### Proof that the tests detect disabled verification
+
+- [ ] Establish a green baseline, then disable signature verification in **one verifier at a time** in a disposable test build. Run the direct-container negative matrix for each backend verifier, so the gateway cannot mask a service regression. Test the auth adapter separately.
+- [ ] Separately bypass the gateway's authorization subrequest in a disposable variant and run the upstream-stub test; backend rejection alone cannot demonstrate that the gateway performed its check.
+- [ ] Require the corresponding assertion to fail for the intended 401/403 or upstream-forwarding reason. Build errors, unavailable containers and unrelated failures do not count as detecting the mutation. Restore/rebuild the baseline between variants and keep bypasses out of committed application configuration.
+- [ ] Record baseline and mutation results through CI-3 and reference them in the report. Migrate the JWT checks currently only in `scripts/security-check.sh` into this repeatable suite; the broader SEC-1 checklist remains a separate final-stack check.
+
+**Done when:** the real gateway and direct services pass the positive/401/403 matrix, refresh/logout flows pass, and a disabled gateway or service check is demonstrably caught by the relevant test.
