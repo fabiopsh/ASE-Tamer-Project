@@ -11,7 +11,7 @@
 | Copy of the GitHub Actions workflow(s) | `docs/ci/ci.yml` | CI-1 | P1 |
 | Completed backlog with acceptance criteria and dependencies | `docs/backlog/` | DOC-1 | P1 (completed P2) |
 
-Plus the root `README.md` with **Get Started** (install, build, run backend, run main tests, run frontend) — INFRA-8.
+Plus `THREAT_MODEL.md` in the repository root (SEC-2, P2, asked by the Security Assessment lab) and the root `README.md` with **Get Started** (install, build, run backend, run main tests, run frontend) — INFRA-8.
 
 ---
 
@@ -73,6 +73,7 @@ Plus the root `README.md` with **Get Started** (install, build, run backend, run
 
 - [ ] Client-side assumptions (list in [09-frontend.md](09-frontend.md#client-side-assumptions-copy-into-the-final-report)).
 - [ ] Security: §6 compliance table and self-attack results (SEC-1), Semgrep/Trivy outcome, accepted exceptions.
+- [ ] Threat model summary (SEC-2): DFD, trust boundaries, STRIDE counts by status, rated gaps with decisions, the audit log fix and its residual risk (SEC-3, SEC-4). Link the full `THREAT_MODEL.md`.
 - [ ] Testing: strategy, Bruno coverage matrix, e2e, Locust results and analysis, AC traceability.
 - [ ] Known limitations (in-memory battles and single `encounters` instance, R19; others found during development).
 - [ ] Optional features implemented (green stories) and how they are documented.

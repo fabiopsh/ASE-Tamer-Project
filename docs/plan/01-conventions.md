@@ -135,6 +135,7 @@ Implementation: an `ApiException(status, code, message)` thrown by services, plu
 | Input | Bean Validation on every DTO field (size, pattern, range); path/query params validated too; only parameterised queries (Panache) |
 | Secrets | Read from files mounted under `/run/secrets` (see INFRA-4); never in `application.properties`, env files or logs |
 | Logging | Never log passwords, tokens, secrets or full request bodies of auth endpoints |
+| P2 audit log | One JSON line per event on the `audit` category, only at the gateway and in auth; values serialized with Jackson (or Nginx `escape=json`), never string formatting (P-26, SEC-3, SEC-4) |
 | Dev/test profiles | `%dev` and `%test` disable TLS and use Dev Services; `%prod` (containers) enforces TLS |
 
 The P1 `@RolesAllowed` checks remain the baseline until INFRA-10 is implemented. In P2, the policy reader follows the same reference-and-verbatim-copy convention as the other security helpers; its rule data comes only from the canonical JSON resource. Missing/invalid JWTs return 401 with `WWW-Authenticate: Bearer`; valid JWTs without an allowed role return 403. Ownership checks remain in the services and return 404 (P-11).

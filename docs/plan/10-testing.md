@@ -19,6 +19,7 @@ What the requirements ask (§5):
 | End-to-end | Bruno core-loop flow through the gateway | `docs/tests/bruno/e2e/` | yes | P1 |
 | Access security | Bruno on real services/gateway, gateway isolation and policy checks | TEST-5; `docs/tests/bruno/access/` | mandatory (CI-3) | P2 |
 | Verification mutation | Controlled disabled-verification variants in an isolated test stack | TEST-5, CI-3 | dedicated job on security-check changes or manual dispatch | P2 |
+| Audit log | JUnit with an in-memory handler on the `audit` category (auth); `scripts/check-audit-log.sh` on the gateway and auth container logs | SEC-3, SEC-4 | yes (backend job, `compose-smoke`) | P2 |
 | Performance | Locust against the gateway | `docs/locust/` | no | P2 |
 
 ## Running services for component tests (P-13)

@@ -90,6 +90,7 @@ Map every security requirement to its implementation (this table goes into the r
 | Access-security regression proof | Real API positive/401/403 matrix, refresh/logout flows, controlled disabled-verification checks | TEST-5, CI-3 |
 | Static and dependency analysis and updates | Semgrep + Trivy in CI, scheduled dependency-update PRs | CI-2, CI-4 |
 | Images without critical/high vulnerabilities | Trivy image scan gate | CI-2 |
+| Threat model and evidence (Security Assessment lab) | `THREAT_MODEL.md` with STRIDE table and rated gaps; JSON audit log at the gateway and in auth | SEC-2, SEC-3, SEC-4 |
 
 Self-attack checklist (run against the full stack before 15/12, record results in the report):
 
@@ -101,7 +102,7 @@ Self-attack checklist (run against the full stack before 15/12, record results i
 - [ ] `/internal/*` and `/q/*` through the gateway → 404.
 - [ ] Forged results: send `outcome`/`hp` fields to battle actions → 400 (unknown fields).
 - [ ] Replay: repeat a reward/xp internal call → no duplicates (component test with `tests` client).
-- [ ] Brute force: many token requests → 429, then backoff.
+- [ ] Brute force: many token requests → 429, then backoff; the attempts appear as `login`/`denied` audit lines (SEC-3).
 - [ ] Oversized bodies → 413.
 - [ ] XSS: script tags in `display_name` / team name → rendered as text in the UI.
 - [ ] Concurrency: two `actions` requests at once, two starter choices at once → consistent state.

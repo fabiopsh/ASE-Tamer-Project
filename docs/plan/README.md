@@ -7,6 +7,7 @@ This folder is the single reference for implementing the backend, the frontend, 
 - [`docs/Monster_Tamer_Functional_Requirements.pdf`](../Monster_Tamer_Functional_Requirements.pdf) — official requirements
 - `docs/consegna/Monster_Tamers_Backlog.xlsx` — user stories
 - Access Security lab slides, 17/11/2026 — access-control follow-up tracked below (slides 23, 28–30 and 34)
+- Security Assessment lab slides, 18/11/2026 — threat model and audit log follow-up tracked below
 
 Where this plan and older documents disagree, **this plan wins** (see [Changes to the architecture](#changes-to-the-architecture)). The architecture document must be updated accordingly (task DOC-1).
 
@@ -26,13 +27,14 @@ Where this plan and older documents disagree, **this plan wins** (see [Changes t
 | [10-testing.md](10-testing.md) | Unit, component (Bruno), integration, e2e, Locust, access-security regression and mutation checks | TEST-1, TEST-2 (P1), TEST-3…5 (P2) |
 | [11-ci-security.md](11-ci-security.md) | GitHub Actions, Semgrep, Trivy, access-security gate, dependency updates, hardening | CI-1 (P1), CI-2…4, SEC-1 (P2) |
 | [12-docs-delivery.md](12-docs-delivery.md) | Backlog, OpenAPI, report, delivery checklists | DOC-1, DOC-2 |
+| [13-threat-model.md](13-threat-model.md) | Threat model (DFD, assets, boundaries, STRIDE, ratings) and audit log | SEC-2, SEC-3, SEC-4 (P2) |
 
 ## Phases
 
 | Phase | Deadline | Scope |
 |---|---|---|
 | **P1 — Prototype** | 10/11/2026 (optional, feedback only) | All red user stories + green US-07, US-21, US-22. Internal HTTPS. All 8 stages. Simple abilities. CI build + test. Bruno collections for all 6 services |
-| **P2 — Final** | 15/12/2026 (mandatory) | Yellow US-05 (complete) and US-25. Access Security follow-up: gateway authentication, shared access policy, 300 s access tokens, refresh rotation and server logout, API attack tests in CI, automatic dependency updates. Encryption at rest. Complex abilities. Robust reset saga and battle expiry sweep. Semgrep + Trivy. Locust. Report. Optional green stories (US-04, US-13) |
+| **P2 — Final** | 15/12/2026 (mandatory) | Yellow US-05 (complete) and US-25. Access Security follow-up: gateway authentication, shared access policy, 300 s access tokens, refresh rotation and server logout, API attack tests in CI, automatic dependency updates. Security Assessment follow-up: threat model and audit log. Encryption at rest. Complex abilities. Robust reset saga and battle expiry sweep. Semgrep + Trivy. Locust. Report. Optional green stories (US-04, US-13) |
 
 Every task in the area files is tagged **P1** or **P2**.
 
@@ -52,6 +54,19 @@ Implement INFRA-10 first, then INFRA-9 and AUTH-7, followed by FE-3, TEST-5 and 
 
 Keep the project's OAuth2 form-urlencoded endpoints and `400 invalid_grant` for wrong login credentials. The lab's endpoint names and example roles are adapted to this project; OpenID Connect, an external identity server and the AI-review bonus are outside this follow-up.
 
+### Security Assessment follow-up (18/11/2026)
+
+**Open P2 tasks.** None of them exists in the repository yet: there is no threat model, and the only login log line is a free-text `"Failed login"` without user.
+
+| Gap or requested behavior | Task | Acceptance condition |
+|---|---|---|
+| Model of the system: Mermaid DFD with numbered arrows, trust boundaries as `subgraph`, assets and attack surfaces with IDs | [SEC-2](13-threat-model.md#sec-2--threat-model-document--p2) | `THREAT_MODEL.md` in the repository root; a reader who never saw the system can tell where data goes and where trust changes |
+| STRIDE threats, each with a control and a real test, or GAP | [SEC-2](13-threat-model.md#sec-2--threat-model-document--p2) | ≥ 10 threats, all six letters, no empty cell and no "n/a" |
+| Rated gaps with a written decision | [SEC-2](13-threat-model.md#sec-2--threat-model-document--p2) | Every Gap/Partial row has likelihood, impact, a one-line reason and Mitigate/Accept/Transfer/Avoid |
+| Close the top gap (repudiation) with an audit log and its test | [SEC-3](13-threat-model.md#sec-3--audit-log-in-auth--p2), [SEC-4](13-threat-model.md#sec-4--request-audit-at-the-gateway--p2) | One JSON line per login and per gateway request (who, what, when, outcome), never a secret; tests green, red when the log call is removed; residual risk written |
+
+Implement SEC-2 first (it selects the gap), then SEC-3. SEC-4 follows INFRA-9, because the gateway may log only a user taken from a verified token. Update `THREAT_MODEL.md` whenever INFRA-9, INFRA-10, AUTH-7, AUTH-8, TEST-5 or CI-3 change a control. The lab's Python `audit.py` and pytest `caplog` are adapted to Java (JBoss Logging + an in-memory JUL handler in tests) and to an Nginx `log_format`.
+
 ### P1 cut line
 
 P1 is large for four days. If time runs out, finish in this order and move the rest to the days after 10/11 (the prototype is not graded):
@@ -62,7 +77,7 @@ P1 is large for four days. If time runs out, finish in this order and move the r
 
 ## Decision log
 
-Initial decisions were taken on 06/11/2026 while preparing this plan; P-22…24 were added after the Access Security review on 17/11/2026. They complement decisions A1–A9 and R1–R20 of the architecture document.
+Initial decisions were taken on 06/11/2026 while preparing this plan; P-22…24 were added after the Access Security review on 17/11/2026, P-25…28 after the Security Assessment lab on 18/11/2026. They complement decisions A1–A9 and R1–R20 of the architecture document.
 
 | # | Topic | Decision |
 |---|---|---|
@@ -90,6 +105,10 @@ Initial decisions were taken on 06/11/2026 while preparing this plan; P-22…24 
 | P-22 | Access Security alignment (17/11/2026) | In P2, player and service access tokens last **300 s**. Player sessions use rotating opaque refresh tokens with a **7-day absolute family lifetime** and server-side logout (AUTH-7) |
 | P-23 | Gateway authorization (P2) | Nginx uses a private HTTPS `auth_request` adapter in `auth`; protected requests are authorized before forwarding. Each backend service also verifies JWTs locally. If the adapter is unavailable, the gateway fails closed with 503 |
 | P-24 | Access policy (P2) | One canonical `backend/security/access-policy.json` table is packaged into the services. The adapter and service checks read it; the existing no-shared-Maven-module convention remains in force (INFRA-10) |
+| P-25 | Threat model (P2) | `THREAT_MODEL.md` in the repository root (next to the code, as the lab asks), linked from the README and `docs/security/`. It models the system as it is, and every P2 security task that changes a control updates it (SEC-2) |
+| P-26 | Audit log (P2) | One JSON line per event (`ts` UTC, `event`, `user`, `outcome` = success/denied/failure) on the `audit` log category. Written only at the entry points: the gateway (every request) and auth (login, service token, register, refresh/logout). Business services behind the gateway do not write audit lines. Never a password, token, secret or request body (SEC-3, SEC-4) |
+| P-27 | User in a denied login (P2) | The username's HMAC blind index (same key and normalizer as AUTH-8), `?` if the username is malformed; `player_id` on success. Keeps P-14 meaningful: no plain username in the logs, but failed attempts on one account can still be counted |
+| P-28 | User at the gateway (P2) | Taken only from the verified `sub` returned by the INFRA-9 adapter; Nginx never decodes an unverified JWT for logging. Hence SEC-4 depends on INFRA-9 |
 
 ## Changes to the architecture
 
