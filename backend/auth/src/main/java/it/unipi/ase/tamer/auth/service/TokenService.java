@@ -2,20 +2,27 @@ package it.unipi.ase.tamer.auth.service;
 
 import io.quarkus.narayana.jta.QuarkusTransaction;
 import it.unipi.ase.tamer.auth.api.dto.TokenResponse;
+import it.unipi.ase.tamer.auth.audit.AuditLog;
+import it.unipi.ase.tamer.auth.audit.AuditLog.Outcome;
+import it.unipi.ase.tamer.auth.audit.UsernameBlindIndex;
 import it.unipi.ase.tamer.auth.domain.Account;
 import it.unipi.ase.tamer.auth.error.OAuthException;
 import it.unipi.ase.tamer.auth.security.ServiceClientRegistry;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.time.Instant;
+import java.util.Map;
 import java.util.Optional;
-import org.jboss.logging.Logger;
 
-/** OAuth2 grants: {@code password} for players (US-02), {@code client_credentials} for services. */
+/**
+ * OAuth2 grants: {@code password} for players (US-02), {@code client_credentials} for services.
+ * Every credential check writes one audit line (SEC-3).
+ */
 @ApplicationScoped
 public class TokenService {
 
-    private static final Logger LOG = Logger.getLogger(TokenService.class);
+    static final String LOGIN = "login";
+    static final String SERVICE_TOKEN = "service_token";
 
     @Inject
     PasswordHasher hasher;
@@ -26,6 +33,9 @@ public class TokenService {
     @Inject
     ServiceClientRegistry clients;
 
+    @Inject
+    UsernameBlindIndex blindIndex;
+
     public TokenResponse passwordGrant(String username, String password) {
         if (isBlank(username) || password == null || password.isEmpty()) {
             throw OAuthException.invalidRequest("username and password are required.");
@@ -35,7 +45,7 @@ public class TokenService {
                 ? hasher.matches(password, account.get().passwordHash)
                 : hasher.burn();
         if (!valid) {
-            LOG.info("Failed login");
+            AuditLog.audit(LOGIN, Outcome.DENIED, blindIndex.of(username), Map.of("reason", "invalid_grant"));
             throw OAuthException.invalidGrant();
         }
 
@@ -44,6 +54,7 @@ public class TokenService {
                 Account.update("lastLogin = ?1 where playerId = ?2", Instant.now(), found.playerId));
 
         IssuedToken token = issuer.playerToken(found.playerId, found.username);
+        AuditLog.audit(LOGIN, Outcome.SUCCESS, found.playerId.toString());
         return TokenResponse.bearer(token.value(), token.expiresIn(), token.scope());
     }
 
@@ -52,10 +63,11 @@ public class TokenService {
             throw OAuthException.invalidRequest("client_id and client_secret are required.");
         }
         if (!clients.authenticate(clientId, clientSecret)) {
-            LOG.warnf("Failed client authentication for client_id=%s", sanitize(clientId));
+            AuditLog.audit(SERVICE_TOKEN, Outcome.DENIED, sanitize(clientId), Map.of("reason", "invalid_client"));
             throw OAuthException.invalidClient();
         }
         IssuedToken token = issuer.serviceToken(clientId);
+        AuditLog.audit(SERVICE_TOKEN, Outcome.SUCCESS, sanitize(clientId));
         return TokenResponse.bearer(token.value(), token.expiresIn(), token.scope());
     }
 

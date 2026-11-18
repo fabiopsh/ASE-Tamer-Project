@@ -3,6 +3,9 @@ package it.unipi.ase.tamer.auth.service;
 import io.quarkus.narayana.jta.QuarkusTransaction;
 import it.unipi.ase.tamer.auth.api.dto.RegisterRequest;
 import it.unipi.ase.tamer.auth.api.dto.RegisterResponse;
+import it.unipi.ase.tamer.auth.audit.AuditLog;
+import it.unipi.ase.tamer.auth.audit.AuditLog.Outcome;
+import it.unipi.ase.tamer.auth.audit.UsernameBlindIndex;
 import it.unipi.ase.tamer.auth.client.CreatePlayerRequest;
 import it.unipi.ase.tamer.auth.client.PlayersClient;
 import it.unipi.ase.tamer.auth.domain.Account;
@@ -14,10 +17,10 @@ import jakarta.inject.Inject;
 import jakarta.persistence.PersistenceException;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.hibernate.exception.ConstraintViolationException;
-import org.jboss.logging.Logger;
 
 /**
  * US-01. The account insert and the creation of the player profile happen in one local
@@ -29,7 +32,7 @@ import org.jboss.logging.Logger;
 public class RegistrationService {
 
     public static final String USERNAME_TAKEN = "USERNAME_TAKEN";
-    private static final Logger LOG = Logger.getLogger(RegistrationService.class);
+    static final String REGISTER = "register";
 
     @Inject
     PasswordHasher hasher;
@@ -37,6 +40,9 @@ public class RegistrationService {
     @Inject
     @RestClient
     PlayersClient players;
+
+    @Inject
+    UsernameBlindIndex blindIndex;
 
     public RegisterResponse register(RegisterRequest request) {
         String username = UsernameNormalizer.normalize(request.username());
@@ -46,33 +52,40 @@ public class RegistrationService {
         String hash = hasher.hash(request.password());
         UUID playerId = UUID.randomUUID();
 
-        QuarkusTransaction.requiringNew().run(() -> {
-            if (Account.findByUsername(username).isPresent()) {
-                throw usernameTaken();
-            }
-            Account account = new Account();
-            account.playerId = playerId;
-            account.username = username;
-            account.passwordHash = hash;
-            account.createdAt = Instant.now();
-            try {
-                account.persistAndFlush();
-            } catch (ConstraintViolationException e) {
-                throw usernameTaken(); // concurrent registration of the same username
-            } catch (PersistenceException e) {
-                if (e.getCause() instanceof ConstraintViolationException) {
+        try {
+            QuarkusTransaction.requiringNew().run(() -> {
+                if (Account.findByUsername(username).isPresent()) {
                     throw usernameTaken();
                 }
-                throw e;
-            }
-            try {
-                players.create(new CreatePlayerRequest(playerId));
-            } catch (RuntimeException e) {
-                throw ApiException.dependencyUnavailable(e);
-            }
-        });
+                Account account = new Account();
+                account.playerId = playerId;
+                account.username = username;
+                account.passwordHash = hash;
+                account.createdAt = Instant.now();
+                try {
+                    account.persistAndFlush();
+                } catch (ConstraintViolationException e) {
+                    throw usernameTaken(); // concurrent registration of the same username
+                } catch (PersistenceException e) {
+                    if (e.getCause() instanceof ConstraintViolationException) {
+                        throw usernameTaken();
+                    }
+                    throw e;
+                }
+                try {
+                    players.create(new CreatePlayerRequest(playerId));
+                } catch (RuntimeException e) {
+                    throw ApiException.dependencyUnavailable(e);
+                }
+            });
+        } catch (ApiException e) {
+            // 409: the username exists (denied); 503: players unavailable (failure)
+            AuditLog.audit(REGISTER, e.status() == 409 ? Outcome.DENIED : Outcome.FAILURE,
+                    blindIndex.of(username), Map.of("reason", e.code()));
+            throw e;
+        }
 
-        LOG.infof("Account created, player_id=%s", playerId);
+        AuditLog.audit(REGISTER, Outcome.SUCCESS, playerId.toString());
         return new RegisterResponse(playerId, username);
     }
 

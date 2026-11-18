@@ -3,6 +3,11 @@
 CI-2 and SEC-1 of [docs/plan/11-ci-security.md](../plan/11-ci-security.md). The CI runs Semgrep and
 Trivy on every push and pull request ([.github/workflows/ci.yml](../../.github/workflows/ci.yml)).
 
+The threat model (data flow diagram, STRIDE threats with their control, test and status, rated
+gaps) is [THREAT_MODEL.md](../../THREAT_MODEL.md) in the repository root (SEC-2). The audit log
+of the gateway and auth (SEC-3, SEC-4) is checked on the running stack by
+`scripts/check-audit-log.sh [gateway-url] [ca-file]`, also run by the CI `compose-smoke` job.
+
 ## Running the scans locally
 
 ```bash

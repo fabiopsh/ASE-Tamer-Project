@@ -87,6 +87,10 @@ jobs:
         run: |
           npm ci
           npm test
+      - name: Audit log of the gateway and auth (SEC-3, SEC-4)
+        env:
+          COMPOSE: docker compose -f docker-compose.yml -f docker-compose.test.yml
+        run: scripts/check-audit-log.sh https://localhost:8443 .test-secrets/ca.crt
       - name: Service logs
         if: failure()
         run: docker compose -f docker-compose.yml -f docker-compose.test.yml logs --no-color --timestamps

@@ -16,8 +16,28 @@ map $http_origin $cors_origin {
     "~${CORS_ALLOWED_ORIGINS}"   $http_origin;
 }
 
-log_format tamer '$remote_addr [$time_local] "$request" $status $body_bytes_sent '
-                 'rid=$request_id rt=$request_time';
+# Audit log (SEC-4, P-26): one JSON line per request, written after the response.
+# escape=json escapes quotes and control characters, so a value cannot forge a second line.
+# The path is $uri (no query string), cut to 128 characters; no header and no body is logged.
+# user: "-" until INFRA-9, which sets it from the subject verified by the auth adapter (P-28);
+# it is never read from the request.
+map $status $audit_outcome {
+    ~^[23]      success;
+    ~^40[13]$   denied;
+    default     failure;
+}
+map $uri $audit_path {
+    "~(?s)^(?<audit_path_cut>.{0,128})" $audit_path_cut;
+}
+# Health checks are noise, not evidence
+map $uri $audit_loggable {
+    /health     0;
+    default     1;
+}
+log_format audit escape=json
+    '{"ts":"$time_iso8601","event":"request","user":"$audit_user","outcome":"$audit_outcome",'
+    '"method":"$request_method","path":"$audit_path","status":"$status",'
+    '"request_id":"$request_id","ip":"$remote_addr","rt":"$request_time"}';
 
 server {
     listen 8443 ssl;
@@ -31,7 +51,8 @@ server {
 
     server_tokens off;
     client_max_body_size 16k;
-    access_log /dev/stdout tamer;
+    set $audit_user "-";
+    access_log /dev/stdout audit if=$audit_loggable;
 
     # Security headers (also on errors)
     add_header Strict-Transport-Security "max-age=31536000" always;

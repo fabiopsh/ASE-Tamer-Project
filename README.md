@@ -139,9 +139,10 @@ backend/              Maven aggregator, one Quarkus module per service
 gateway/              Nginx configuration and Dockerfile
 infra/init-secrets/   one-shot container that generates certificates, keys and passwords
 frontend/             web UI (Vite + React)
-scripts/              helper scripts (export the CA, prepare the API tests, security self-attack)
+scripts/              helper scripts (export the CA, prepare the API tests, security self-attack, audit log check)
 .github/workflows/    CI: build, tests, Semgrep, Trivy (copy in docs/ci/ci.yml)
 docs/                 plan, architecture, backlog, OpenAPI, test collections
+THREAT_MODEL.md       data flow diagram, assets, trust boundaries, STRIDE threats and decisions
 docker-compose.yml    the whole backend
 docker-compose.test.yml  test override: exposes each service on localhost
 ```
@@ -172,6 +173,7 @@ API tests (Bruno) and load tests (Locust) run against the test stack. See [docs/
 | Implementation plan and decisions | [docs/plan](docs/plan/README.md) |
 | OpenAPI specs | [docs/openapi](docs/openapi/) |
 | Security analysis | [docs/security](docs/security/README.md) |
+| Threat model (STRIDE, rated gaps, audit log) | [THREAT_MODEL.md](THREAT_MODEL.md) |
 | Backlog and acceptance criteria | [docs/backlog](docs/backlog/acceptance_criteria.md) |
 | Frontend development (hot reload, mock server) | [frontend/README.md](frontend/README.md) |
 
@@ -247,6 +249,7 @@ Results and their analysis: [docs/locust/README.md](docs/locust/README.md).
 ### Security scans
 
 Semgrep, Trivy and a self-attack script: [docs/security/README.md](docs/security/README.md).
+Threat model and audit log check (`scripts/check-audit-log.sh`): [THREAT_MODEL.md](THREAT_MODEL.md).
 
 ## Ports
 

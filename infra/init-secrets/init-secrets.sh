@@ -15,7 +15,17 @@ CALLERS="players teams encounters tests"
 CA_DAYS=3650
 CERT_DAYS=825
 
+random_secret() {
+    openssl rand -hex 32
+}
+
 if [ -f "$OUT/.done" ]; then
+    # Keys added after the first release are appended to an existing volume, so that the
+    # stack starts without deleting it. SEC-3 (P-27): username blind index for the audit log.
+    if ! grep -q '^tamer.crypto.username-hmac-key=' "$OUT/auth/secrets.properties"; then
+        echo "tamer.crypto.username-hmac-key=$(random_secret)" >> "$OUT/auth/secrets.properties"
+        echo "init-secrets: added the username HMAC key to an existing volume"
+    fi
     echo "init-secrets: secrets already present, nothing to do"
     exit 0
 fi
@@ -25,10 +35,6 @@ find "$OUT" -mindepth 1 -delete
 
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
-
-random_secret() {
-    openssl rand -hex 32
-}
 
 # issue_cert <dir> <common name> <subjectAltName>
 issue_cert() {
@@ -91,6 +97,8 @@ cp "$TMP/jwt-private.pem" "$OUT/auth/jwt-private.pem"
 for client in $CALLERS; do
     echo "tamer.service-clients.$client=$(cat "$TMP/client-$client")" >> "$OUT/auth/secrets.properties"
 done
+# Username blind index (SEC-3 audit log, P-27; AUTH-8 reuses it for the username_hmac column)
+echo "tamer.crypto.username-hmac-key=$(random_secret)" >> "$OUT/auth/secrets.properties"
 
 # Used only by the component tests through the test override (TEST-1)
 mkdir -p "$OUT/tests"

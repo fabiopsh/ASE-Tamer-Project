@@ -56,7 +56,7 @@ Keep the project's OAuth2 form-urlencoded endpoints and `400 invalid_grant` for 
 
 ### Security Assessment follow-up (18/11/2026)
 
-**Open P2 tasks.** None of them exists in the repository yet: there is no threat model, and the only login log line is a free-text `"Failed login"` without user.
+**Status (18/11/2026):** SEC-2 and SEC-3 done, SEC-4 done except the verified `user` of gateway lines, which waits for INFRA-9. Still open: the read-aloud review of the diagram by a team member, and the `THREAT_MODEL.md` updates that each later P2 task brings.
 
 | Gap or requested behavior | Task | Acceptance condition |
 |---|---|---|
@@ -168,6 +168,7 @@ With 3 people, merge B and D: infrastructure first, then monsters/teams.
 | 09/11/2026 | EN-1…3, HI-1, FE-1, FE-2 | Engine, encounters service, history service and the React UI. Verified end to end through the gateway with `docker compose up` (register → starters → team → battles → boss → stage 2/3 → defeat → reset → history). Notes in [07-encounters.md](07-encounters.md#tuned-constants) (boss HP ×1.5; late bosses still hard for a commons-only team) |
 | 09/11/2026 | TEST-1, TEST-2, TEST-3 (first run) | `00-setup` folders now use public endpoints only, so the integration run works through the gateway; internal requests use their own player. New requests for the missing matrix cases, `e2e/` core loop, JSON export (`npm run export`), Locust. Green: component 189, integration 117, e2e. Details in [`docs/tests/bruno/README.md`](../tests/bruno/README.md) and [`docs/locust/README.md`](../locust/README.md) |
 | 09/11/2026 | CI-1, CI-2 (first triage), DOC-1 (docs part) | Workflow `.github/workflows/ci.yml` (+ copy in `docs/ci/`), Semgrep/Trivy fixes in [`docs/security/`](../security/README.md); AC for every story in scope, completed backlog xlsx, OpenAPI in `docs/openapi/`, architecture section 10. Not yet run on GitHub; SEC-1 script written but not executed |
+| 18/11/2026 | SEC-2, SEC-3, SEC-4 (user field after INFRA-9) | [`THREAT_MODEL.md`](../../THREAT_MODEL.md) in the root: DFD, 10 assets, 7 attack surfaces, 4 trust boundaries, 25 STRIDE threats (6 Covered, 12 Partial, 5 Gap, 2 fixed), ratings and decisions. JSON audit log in auth (`AuditLog`, `UsernameBlindIndex`, 23 new tests, mutation-checked) and at the gateway (`log_format audit`); `scripts/check-audit-log.sh` added to the CI `compose-smoke` job. Next gap by rating: a per-IP rate limit on `/api/` (threat 22) |
 
 ## Definition of done (every task)
 
