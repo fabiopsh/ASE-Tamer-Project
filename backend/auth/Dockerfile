@@ -2,7 +2,7 @@
 # auth - build context: backend/ (see docs/plan/02-infrastructure.md, INFRA-2)
 
 # ---- build stage: compiles inside Docker, the host needs only Docker ----
-FROM maven:3.9.16-eclipse-temurin-21 AS build
+FROM maven:3.9-eclipse-temurin-26 AS build
 WORKDIR /src
 # The aggregator needs every module pom to resolve the reactor
 COPY pom.xml .
