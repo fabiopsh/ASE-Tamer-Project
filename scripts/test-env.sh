@@ -13,8 +13,10 @@ read_secret() {
 mkdir -p "$ROOT/.test-secrets"
 read_secret tests/ca.crt > "$ROOT/.test-secrets/ca.crt"
 SECRET=$(read_secret tests/client.env | sed -n 's/^TAMER_TEST_CLIENT_SECRET=//p')
+umask 077
 {
     echo "TESTS_CLIENT_SECRET=$SECRET"
     echo "CA_PATH=$ROOT/.test-secrets/ca.crt"
 } > "$ROOT/docs/tests/bruno/.env"
-echo "Wrote .test-secrets/ca.crt and docs/tests/bruno/.env"
+chmod 600 "$ROOT/docs/tests/bruno/.env"
+echo "Wrote .test-secrets/ca.crt and docs/tests/bruno/.env (0600)"

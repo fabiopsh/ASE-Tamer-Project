@@ -1,6 +1,7 @@
 # One-shot container that generates every secret at first start (INFRA-4, P-04).
 FROM alpine:3.24.4
-RUN apk add --no-cache openssl \
+RUN apk upgrade --no-cache \
+    && apk add --no-cache openssl \
     && mkdir /secrets \
     && chown 10001:10001 /secrets
 COPY --chmod=0755 init-secrets.sh /usr/local/bin/init-secrets.sh

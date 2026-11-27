@@ -1,6 +1,10 @@
 package it.unipi.ase.tamer.players.api;
 
 import it.unipi.ase.tamer.players.api.dto.ChooseStartersRequest;
+import it.unipi.ase.tamer.players.api.dto.ChosenStartersResponse;
+import it.unipi.ase.tamer.players.api.dto.PlayerResponse;
+import it.unipi.ase.tamer.players.api.dto.StarterPoolResponse;
+import it.unipi.ase.tamer.players.api.dto.UpdateProfileRequest;
 import it.unipi.ase.tamer.players.error.ErrorResponse;
 import it.unipi.ase.tamer.players.security.CurrentPlayer;
 import it.unipi.ase.tamer.players.service.PlayersService;
@@ -10,6 +14,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -35,17 +40,41 @@ public class PlayersResource {
 
     @GET
     @Operation(summary = "Read my player profile (US-03)")
-    @APIResponse(responseCode = "200", description = "Player profile")
+    @APIResponse(responseCode = "200", description = "Player profile",
+            content = @Content(schema = @Schema(implementation = PlayerResponse.class)))
+    @APIResponse(responseCode = "401", description = "UNAUTHORIZED: missing or invalid token",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     @APIResponse(responseCode = "404", description = "NOT_FOUND",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
-    public Object profile() {
+    public PlayerResponse profile() {
         return service.profile(currentPlayer.id());
+    }
+
+    @PATCH
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Update my display name or avatar (US-04)")
+    @APIResponse(responseCode = "200", description = "Updated player profile",
+            content = @Content(schema = @Schema(implementation = PlayerResponse.class)))
+    @APIResponse(responseCode = "400", description = "VALIDATION_ERROR",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @APIResponse(responseCode = "401", description = "UNAUTHORIZED: missing or invalid token",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @APIResponse(responseCode = "404", description = "NOT_FOUND",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    public PlayerResponse updateProfile(@Valid @NotNull UpdateProfileRequest request) {
+        return service.updateProfile(currentPlayer.id(), request);
     }
 
     @GET
     @Path("/starters")
     @Operation(summary = "Read the persistent starter pool (US-06)")
-    public Object starterPool() {
+    @APIResponse(responseCode = "200", description = "Persistent starter pool",
+            content = @Content(schema = @Schema(implementation = StarterPoolResponse.class)))
+    @APIResponse(responseCode = "401", description = "UNAUTHORIZED: missing or invalid token",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @APIResponse(responseCode = "404", description = "NOT_FOUND",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    public StarterPoolResponse starterPool() {
         return service.starterPool(currentPlayer.id());
     }
 
@@ -53,10 +82,16 @@ public class PlayersResource {
     @Path("/starters")
     @Consumes(MediaType.APPLICATION_JSON)
     @Operation(summary = "Choose three starter monsters and open the run (US-06, US-07)")
-    @APIResponse(responseCode = "201", description = "Starters chosen")
-    @APIResponse(responseCode = "400", description = "INVALID_STARTERS")
-    @APIResponse(responseCode = "409", description = "STARTERS_ALREADY_CHOSEN")
-    @APIResponse(responseCode = "503", description = "DEPENDENCY_UNAVAILABLE")
+    @APIResponse(responseCode = "201", description = "Starters chosen",
+            content = @Content(schema = @Schema(implementation = ChosenStartersResponse.class)))
+    @APIResponse(responseCode = "400", description = "INVALID_STARTERS",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @APIResponse(responseCode = "401", description = "UNAUTHORIZED: missing or invalid token",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @APIResponse(responseCode = "409", description = "STARTERS_ALREADY_CHOSEN",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @APIResponse(responseCode = "503", description = "DEPENDENCY_UNAVAILABLE",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     public Response choose(@Valid @NotNull ChooseStartersRequest request) {
         return Response.status(Response.Status.CREATED).entity(service.choose(currentPlayer.id(), request)).build();
     }

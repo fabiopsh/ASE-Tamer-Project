@@ -31,6 +31,8 @@
 .blog-line--switch { --tone: var(--accent-strong); }
 .blog-line--flee { --tone: var(--warning); }
 .blog-line--end { --tone: var(--success); font-weight: var(--weight-bold); }
+.blog-line--ability { --tone: var(--accent-strong); }
+.blog-line--heal { --tone: var(--success); }
 .blog-line--info { --tone: var(--text-3); }
 
 .blog-line__icon { flex: none; color: var(--tone); margin-top: 2px; }
@@ -49,6 +51,17 @@
   background: var(--bg-0);
   border: var(--stroke-fine) solid var(--accent);
   border-color: var(--danger);
+}
+.blog-line__heal {
+  flex: none;
+  align-self: center;
+  padding: 1px 8px;
+  border-radius: var(--radius-pill);
+  font-weight: var(--weight-black);
+  font-size: var(--text-sm);
+  color: var(--success);
+  background: var(--bg-0);
+  border: var(--stroke-fine) solid var(--success);
 }
 
 .blog-line--fresh { animation: blog-in var(--dur-slow) var(--ease-out) backwards; }

@@ -1,12 +1,15 @@
 {
   "name": "monster-tamers-api-tests",
   "private": true,
-  "description": "Bruno component, integration and end-to-end tests (docs/plan/10-testing.md)",
+  "description": "Bruno component, integration, e2e and access-security tests (docs/plan/10-testing.md)",
   "scripts": {
     "test:component": "bru run services -r --env component --cacert ../../../.test-secrets/ca.crt",
     "test:integration": "bru run services/auth/public services/players/00-setup services/players/public services/monsters/00-setup services/monsters/public services/teams/00-setup services/teams/public services/encounters/00-setup services/encounters/public services/history/00-setup services/history/public -r --env integration --cacert ../../../.test-secrets/ca.crt",
     "test:e2e": "bru run e2e -r --env integration --cacert ../../../.test-secrets/ca.crt",
-    "test": "npm run test:component && npm run test:integration && npm run test:e2e",
+    "test:access:component": "bru run access -r --env component --cacert ../../../.test-secrets/ca.crt",
+    "test:access:integration": "bru run access -r --env integration --cacert ../../../.test-secrets/ca.crt",
+    "test:access": "npm run test:access:component && npm run test:access:integration",
+    "test": "npm run test:component && npm run test:integration && npm run test:e2e && npm run test:access",
     "export": "node export-json.js"
   },
   "devDependencies": {

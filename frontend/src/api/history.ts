@@ -16,7 +16,9 @@ export function getHistoryRecord(encounterId: Uuid, signal?: AbortSignal): Promi
 export interface HistoryVerification {
   valid: boolean;
   records: number;
-  first_invalid?: Uuid;
+  first_invalid?: Uuid | null;
+  head_hash?: string | null;
+  first_broken_seq?: number | null;
 }
 
 /** P2 (US-25). */

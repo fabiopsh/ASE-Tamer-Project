@@ -1,0 +1,25 @@
+meta {
+  name: GET /api/history/verify - valid: intact hash chain (US-25 / HI-2)
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{historyUrl}}/api/history/verify
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+tests {
+  test("200 valid hash chain", function () {
+    expect(res.getStatus()).to.equal(200);
+    const b = res.getBody();
+    expect(b.valid).to.equal(true);
+    expect(b.records).to.be.at.least(1);
+    expect(b.head_hash).to.match(/^[0-9a-f]{64}$/);
+  });
+}

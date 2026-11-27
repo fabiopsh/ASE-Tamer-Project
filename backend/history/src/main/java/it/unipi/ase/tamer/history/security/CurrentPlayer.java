@@ -1,7 +1,6 @@
 package it.unipi.ase.tamer.history.security;
 
-import it.unipi.ase.tamer.history.error.ApiException;
-import it.unipi.ase.tamer.history.error.ErrorCodes;
+import io.quarkus.security.UnauthorizedException;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import java.util.UUID;
@@ -26,7 +25,7 @@ public class CurrentPlayer {
         }
     }
 
-    private static ApiException unauthorized() {
-        return new ApiException(401, ErrorCodes.UNAUTHORIZED, "Missing, invalid or expired token.");
+    private static UnauthorizedException unauthorized() {
+        return new UnauthorizedException("Missing, invalid or expired token.");
     }
 }

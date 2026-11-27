@@ -17,13 +17,15 @@ import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 
 @RegisterRestClient(configKey = "monsters")
 @RegisterProvider(ServiceTokenFilter.class)
+@RegisterProvider(ClientErrorResponseMapper.class)
 @Path("/internal/collections/{pid}/instances")
 public interface MonstersClient {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Timeout(2000)
-    @Retry(maxRetries = 2, delay = 200)
-    @CircuitBreaker(requestVolumeThreshold = 10, failureRatio = 0.5, delay = 5000)
+    @Retry(maxRetries = 2, delay = 200, abortOn = RemoteClientException.class)
+    @CircuitBreaker(requestVolumeThreshold = 10, failureRatio = 0.5, delay = 5000,
+            skipOn = RemoteClientException.class)
     List<MonsterInstance> instances(@PathParam("pid") UUID playerId, @QueryParam("ids") String ids);
 }

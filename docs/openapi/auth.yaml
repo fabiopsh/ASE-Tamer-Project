@@ -28,7 +28,7 @@ components:
       properties:
         error:
           type: string
-        errorDescription:
+        error_description:
           type: string
     RegisterRequest:
       type: object
@@ -55,21 +55,21 @@ components:
     RegisterResponse:
       type: object
       properties:
-        playerId:
+        player_id:
           $ref: "#/components/schemas/UUID"
         username:
           type: string
     TokenResponse:
       type: object
       properties:
-        accessToken:
+        access_token:
           type: string
-        tokenType:
+        token_type:
           type: string
-        expiresIn:
+        expires_in:
           type: integer
           format: int64
-        refreshToken:
+        refresh_token:
           type: string
         scope:
           type: string
@@ -84,6 +84,38 @@ components:
       scheme: bearer
       bearerFormat: JWT
 paths:
+  /api/auth/logout:
+    post:
+      summary: Revoke a refresh token family (AUTH-7)
+      description: Form-urlencoded refresh_token=... Revokes the entire session family
+        idempotently; works without an active access token.
+      operationId: LogoutResource_logout
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                refresh_token:
+                  type: string
+        required: true
+      responses:
+        "204":
+          description: Session family revoked (or token unknown/already revoked)
+        "400":
+          description: invalid_request when refresh_token is missing or blank
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OAuthErrorResponse"
+        "503":
+          description: DEPENDENCY_UNAVAILABLE when revocation could not be persisted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /api/auth/register:
     post:
       summary: Create an account (US-01)
@@ -126,9 +158,9 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
   /api/auth/token:
     post:
-      summary: Obtain an access token (US-02)
-      description: "OAuth2 token endpoint, form-urlencoded. grant_type=password with\
-        \ username and password."
+      summary: "Obtain or refresh an access token (US-02, AUTH-7)"
+      description: "OAuth2 token endpoint, form-urlencoded. Supports grant_type=password\
+        \ (username, password) and grant_type=refresh_token (refresh_token)."
       operationId: TokenResource_token
       tags:
       - auth
@@ -144,10 +176,12 @@ paths:
                   type: string
                 password:
                   type: string
+                refresh_token:
+                  type: string
         required: true
       responses:
         "200":
-          description: Access token
+          description: Access and refresh tokens
           content:
             application/json:
               schema:
@@ -158,6 +192,38 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/OAuthErrorResponse"
+  /internal/auth/authorize:
+    get:
+      summary: Gateway auth_request adapter (INFRA-9)
+      description: "Verifies the forwarded Bearer JWT and checks (X-Original-Method,\
+        \ X-Original-URI) against the canonical access policy."
+      operationId: AuthorizeResource_authorize
+      tags:
+      - auth-internal
+      parameters:
+      - name: X-Original-Method
+        in: header
+        schema:
+          type: string
+      - name: X-Original-URI
+        in: header
+        schema:
+          type: string
+      responses:
+        "204":
+          description: Request allowed; sets X-Auth-Subject on role-protected routes
+        "401":
+          description: "Missing, invalid or expired bearer token"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: "Forbidden route, invalid path, or insufficient role/audience"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /internal/auth/token:
     post:
       summary: Obtain a service token
@@ -201,8 +267,10 @@ info:
   title: Monster Tamers - auth
   version: 0.1.0
   description: "Accounts and OAuth2 tokens. Players: POST /api/auth/token with grant_type=password\
-    \ (form-urlencoded). Services: POST /internal/auth/token with grant_type=client_credentials.\
-    \ The access token is an RS256 JWT, sent as Authorization: Bearer."
+    \ or grant_type=refresh_token (form-urlencoded), POST /api/auth/logout with refresh_token.\
+    \ Services: POST /internal/auth/token with grant_type=client_credentials. Gateway\
+    \ adapter: GET /internal/auth/authorize. The access token is an RS256 JWT, sent\
+    \ as Authorization: Bearer."
 servers:
 - url: https://localhost:8443
   description: Auto generated value

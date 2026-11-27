@@ -1,0 +1,18 @@
+meta {
+  name: GET /api/history/verify - invalid: no token -> 401
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{historyUrl}}/api/history/verify
+  body: none
+  auth: none
+}
+
+tests {
+  test("401 UNAUTHORIZED", function () {
+    expect(res.getStatus()).to.equal(401);
+    expect(res.getHeader("www-authenticate")).to.include("Bearer");
+  });
+}

@@ -33,4 +33,17 @@ public final class TestData {
                 .formParam("password", password)
                 .post("/api/auth/token");
     }
+
+    public static Response refreshGrant(String refreshToken) {
+        return given().contentType(ContentType.URLENC)
+                .formParam("grant_type", "refresh_token")
+                .formParam("refresh_token", refreshToken)
+                .post("/api/auth/token");
+    }
+
+    public static Response logout(String refreshToken) {
+        return given().contentType(ContentType.URLENC)
+                .formParam("refresh_token", refreshToken)
+                .post("/api/auth/logout");
+    }
 }

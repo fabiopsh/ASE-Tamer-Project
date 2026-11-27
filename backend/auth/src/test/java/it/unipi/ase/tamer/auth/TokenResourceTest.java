@@ -15,6 +15,7 @@ import io.quarkus.test.common.WithTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import io.smallrye.jwt.auth.principal.JWTParser;
+import it.unipi.ase.tamer.auth.audit.UsernameBlindIndex;
 import it.unipi.ase.tamer.auth.client.PlayersClient;
 import it.unipi.ase.tamer.auth.domain.Account;
 import jakarta.inject.Inject;
@@ -35,6 +36,9 @@ class TokenResourceTest {
     @Inject
     JWTParser parser;
 
+    @Inject
+    UsernameBlindIndex blindIndex;
+
     @Test
     void correctCredentialsReturnAPlayerToken() throws Exception {
         String username = uniqueUsername();
@@ -45,9 +49,10 @@ class TokenResourceTest {
                 .header("Cache-Control", "no-store")
                 .header("Pragma", "no-cache")
                 .body("token_type", equalTo("Bearer"))
-                .body("expires_in", equalTo(3600))
+                .body("expires_in", equalTo(300))
                 .body("scope", equalTo("player"))
                 .body("access_token", notNullValue())
+                .body("refresh_token", notNullValue())
                 .extract().path("access_token");
 
         JsonWebToken jwt = parser.parse(token);
@@ -57,8 +62,8 @@ class TokenResourceTest {
         assertEquals(username, jwt.getName());
         assertEquals(Set.of("player"), jwt.getGroups());
         assertNotNull(jwt.getTokenID());
-        assertEquals(3600, jwt.getExpirationTime() - jwt.getIssuedAtTime());
-        assertNotNull(Account.findByUsername(username).orElseThrow().lastLogin);
+        assertEquals(300, jwt.getExpirationTime() - jwt.getIssuedAtTime());
+        assertNotNull(Account.findByUsernameHmac(blindIndex.of(username)).orElseThrow().lastLogin);
     }
 
     @Test

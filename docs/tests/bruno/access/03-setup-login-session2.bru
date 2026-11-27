@@ -1,0 +1,26 @@
+meta {
+  name: 03 - Login independent session 2
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{authUrl}}/api/auth/token
+  body: formUrlEncoded
+  auth: none
+}
+
+body:form-urlencoded {
+  grant_type: password
+  username: {{accUser}}
+  password: access-pass-123
+}
+
+tests {
+  test("200 independent refresh family", function () {
+    expect(res.getStatus()).to.equal(200);
+    const b = res.getBody();
+    expect(b.refresh_token).to.not.equal(bru.getVar("accRefresh1"));
+    bru.setVar("accRefresh2", b.refresh_token);
+  });
+}

@@ -16,6 +16,20 @@ final class Fighter {
     int firstRound;
     /** Attacks received so far (dodged ones included). */
     int attacksReceived;
+    /** Whether one-time {@code heal} ({@code hp_below_50}) has already triggered in this battle. */
+    boolean healed;
+    /** Whether one-time {@code revive} ({@code once}) has already triggered in this battle. */
+    boolean revived;
+    /** Set by opponent's {@code stun}; consumed on this fighter's next attack attempt. */
+    boolean stunned;
+    /** Name of the ability that inflicted {@link #stunned}. */
+    String stunnedBy;
+    /** Active ability copied via {@code copy_ability} on {@code first_turn}, if any. */
+    Ability copiedAbility;
+    /** Stat boosted this round by {@code random_boost} ({@code attack|defense|speed}), or {@code null}. */
+    String randomBoostStat;
+    /** Multiplier for {@link #randomBoostStat} in the current round. */
+    double randomBoostFactor = 1.0;
 
     Fighter(Combatant combatant, String side, int position, int maxHp) {
         this.combatant = combatant;
@@ -30,6 +44,11 @@ final class Fighter {
     }
 
     Ability ability() {
-        return combatant.ability();
+        return copiedAbility != null ? copiedAbility : combatant.ability();
+    }
+
+    void clearRandomBoost() {
+        randomBoostStat = null;
+        randomBoostFactor = 1.0;
     }
 }

@@ -19,7 +19,7 @@ function usernameProblem(u: string): string | null {
 function passwordProblem(p: string, u: string): string | null {
   if (p.length === 0) return null;
   if (p.length < 8) return 'At least 8 characters.';
-  if (new TextEncoder().encode(p).length > 72) return 'At most 72 bytes.';
+  if (new TextEncoder().encode(p).length > 72) return 'At most 72 UTF-8 bytes.';
   if (p.toLowerCase() === u.toLowerCase()) return 'The password cannot be your username.';
   return null;
 }
@@ -38,6 +38,7 @@ export function RegisterPage() {
   const pErr = passwordProblem(password, u);
   const cErr = confirm.length > 0 && confirm !== password ? 'The passwords do not match.' : null;
   const taken = isApiError(error) && error.code === 'USERNAME_TAKEN';
+  const createdButLoginFailed = isApiError(error) && error.code === 'REGISTERED_LOGIN_FAILED';
   const canSubmit = u.length > 0 && password.length > 0 && confirm.length > 0 && !uErr && !pErr && !cErr;
 
   async function onSubmit(e: FormEvent) {
@@ -62,7 +63,21 @@ export function RegisterPage() {
         <p className="muted">Pick a name and you will choose your first three monsters right after.</p>
       </div>
 
-      {error !== null && !taken && <ErrorBanner title="Could not create the account" error={error} compact />}
+      {createdButLoginFailed ? (
+        <ErrorBanner
+          tone="info"
+          title="Account created — please log in"
+          message="Your account was created successfully, but automatic sign-in did not complete. Log in directly with your new username and password."
+          action={
+            <Link to="/login" className="btn btn--primary btn--sm">
+              Go to log in
+            </Link>
+          }
+          compact
+        />
+      ) : (
+        error !== null && !taken && <ErrorBanner title="Could not create the account" error={error} compact />
+      )}
 
       <form className="panel stack" onSubmit={onSubmit} noValidate>
         <div className="field">
@@ -120,7 +135,7 @@ export function RegisterPage() {
             </span>
           ) : (
             <span id="reg-password-hint" className="field__hint">
-              8–72 characters, different from the username.
+              8–72 characters (max 72 UTF-8 bytes), different from the username.
             </span>
           )}
         </div>
@@ -135,10 +150,15 @@ export function RegisterPage() {
             autoComplete="new-password"
             value={confirm}
             aria-invalid={(touched.confirm && cErr !== null) || undefined}
+            aria-describedby={touched.confirm && cErr ? 'reg-confirm-error' : undefined}
             onChange={(e) => setConfirm(e.target.value)}
             onBlur={() => setTouched((t) => ({ ...t, confirm: true }))}
           />
-          {touched.confirm && cErr && <span className="field__error">{cErr}</span>}
+          {touched.confirm && cErr && (
+            <span id="reg-confirm-error" className="field__error">
+              {cErr}
+            </span>
+          )}
         </div>
         <Button type="submit" variant="primary" size="lg" block loading={busy} disabled={!canSubmit}>
           {busy ? 'Creating your account…' : 'Create account'}

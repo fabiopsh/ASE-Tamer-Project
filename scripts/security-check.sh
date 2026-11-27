@@ -16,6 +16,8 @@ CA="${2:-tamer-ca.crt}"
 command -v jq >/dev/null || { echo "jq is required"; exit 2; }
 
 PASS=0; FAIL=0; WARN=0
+TMP=$(mktemp -d)
+trap 'rm -rf "$TMP"' EXIT
 ok()   { PASS=$((PASS + 1)); printf '  \033[32mPASS\033[0m %s\n' "$1"; }
 ko()   { FAIL=$((FAIL + 1)); printf '  \033[31mFAIL\033[0m %s\n' "$1"; }
 warn() { WARN=$((WARN + 1)); printf '  \033[33mWARN\033[0m %s\n' "$1"; }
@@ -120,8 +122,8 @@ if [ "$(jq -r .status <<<"$BODY")" = in_progress ]; then
     for i in 1 2; do
         curl -s -o /dev/null -w '%{http_code}\n' --cacert "$CA" -X POST -H "Authorization: Bearer $TOKEN_A" \
             -H 'Content-Type: application/json' -d '{"type":"attack"}' "$GW/api/battles/current/actions" &
-    done > /tmp/tamer-sec-$$; wait
-    CODES=$(sort /tmp/tamer-sec-$$ | tr '\n' ' '); rm -f /tmp/tamer-sec-$$
+    done > "$TMP/battle-codes"; wait
+    CODES=$(sort "$TMP/battle-codes" | tr '\n' ' ')
     req GET /api/battles/current "$TOKEN_A"
     if [ "$STATUS" = 404 ]; then ok "parallel actions ($CODES): battle finished, history decides"; else
         TURN1=$(jq -r .turn <<<"$BODY"); OKS=$(grep -o 200 <<<"$CODES" | wc -l | tr -d ' ')
@@ -136,8 +138,8 @@ req GET /api/players/me/starters "$TOKEN_C"; POOL_C=$(jq -c '.pool[0:3]' <<<"$BO
 for i in 1 2; do
     curl -s -o /dev/null -w '%{http_code}\n' --cacert "$CA" -X POST -H "Authorization: Bearer $TOKEN_C" \
         -H 'Content-Type: application/json' -d "{\"monster_ids\":$POOL_C}" "$GW/api/players/me/starters" &
-done > /tmp/tamer-sec-$$; wait
-CODES=$(sort /tmp/tamer-sec-$$ | tr '\n' ' '); rm -f /tmp/tamer-sec-$$
+done > "$TMP/starter-codes"; wait
+CODES=$(sort "$TMP/starter-codes" | tr '\n' ' ')
 req GET /api/collection "$TOKEN_C"; COUNT=$(jq '.items | length' <<<"$BODY")
 [ "$COUNT" = 3 ] && ok "two starter choices at once ($CODES): exactly 3 monsters" || ko "two starter choices ($CODES): $COUNT monsters"
 

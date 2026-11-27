@@ -16,21 +16,20 @@ import { useToast } from '../../components/toast-context';
 import { useAsync } from '../../hooks/useAsync';
 import { useGoToStarters } from '../../hooks/useGoToStarters';
 import { capitalize } from '../../lib/format';
+import { LAST_TEAM_STORAGE_KEY } from '../../session/storage';
 import { useGameStatus } from '../../session/useGameStatus';
 import './encounters.css';
 
-const TEAM_KEY = 'tamer.lastTeam';
-
 function readLastTeam(): string | null {
   try {
-    return localStorage.getItem(TEAM_KEY);
+    return localStorage.getItem(LAST_TEAM_STORAGE_KEY);
   } catch {
     return null;
   }
 }
 function writeLastTeam(id: string) {
   try {
-    localStorage.setItem(TEAM_KEY, id);
+    localStorage.setItem(LAST_TEAM_STORAGE_KEY, id);
   } catch {
     /* storage unavailable: the choice is simply not remembered */
   }
@@ -90,6 +89,8 @@ export function EncountersPage() {
     (run.data === null && run.error === null) ||
     (isApiError(encounters.error) && encounters.error.code === 'NO_ACTIVE_RUN');
   const r = run.data ?? null;
+  const teamInvalid = validation.data?.valid === false;
+  const cannotStart = !template || !team || teamInvalid || Boolean(r?.reset_pending);
 
   return (
     <div className="page encounters">
@@ -217,7 +218,7 @@ export function EncountersPage() {
               size="lg"
               block
               loading={starting}
-              disabled={!template || !team}
+              disabled={cannotStart}
               onClick={() => void start()}
             >
               <SwordsIcon /> {template?.is_boss ? 'Challenge the boss' : 'Start battle'}
@@ -236,7 +237,7 @@ export function EncountersPage() {
           <Button
             variant={template.is_boss ? 'gold' : 'primary'}
             loading={starting}
-            disabled={!team}
+            disabled={cannotStart}
             onClick={() => void start()}
           >
             Start

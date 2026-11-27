@@ -62,6 +62,9 @@ export function DashboardPage() {
           <Link to="/teams" className="btn btn--lg">
             Manage teams
           </Link>
+          <Link to="/profile" className="btn btn--ghost btn--lg">
+            Edit profile
+          </Link>
         </div>
       </section>
 

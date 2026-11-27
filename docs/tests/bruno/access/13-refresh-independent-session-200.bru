@@ -1,0 +1,23 @@
+meta {
+  name: 13 - Independent session 2 still refreshes
+  type: http
+  seq: 13
+}
+
+post {
+  url: {{authUrl}}/api/auth/token
+  body: formUrlEncoded
+  auth: none
+}
+
+body:form-urlencoded {
+  grant_type: refresh_token
+  refresh_token: {{accRefresh2}}
+}
+
+tests {
+  test("200 independent family unaffected", function () {
+    expect(res.getStatus()).to.equal(200);
+    bru.setVar("accRefresh2Rotated", res.getBody().refresh_token);
+  });
+}

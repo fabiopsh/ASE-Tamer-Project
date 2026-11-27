@@ -1,0 +1,22 @@
+meta {
+  name: 07 - Encounters: tampered payload -> 401
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{encountersUrl}}/api/runs
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{tamperedPayloadToken}}
+}
+
+tests {
+  test("401 tampered payload rejected", function () {
+    expect(res.getStatus()).to.equal(401);
+    expect(res.getHeader("www-authenticate")).to.include("Bearer");
+  });
+}

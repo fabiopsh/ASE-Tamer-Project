@@ -1,0 +1,1057 @@
+{
+  "info": {
+    "name": "Monster Tamers - access",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "01 - Register player for access matrix",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "auth": {
+          "type": "noauth"
+        },
+        "description": "",
+        "url": {
+          "raw": "{{authUrl}}/api/auth/register",
+          "protocol": "",
+          "host": [
+            "{{authUrl}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "register"
+          ],
+          "query": [],
+          "variable": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"{{accUser}}\",\n  \"password\": \"access-pass-123\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              "bru.setVar(\"accUser\", \"acc_\" + Math.random().toString(16).slice(2, 12));"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              "// Tests",
+              "test(\"201 registered\", function () {",
+              "  expect(res.getStatus()).to.equal(201);",
+              "  bru.setVar(\"accPlayerId\", res.getBody().player_id);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 - Login session 1 (300 s TTL + refresh token)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "auth": {
+          "type": "noauth"
+        },
+        "description": "",
+        "url": {
+          "raw": "{{authUrl}}/api/auth/token",
+          "protocol": "",
+          "host": [
+            "{{authUrl}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "token"
+          ],
+          "query": [],
+          "variable": []
+        },
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "grant_type",
+              "value": "password",
+              "disabled": false,
+              "type": "default",
+              "description": ""
+            },
+            {
+              "key": "username",
+              "value": "{{accUser}}",
+              "disabled": false,
+              "type": "default",
+              "description": ""
+            },
+            {
+              "key": "password",
+              "value": "access-pass-123",
+              "disabled": false,
+              "type": "default",
+              "description": ""
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              "// Tests",
+              "test(\"200 with expires_in=300 and refresh_token\", function () {",
+              "  expect(res.getStatus()).to.equal(200);",
+              "  expect(res.getHeader(\"cache-control\")).to.include(\"no-store\");",
+              "  const b = res.getBody();",
+              "  expect(b.token_type).to.equal(\"Bearer\");",
+              "  expect(b.expires_in).to.equal(300);",
+              "  expect(b.refresh_token).to.be.a(\"string\").and.not.be.empty;",
+              "  bru.setVar(\"accToken1\", b.access_token);",
+              "  bru.setVar(\"accRefresh1\", b.refresh_token);",
+              "",
+              "  const toB64Url = (s) => Buffer.from(s, \"utf8\").toString(\"base64\").replace(/\\+/g, \"-\").replace(/\\//g, \"_\").replace(/=+$/, \"\");",
+              "  const fromB64Url = (s) => {",
+              "    const pad = s.length % 4 === 0 ? \"\" : \"=\".repeat(4 - (s.length % 4));",
+              "    return Buffer.from(s.replace(/-/g, \"+\").replace(/_/g, \"/\") + pad, \"base64\").toString(\"utf8\");",
+              "  };",
+              "  const parts = b.access_token.split(\".\");",
+              "  const hdrNone = toB64Url('{\"alg\":\"none\",\"typ\":\"JWT\"}');",
+              "  bru.setVar(\"algNoneToken\", `${hdrNone}.${parts[1]}.`);",
+              "  const badSig = (parts[2][0] === \"A\" ? \"B\" : \"A\") + parts[2].slice(1);",
+              "  bru.setVar(\"badSigToken\", `${parts[0]}.${parts[1]}.${badSig}`);",
+              "  const payload = JSON.parse(fromB64Url(parts[1]));",
+              "  payload.sub = \"00000000-0000-4000-8000-000000000000\";",
+              "  bru.setVar(\"tamperedPayloadToken\", `${parts[0]}.${toB64Url(JSON.stringify(payload))}.${parts[2]}`);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 - Login independent session 2",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "auth": {
+          "type": "noauth"
+        },
+        "description": "",
+        "url": {
+          "raw": "{{authUrl}}/api/auth/token",
+          "protocol": "",
+          "host": [
+            "{{authUrl}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "token"
+          ],
+          "query": [],
+          "variable": []
+        },
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "grant_type",
+              "value": "password",
+              "disabled": false,
+              "type": "default",
+              "description": ""
+            },
+            {
+              "key": "username",
+              "value": "{{accUser}}",
+              "disabled": false,
+              "type": "default",
+              "description": ""
+            },
+            {
+              "key": "password",
+              "value": "access-pass-123",
+              "disabled": false,
+              "type": "default",
+              "description": ""
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              "// Tests",
+              "test(\"200 independent refresh family\", function () {",
+              "  expect(res.getStatus()).to.equal(200);",
+              "  const b = res.getBody();",
+              "  expect(b.refresh_token).to.not.equal(bru.getVar(\"accRefresh1\"));",
+              "  bru.setVar(\"accRefresh2\", b.refresh_token);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 - Players: no token -> 401 + Bearer challenge",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "auth": {
+          "type": "noauth"
+        },
+        "description": "",
+        "url": {
+          "raw": "{{playersUrl}}/api/players/me",
+          "protocol": "",
+          "host": [
+            "{{playersUrl}}"
+          ],
+          "path": [
+            "api",
+            "players",
+            "me"
+          ],
+          "query": [],
+          "variable": []
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              "// Tests",
+              "test(\"401 with WWW-Authenticate: Bearer\", function () {",
+              "  expect(res.getStatus()).to.equal(401);",
+              "  expect(res.getHeader(\"www-authenticate\")).to.include(\"Bearer\");",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 - Monsters: alg=none token -> 401",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{algNoneToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "description": "",
+        "url": {
+          "raw": "{{monstersUrl}}/api/monsters",
+          "protocol": "",
+          "host": [
+            "{{monstersUrl}}"
+          ],
+          "path": [
+            "api",
+            "monsters"
+          ],
+          "query": [],
+          "variable": []
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              "// Tests",
+              "test(\"401 alg=none rejected\", function () {",
+              "  expect(res.getStatus()).to.equal(401);",
+              "  expect(res.getHeader(\"www-authenticate\")).to.include(\"Bearer\");",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 - Teams: invalid signature -> 401",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{badSigToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "description": "",
+        "url": {
+          "raw": "{{teamsUrl}}/api/teams",
+          "protocol": "",
+          "host": [
+            "{{teamsUrl}}"
+          ],
+          "path": [
+            "api",
+            "teams"
+          ],
+          "query": [],
+          "variable": []
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              "// Tests",
+              "test(\"401 bad signature rejected\", function () {",
+              "  expect(res.getStatus()).to.equal(401);",
+              "  expect(res.getHeader(\"www-authenticate\")).to.include(\"Bearer\");",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 - Encounters: tampered payload -> 401",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{tamperedPayloadToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "description": "",
+        "url": {
+          "raw": "{{encountersUrl}}/api/runs",
+          "protocol": "",
+          "host": [
+            "{{encountersUrl}}"
+          ],
+          "path": [
+            "api",
+            "runs"
+          ],
+          "query": [],
+          "variable": []
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              "// Tests",
+              "test(\"401 tampered payload rejected\", function () {",
+              "  expect(res.getStatus()).to.equal(401);",
+              "  expect(res.getHeader(\"www-authenticate\")).to.include(\"Bearer\");",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 - History: garbage token -> 401",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "not.a.valid.jwt",
+              "type": "string"
+            }
+          ]
+        },
+        "description": "",
+        "url": {
+          "raw": "{{historyUrl}}/api/history",
+          "protocol": "",
+          "host": [
+            "{{historyUrl}}"
+          ],
+          "path": [
+            "api",
+            "history"
+          ],
+          "query": [],
+          "variable": []
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              "// Tests",
+              "test(\"401 garbage token rejected\", function () {",
+              "  expect(res.getStatus()).to.equal(401);",
+              "  expect(res.getHeader(\"www-authenticate\")).to.include(\"Bearer\");",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 - Valid player access across services (players)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{accToken1}}",
+              "type": "string"
+            }
+          ]
+        },
+        "description": "",
+        "url": {
+          "raw": "{{playersUrl}}/api/players/me",
+          "protocol": "",
+          "host": [
+            "{{playersUrl}}"
+          ],
+          "path": [
+            "api",
+            "players",
+            "me"
+          ],
+          "query": [],
+          "variable": []
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              "// Tests",
+              "test(\"200 player profile\", function () {",
+              "  expect(res.getStatus()).to.equal(200);",
+              "  expect(res.getBody().player_id).to.equal(bru.getVar(\"accPlayerId\"));",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 - Refresh rotation succeeds",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "auth": {
+          "type": "noauth"
+        },
+        "description": "",
+        "url": {
+          "raw": "{{authUrl}}/api/auth/token",
+          "protocol": "",
+          "host": [
+            "{{authUrl}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "token"
+          ],
+          "query": [],
+          "variable": []
+        },
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "grant_type",
+              "value": "refresh_token",
+              "disabled": false,
+              "type": "default",
+              "description": ""
+            },
+            {
+              "key": "refresh_token",
+              "value": "{{accRefresh1}}",
+              "disabled": false,
+              "type": "default",
+              "description": ""
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              "// Tests",
+              "test(\"200 rotated token pair\", function () {",
+              "  expect(res.getStatus()).to.equal(200);",
+              "  expect(res.getHeader(\"cache-control\")).to.include(\"no-store\");",
+              "  const b = res.getBody();",
+              "  expect(b.expires_in).to.equal(300);",
+              "  expect(b.refresh_token).to.be.a(\"string\").and.not.equal(bru.getVar(\"accRefresh1\"));",
+              "  bru.setVar(\"accRefresh1Rotated\", b.refresh_token);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "11 - Refresh reuse rejected and revokes family",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "auth": {
+          "type": "noauth"
+        },
+        "description": "",
+        "url": {
+          "raw": "{{authUrl}}/api/auth/token",
+          "protocol": "",
+          "host": [
+            "{{authUrl}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "token"
+          ],
+          "query": [],
+          "variable": []
+        },
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "grant_type",
+              "value": "refresh_token",
+              "disabled": false,
+              "type": "default",
+              "description": ""
+            },
+            {
+              "key": "refresh_token",
+              "value": "{{accRefresh1}}",
+              "disabled": false,
+              "type": "default",
+              "description": ""
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              "// Tests",
+              "test(\"400 invalid_grant on consumed refresh token\", function () {",
+              "  expect(res.getStatus()).to.equal(400);",
+              "  expect(res.getBody().error).to.equal(\"invalid_grant\");",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "12 - Rotated descendant revoked after reuse",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "auth": {
+          "type": "noauth"
+        },
+        "description": "",
+        "url": {
+          "raw": "{{authUrl}}/api/auth/token",
+          "protocol": "",
+          "host": [
+            "{{authUrl}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "token"
+          ],
+          "query": [],
+          "variable": []
+        },
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "grant_type",
+              "value": "refresh_token",
+              "disabled": false,
+              "type": "default",
+              "description": ""
+            },
+            {
+              "key": "refresh_token",
+              "value": "{{accRefresh1Rotated}}",
+              "disabled": false,
+              "type": "default",
+              "description": ""
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              "// Tests",
+              "test(\"400 invalid_grant because whole family was revoked\", function () {",
+              "  expect(res.getStatus()).to.equal(400);",
+              "  expect(res.getBody().error).to.equal(\"invalid_grant\");",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "13 - Independent session 2 still refreshes",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "auth": {
+          "type": "noauth"
+        },
+        "description": "",
+        "url": {
+          "raw": "{{authUrl}}/api/auth/token",
+          "protocol": "",
+          "host": [
+            "{{authUrl}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "token"
+          ],
+          "query": [],
+          "variable": []
+        },
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "grant_type",
+              "value": "refresh_token",
+              "disabled": false,
+              "type": "default",
+              "description": ""
+            },
+            {
+              "key": "refresh_token",
+              "value": "{{accRefresh2}}",
+              "disabled": false,
+              "type": "default",
+              "description": ""
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              "// Tests",
+              "test(\"200 independent family unaffected\", function () {",
+              "  expect(res.getStatus()).to.equal(200);",
+              "  bru.setVar(\"accRefresh2Rotated\", res.getBody().refresh_token);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "14 - Logout revokes session 2 family (204)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "auth": {
+          "type": "noauth"
+        },
+        "description": "",
+        "url": {
+          "raw": "{{authUrl}}/api/auth/logout",
+          "protocol": "",
+          "host": [
+            "{{authUrl}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "logout"
+          ],
+          "query": [],
+          "variable": []
+        },
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "refresh_token",
+              "value": "{{accRefresh2Rotated}}",
+              "disabled": false,
+              "type": "default",
+              "description": ""
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              "// Tests",
+              "test(\"204 No Content\", function () {",
+              "  expect(res.getStatus()).to.equal(204);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "15 - Logout repeat is idempotent (204)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "auth": {
+          "type": "noauth"
+        },
+        "description": "",
+        "url": {
+          "raw": "{{authUrl}}/api/auth/logout",
+          "protocol": "",
+          "host": [
+            "{{authUrl}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "logout"
+          ],
+          "query": [],
+          "variable": []
+        },
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "refresh_token",
+              "value": "{{accRefresh2Rotated}}",
+              "disabled": false,
+              "type": "default",
+              "description": ""
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              "// Tests",
+              "test(\"204 idempotent logout\", function () {",
+              "  expect(res.getStatus()).to.equal(204);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "16 - Logout missing refresh_token -> 400",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "auth": {
+          "type": "noauth"
+        },
+        "description": "",
+        "url": {
+          "raw": "{{authUrl}}/api/auth/logout",
+          "protocol": "",
+          "host": [
+            "{{authUrl}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "logout"
+          ],
+          "query": [],
+          "variable": []
+        },
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "refresh_token",
+              "value": "",
+              "disabled": false,
+              "type": "default",
+              "description": ""
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              "// Tests",
+              "test(\"400 invalid_request\", function () {",
+              "  expect(res.getStatus()).to.equal(400);",
+              "  expect(res.getBody().error).to.equal(\"invalid_request\");",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "17 - Refresh after logout fails (400)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "auth": {
+          "type": "noauth"
+        },
+        "description": "",
+        "url": {
+          "raw": "{{authUrl}}/api/auth/token",
+          "protocol": "",
+          "host": [
+            "{{authUrl}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "token"
+          ],
+          "query": [],
+          "variable": []
+        },
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "grant_type",
+              "value": "refresh_token",
+              "disabled": false,
+              "type": "default",
+              "description": ""
+            },
+            {
+              "key": "refresh_token",
+              "value": "{{accRefresh2Rotated}}",
+              "disabled": false,
+              "type": "default",
+              "description": ""
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              "// Tests",
+              "test(\"400 invalid_grant after logout\", function () {",
+              "  expect(res.getStatus()).to.equal(400);",
+              "  expect(res.getBody().error).to.equal(\"invalid_grant\");",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "authUrl",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "accUser",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "playersUrl",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "monstersUrl",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "algNoneToken",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "teamsUrl",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "badSigToken",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "encountersUrl",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "tamperedPayloadToken",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "historyUrl",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "accToken1",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "accRefresh1",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "accRefresh1Rotated",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "accRefresh2",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "accRefresh2Rotated",
+      "value": "",
+      "type": "default"
+    }
+  ]
+}

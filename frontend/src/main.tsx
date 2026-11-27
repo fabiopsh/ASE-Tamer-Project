@@ -6,6 +6,7 @@ import './styles/tokens.css';
 import './styles/base.css';
 import './styles/ui.css';
 import { App } from './App';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { ToastProvider } from './components/ToastProvider';
 import { SessionProvider } from './session/SessionContext';
 import './styles/amber.css';
@@ -13,13 +14,15 @@ import './styles/amber.css';
 function renderApp() {
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
-      <BrowserRouter>
-        <ToastProvider>
-          <SessionProvider>
-            <App />
-          </SessionProvider>
-        </ToastProvider>
-      </BrowserRouter>
+      <ErrorBoundary>
+        <BrowserRouter>
+          <ToastProvider>
+            <SessionProvider>
+              <App />
+            </SessionProvider>
+          </ToastProvider>
+        </BrowserRouter>
+      </ErrorBoundary>
     </StrictMode>,
   );
 }

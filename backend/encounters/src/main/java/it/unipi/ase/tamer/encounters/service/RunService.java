@@ -13,8 +13,10 @@ import it.unipi.ase.tamer.encounters.error.ErrorCodes;
 import it.unipi.ase.tamer.encounters.error.ErrorDetail;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.UUID;
+import org.hibernate.exception.ConstraintViolationException;
 import org.jboss.logging.Logger;
 
 /**
@@ -94,6 +96,9 @@ public class RunService {
             });
             return new Opened(true, RunResponse.from(run));
         } catch (RuntimeException e) {
+            if (!isUniqueViolation(e)) {
+                throw e;
+            }
             // concurrent open: same run id (idempotent) or another active run (unique index)
             Run again = find(runId);
             if (again != null && again.playerId.equals(playerId)) {
@@ -101,6 +106,22 @@ public class RunService {
             }
             throw new ApiException(409, EncounterErrors.RUN_CONFLICT, "The player already has an active run.");
         }
+    }
+
+    /** True only when the failure is a PostgreSQL unique-constraint violation (SQLState {@code 23505}). */
+    static boolean isUniqueViolation(Throwable e) {
+        for (Throwable t = e; t != null; t = t.getCause()) {
+            if (t instanceof ConstraintViolationException cve) {
+                String state = cve.getSQLState();
+                if (state == null || "23505".equals(state)) {
+                    return true;
+                }
+            }
+            if (t instanceof SQLException sql && "23505".equals(sql.getSQLState())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     // ---- public reads ----------------------------------------------------------------------------------------
@@ -172,9 +193,9 @@ public class RunService {
             if (session != null && session.encounterId().equals(run.activeBattleId)) {
                 session.lock().lock();
                 try {
+                    completions.close(session, BattleCompletionService.ABANDONED, true);
                     session.close();
                     registry.remove(session);
-                    completions.close(session, BattleCompletionService.ABANDONED, true);
                 } finally {
                     session.lock().unlock();
                 }

@@ -12,6 +12,7 @@ COPY monsters/pom.xml monsters/
 COPY teams/pom.xml teams/
 COPY encounters/pom.xml encounters/
 COPY history/pom.xml history/
+COPY security security
 COPY monsters/src monsters/src
 COPY monsters/seed monsters/seed
 RUN --mount=type=cache,target=/root/.m2 mvn -B -q -pl monsters -am package -DskipTests

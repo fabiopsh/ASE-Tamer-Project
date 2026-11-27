@@ -22,7 +22,7 @@ public class TokenIssuer {
     /** client_id that {@code auth} uses for its own outgoing calls. */
     public static final String SELF_CLIENT_ID = "auth";
 
-    @ConfigProperty(name = "tamer.access-token-ttl", defaultValue = "3600")
+    @ConfigProperty(name = "tamer.access-token-ttl", defaultValue = "300")
     long accessTokenTtl;
 
     @ConfigProperty(name = "tamer.service-token-ttl", defaultValue = "300")

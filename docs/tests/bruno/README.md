@@ -1,31 +1,38 @@
 # Monster Tamers — API tests (Bruno)
 
-Component, integration and end-to-end tests of [docs/plan/10-testing.md](../../plan/10-testing.md).
-The exported JSON (Postman v2.1, deliverable) is in [`../json/`](../json/).
+Component, integration, end-to-end and access-security tests of
+[docs/plan/10-testing.md](../../plan/10-testing.md) (`TEST-1`, `TEST-2`, `TEST-5`).
+The exported JSON (Postman v2.1, deliverable — 10 files including `access.postman_collection.json`)
+is in [`../json/`](../json/).
 
 ## Running the API tests
 
 ```bash
 # from the repository root
 docker compose -f docker-compose.yml -f docker-compose.test.yml up -d --build --wait
-scripts/test-env.sh            # writes .test-secrets/ca.crt and docs/tests/bruno/.env (both gitignored)
+scripts/test-env.sh                 # writes .test-secrets/ca.crt and docs/tests/bruno/.env (both gitignored)
 
 cd docs/tests/bruno
-npm ci                         # Bruno CLI 4.3.0, pinned in package.json
-npm run test:component         # every service on its own port (9001…9006), public + internal
-npm run test:integration       # the public requests again, through the gateway (8443)
-npm run test:e2e               # core loop through the gateway
-npm test                       # the three runs above, in this order
-npm run export                 # re-export ../json/ (do it before each delivery)
+npm ci                              # Bruno CLI 4.3.0, pinned in package.json
+npm run test:component              # every service on its own port (9001…9006), public + internal
+npm run test:integration            # the public requests again, through the gateway (8443)
+npm run test:e2e                    # core loop through the gateway
+npm run test:access:component       # access-security & refresh/logout regression against services
+npm run test:access:integration     # access-security & refresh/logout regression through the gateway
+npm test                            # all five runs above, in this order
+npm run export                      # re-export ../json/ (10 Postman v2.1 files)
 ```
 
 The runs need a fresh-enough stack, not an empty one: every folder registers its own random users.
 
-| Run | Environment | Folders |
-|---|---|---|
-| component | `component` (`authUrl=https://localhost:9001`, …) | `services/**` |
-| integration | `integration` (every `*Url=https://localhost:8443`) | `services/<svc>/00-setup` + `services/<svc>/public` |
-| e2e | `integration` | `e2e/` |
+| Run | Environment | Folders | Verified (27/11/2026) |
+|---|---|---|---:|
+| component | `component` (`authUrl=https://localhost:9001`, …) | `services/**` | **201 / 201** |
+| integration | `integration` (every `*Url=https://localhost:8443`) | `services/<svc>/00-setup` + `services/<svc>/public` | **128 / 128** |
+| e2e | `integration` | `e2e/` | **36 / 36** |
+| access:component | `component` | `access/` | **17 / 17** |
+| access:integration | `integration` | `access/` | **17 / 17** |
+| **Total (`npm test`)** | — | all suites | **399 / 399** |
 
 `internal/` folders run only in the component run: the gateway answers 404 for `/internal/*`
 (checked in `e2e/15-internal-not-exposed.bru`).
@@ -41,7 +48,8 @@ services/<svc>/
   internal/
     00-setup/          a separate fresh player + service token (tests client)
     *.bru              /internal/* requests (valid + invalid)
-e2e/                   01-register … 14-collection-after-battle, then the negative block
+e2e/                   01-register … 14-collection-after-battle, then the negative block (15…17)
+access/                01-setup-register … 17-refresh-after-logout-400 (TEST-5 access-security & AUTH-7 suite)
 ```
 
 Folder order is fixed by `folder.bru` (`seq`): `00-setup` → `public` → `internal`. `internal/`
@@ -95,20 +103,24 @@ the battle ends (< 50 rounds), e2e attacks until it ends (< 100 rounds), teams f
 | Service | Endpoint | Valid | Invalid |
 |---|---|---|---|
 | auth | `POST /api/auth/register` | 01 | 02 duplicate, 03 short password |
-| auth | `POST /api/auth/token` | 04 | 05 wrong password, 06 unknown user (same error), 07 unsupported grant |
+| auth | `POST /api/auth/token` | 04 password, 08 refresh, `access/10`, `13` | 05 wrong password, 06 unknown user (same error), 07 unsupported grant, `access/11` reuse, `12` revoked descendant, `17` after logout |
+| auth | `POST /api/auth/logout` | 09, `access/14`, `15` idempotent | 10 missing param, `access/16` missing param |
 | auth | `POST /internal/auth/token` | internal 01 | internal 02 wrong secret |
-| players | `GET /api/players/me` | 01 | 02 no token |
+| auth | `GET /internal/auth/authorize` | internal 03 | internal 04 invalid token, internal 05 wrong role |
+| players | `GET /api/players/me` | 01, `access/09` | 02 no token, `access/04` no token |
+| players | `PATCH /api/players/me` | 10 | 11 invalid avatar |
 | players | `GET /api/players/me/starters` | 03 | 04 no token |
 | players | `POST /api/players/me/starters` | 08 | 05 duplicate, 06 two starters, 07 outside pool, 09 second choice |
 | players | `POST /internal/players` | internal 01 (idempotent) | internal 02 player token |
 | players | `POST /internal/players/{pid}/new-run` | internal 03, 04 retried | internal 05 player token |
-| monsters | `GET /api/monsters` | 01 | 02 bad filter |
+| monsters | `GET /api/monsters` | 01 | 02 bad filter, `access/05` alg:none |
 | monsters | `GET /api/monsters/{id}` | 03 | 04 unknown id |
 | monsters | `GET /api/abilities`, `/{id}` | 05, 07 | 06 no token, 08 unknown id |
 | monsters | `GET /api/elements` | 09 | 10 no token |
 | monsters | `GET /images/monsters/{file}` | 11 | 12 missing |
 | monsters | `GET /api/collection` | 13 | 14 bad page |
 | monsters | `GET /api/collection/{owned_id}` | 15 | 16 unknown, 17 foreign |
+| monsters | `PATCH /api/collection/{owned_id}` | 18 | 19 invalid nickname |
 | monsters | `GET /internal/monsters` | internal 01 | internal 02 player token |
 | monsters | `GET /internal/monsters/{id}/stats` | internal 03 | internal 04 level 51 |
 | monsters | `POST /internal/collections/{pid}/starters` | internal 05, 06 retried | internal 15 two ids |
@@ -116,7 +128,7 @@ the battle ends (< 50 rounds), e2e attacks until it ends (< 100 rounds), teams f
 | monsters | `POST /internal/collections/{pid}/xp` | internal 09, 10 retried | internal 17 negative xp |
 | monsters | `GET /internal/collections/{pid}/instances` | internal 11 | internal 12 player token |
 | monsters | `POST /internal/collections/{pid}/archive` | internal 13, 14 retried | internal 18 player token |
-| teams | `GET /api/teams` | 01 | 02 no token |
+| teams | `GET /api/teams` | 01 | 02 no token, `access/06` bad signature |
 | teams | `POST /api/teams/validate` | 03 | 04 duplicate member |
 | teams | `POST /api/teams` | 05, 15 up to five | 06 four members, 13 foreign monster, 16 sixth team |
 | teams | `GET /api/teams/{id}` | 07 | 08 unknown, 14 foreign |
@@ -127,7 +139,7 @@ the battle ends (< 50 rounds), e2e attacks until it ends (< 100 rounds), teams f
 | encounters | `GET /api/runs/current` | 01 | 22 no active run |
 | encounters | `GET /api/runs` | 02 | 03 bad size |
 | encounters | `GET /api/runs/{run_id}` | 04 | 05 unknown |
-| encounters | `GET /api/encounters` | 06 | 09 no token |
+| encounters | `GET /api/encounters` | 06 | 09 no token, `access/07` tampered payload |
 | encounters | `GET /api/encounters/{id}` | 07 | 08 boss locked |
 | encounters | `POST /api/battles` | 13 | 11 unavailable template, 12 unknown team, 14 start twice |
 | encounters | `GET /api/battles/current` | 15 | 20 no battle |
@@ -135,8 +147,9 @@ the battle ends (< 50 rounds), e2e attacks until it ends (< 100 rounds), teams f
 | encounters | `POST /api/runs/current/abandon` | 19 | 21 no run |
 | encounters | `POST /api/runs` (new run) | — (needs a won run: JUnit `BattleApiTest.stageEightBossWinsTheRunAndANewRunCanStart`) | 23 run not won |
 | encounters | `POST /internal/runs` | internal 01 (idempotent) | internal 02 second active, 03 missing field, 04 player token |
-| history | `GET /api/history` | 01, 03 outcome filter | 02 no token, 04 bad outcome, 05 bad size |
+| history | `GET /api/history` | 01, 03 outcome filter | 02 no token, 04 bad outcome, 05 bad size, `access/08` garbage token |
 | history | `GET /api/history/{id}` | 06 | 07 unknown, 08 no token, internal 11 foreign |
+| history | `GET /api/history/verify` | 09 | 10 no token |
 | history | `POST /internal/history` | internal 01, 02 duplicate (idempotent) | internal 03 bad outcome, 04 missing wild, 05 unknown field, 06 player token, 07 no token |
 
 Not covered by Bruno: switching to a KO'd slot (needs a battle in a precise state; covered by

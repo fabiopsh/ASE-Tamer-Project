@@ -13,6 +13,13 @@
     <artifactId>encounters</artifactId>
     <name>Monster Tamers - encounters</name>
 
+    <dependencies>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-scheduler</artifactId>
+        </dependency>
+    </dependencies>
+
     <build>
         <plugins>
             <plugin>

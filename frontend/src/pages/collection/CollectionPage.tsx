@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { fetchAllPages } from '../../api/client';
 import { listRuns } from '../../api/encounters';
 import { listCollection } from '../../api/monsters';
 import type { Run } from '../../api/types';
@@ -27,13 +28,19 @@ export function CollectionPage() {
   const runId = params.get('run') ?? undefined;
   const page = Math.max(0, Number.parseInt(params.get('page') ?? '0', 10) || 0);
 
+  const viewingPast = runId !== undefined && runId !== player?.current_run_id;
+  const queryRunId = viewingPast ? runId : undefined;
+
   const { data, error, loading, reload } = useAsync(
-    (signal) => listCollection({ run_id: runId, page, size: PAGE_SIZE }, signal),
-    `collection:${runId ?? 'current'}:${page}`,
+    (signal) => listCollection({ run_id: queryRunId, page, size: PAGE_SIZE }, signal),
+    `collection:${queryRunId ?? 'current'}:${page}`,
   );
   // Past runs come from the encounters service; the selector stays hidden while it is unavailable.
-  const runs = useAsync((signal) => listRuns({ size: 50 }, signal), 'runs');
-  const pastRuns = (runs.data?.items ?? []).filter((r) => r.run_id !== player?.current_run_id);
+  const runs = useAsync(
+    (signal) => fetchAllPages((p, size) => listRuns({ page: p, size }, signal)),
+    'runs',
+  );
+  const pastRuns = (runs.data ?? []).filter((r) => r.run_id !== player?.current_run_id);
 
   function update(next: { run?: string | null; page?: number }) {
     const p = new URLSearchParams(params);
@@ -47,8 +54,6 @@ export function CollectionPage() {
     setParams(p);
     if (next.page !== undefined) window.scrollTo({ top: 0, behavior: 'smooth' });
   }
-
-  const viewingPast = runId !== undefined;
 
   return (
     <div className="page">
@@ -69,7 +74,7 @@ export function CollectionPage() {
               <select
                 id="run-select"
                 className="select"
-                value={runId ?? ''}
+                value={viewingPast ? runId : ''}
                 onChange={(e) => update({ run: e.target.value || null })}
               >
                 <option value="">Current run</option>

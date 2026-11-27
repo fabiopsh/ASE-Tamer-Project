@@ -127,6 +127,19 @@
     </dependencies>
 
     <build>
+        <resources>
+            <resource>
+                <directory>${project.basedir}/src/main/resources</directory>
+            </resource>
+            <!-- Canonical access policy packaged into every microservice (INFRA-10, P-24) -->
+            <resource>
+                <directory>${project.basedir}/../security</directory>
+                <targetPath>security</targetPath>
+                <includes>
+                    <include>access-policy.json</include>
+                </includes>
+            </resource>
+        </resources>
         <pluginManagement>
             <plugins>
                 <plugin>

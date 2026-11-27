@@ -20,6 +20,8 @@ public class OwnedMonster extends PanacheEntityBase {
     public UUID runId;
     @Column(name = "monster_id", nullable = false)
     public int monsterId;
+    @Column(name = "nickname", length = 30)
+    public String nickname;
     public short level;
     public int xp;
     public String source;

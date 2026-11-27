@@ -5,8 +5,13 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.matchesPattern;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.narayana.jta.QuarkusTransaction;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.security.TestSecurity;
@@ -14,13 +19,22 @@ import io.quarkus.test.security.jwt.Claim;
 import io.quarkus.test.security.jwt.JwtSecurity;
 import io.restassured.http.ContentType;
 import io.restassured.response.ValidatableResponse;
+import it.unipi.ase.tamer.history.api.dto.EncounterRecordRequest;
 import it.unipi.ase.tamer.history.domain.EncounterRecord;
+import it.unipi.ase.tamer.history.service.HashChain;
+import it.unipi.ase.tamer.history.service.HistoryService;
+import jakarta.inject.Inject;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -37,10 +51,16 @@ class HistoryResourceTest {
     static final String RUN_2 = "22222222-2222-4222-8222-222222222222";
     static final Instant T0 = Instant.parse("2026-11-06T10:00:00Z");
 
+    @Inject
+    HistoryService historyService;
+
+    @Inject
+    ObjectMapper objectMapper;
+
     @BeforeEach
     void cleanTable() {
         QuarkusTransaction.requiringNew().run(() -> EncounterRecord.getEntityManager()
-                .createNativeQuery("DELETE FROM encounter_records").executeUpdate());
+                .createNativeQuery("TRUNCATE TABLE encounter_records, chain_heads").executeUpdate());
     }
 
     // ---------- helpers ----------
@@ -158,6 +178,7 @@ class HistoryResourceTest {
     @Test
     void publicEndpointsWithoutTokenAre401() {
         given().get("/api/history").then().statusCode(401).body("error", equalTo("UNAUTHORIZED"));
+        given().get("/api/history/verify").then().statusCode(401).body("error", equalTo("UNAUTHORIZED"));
         given().get("/api/history/" + id()).then().statusCode(401).body("error", equalTo("UNAUTHORIZED"));
     }
 
@@ -379,5 +400,152 @@ class HistoryResourceTest {
                 .body("items.encounter_id", contains(mine)).body("total_items", equalTo(1));
         given().get("/api/history/" + mine).then().statusCode(200);
         given().get("/api/history/" + theirs).then().statusCode(404);
+    }
+
+    // ---------- append-only hash chain & verify (HI-2 / US-25) ----------
+
+    @Test
+    @TestSecurity(user = "ash", roles = {"player", "service"})
+    @JwtSecurity(claims = @Claim(key = "sub", value = PLAYER_A))
+    void verifyReturnsValidForEmptyAndPopulatedChain() {
+        given().get("/api/history/verify").then().statusCode(200)
+                .body("valid", equalTo(true))
+                .body("records", equalTo(0))
+                .body("head_hash", equalTo(HashChain.GENESIS_HASH))
+                .body("first_invalid", nullValue())
+                .body("first_broken_seq", nullValue());
+
+        // Include nanosecond precision timestamps to confirm Postgres microsecond truncation matches hashing.
+        Map<String, Object> r1 = record(id(), PLAYER_A, RUN_1, "victory", 1);
+        r1.put("started_at", "2026-11-06T10:00:00.123456789Z");
+        r1.put("ended_at", "2026-11-06T10:01:00.987654321Z");
+        post(r1).statusCode(201);
+        post(record(id(), PLAYER_A, RUN_1, "fled", 2)).statusCode(201);
+        post(record(id(), PLAYER_A, RUN_1, "defeat", 3)).statusCode(201);
+
+        given().get("/api/history/verify").then().statusCode(200)
+                .body("valid", equalTo(true))
+                .body("records", equalTo(3))
+                .body("head_hash", matchesPattern("[0-9a-f]{64}"))
+                .body("first_invalid", nullValue())
+                .body("first_broken_seq", nullValue());
+    }
+
+    @Test
+    @TestSecurity(user = "encounters", roles = "service")
+    void databaseTriggerBlocksUpdateAndDelete() {
+        String encounterId = id();
+        post(record(encounterId, PLAYER_A, RUN_1, "victory", 1)).statusCode(201);
+
+        Throwable updateErr = assertThrows(RuntimeException.class, () -> QuarkusTransaction.requiringNew().run(() ->
+                EncounterRecord.getEntityManager()
+                        .createNativeQuery("UPDATE encounter_records SET xp_gained = 999 WHERE encounter_id = CAST(:id AS uuid)")
+                        .setParameter("id", encounterId)
+                        .executeUpdate()));
+        assertTrue(causeMessageContains(updateErr, "append-only"), "expected append-only error, got: " + updateErr);
+
+        Throwable deleteErr = assertThrows(RuntimeException.class, () -> QuarkusTransaction.requiringNew().run(() ->
+                EncounterRecord.getEntityManager()
+                        .createNativeQuery("DELETE FROM encounter_records WHERE encounter_id = CAST(:id AS uuid)")
+                        .setParameter("id", encounterId)
+                        .executeUpdate()));
+        assertTrue(causeMessageContains(deleteErr, "append-only"), "expected append-only error, got: " + deleteErr);
+    }
+
+    @Test
+    @TestSecurity(user = "ash", roles = {"player", "service"})
+    @JwtSecurity(claims = @Claim(key = "sub", value = PLAYER_A))
+    void verifyDetectsTamperedRow() {
+        String id1 = id();
+        String id2 = id();
+        String id3 = id();
+        post(record(id1, PLAYER_A, RUN_1, "victory", 1)).statusCode(201);
+        post(record(id2, PLAYER_A, RUN_1, "victory", 2)).statusCode(201);
+        post(record(id3, PLAYER_A, RUN_1, "defeat", 3)).statusCode(201);
+
+        // Temporarily disable trigger to simulate direct DB tampering of row #2.
+        QuarkusTransaction.requiringNew().run(() -> {
+            var em = EncounterRecord.getEntityManager();
+            em.createNativeQuery("ALTER TABLE encounter_records DISABLE TRIGGER trg_encounter_records_append_only")
+                    .executeUpdate();
+            try {
+                em.createNativeQuery("UPDATE encounter_records SET xp_gained = 9999 WHERE encounter_id = CAST(:id AS uuid)")
+                        .setParameter("id", id2)
+                        .executeUpdate();
+            } finally {
+                em.createNativeQuery("ALTER TABLE encounter_records ENABLE TRIGGER trg_encounter_records_append_only")
+                        .executeUpdate();
+            }
+        });
+
+        given().get("/api/history/verify").then().statusCode(200)
+                .body("valid", equalTo(false))
+                .body("records", equalTo(3))
+                .body("first_invalid", equalTo(id2))
+                .body("first_broken_seq", equalTo(2));
+    }
+
+    @Test
+    @TestSecurity(user = "ash", roles = {"player", "service"})
+    @JwtSecurity(claims = @Claim(key = "sub", value = PLAYER_A))
+    void crossPlayerEncounterIdCollisionIsRejectedWith409() {
+        String encounterId = id();
+        post(record(encounterId, PLAYER_A, RUN_1, "victory", 1)).statusCode(201);
+
+        post(record(encounterId, PLAYER_B, RUN_2, "victory", 2)).statusCode(409)
+                .body("error", equalTo("ENCOUNTER_CONFLICT"));
+
+        assertEquals(1, rows());
+        given().get("/api/history/verify").then().statusCode(200)
+                .body("valid", equalTo(true))
+                .body("records", equalTo(1));
+    }
+
+    @Test
+    @TestSecurity(user = "ash", roles = {"player", "service"})
+    @JwtSecurity(claims = @Claim(key = "sub", value = PLAYER_A))
+    void concurrentInsertsForSamePlayerProduceValidSequentialChain() throws Exception {
+        int threads = 6;
+        ExecutorService pool = Executors.newFixedThreadPool(threads);
+        CountDownLatch ready = new CountDownLatch(threads);
+        CountDownLatch start = new CountDownLatch(1);
+        List<Callable<HistoryService.StoreResult>> tasks = new ArrayList<>();
+        for (int i = 0; i < threads; i++) {
+            Map<String, Object> raw = record(id(), PLAYER_A, RUN_1, "victory", i + 1);
+            EncounterRecordRequest req = objectMapper.convertValue(raw, EncounterRecordRequest.class);
+            tasks.add(() -> {
+                ready.countDown();
+                start.await();
+                return historyService.store(req);
+            });
+        }
+        try {
+            List<Future<HistoryService.StoreResult>> futures = new ArrayList<>();
+            for (Callable<HistoryService.StoreResult> task : tasks) {
+                futures.add(pool.submit(task));
+            }
+            ready.await();
+            start.countDown();
+            for (Future<HistoryService.StoreResult> f : futures) {
+                assertTrue(f.get().created());
+            }
+        } finally {
+            pool.shutdownNow();
+        }
+
+        given().get("/api/history/verify").then().statusCode(200)
+                .body("valid", equalTo(true))
+                .body("records", equalTo(threads))
+                .body("first_invalid", nullValue())
+                .body("first_broken_seq", nullValue());
+    }
+
+    private static boolean causeMessageContains(Throwable t, String needle) {
+        for (Throwable cur = t; cur != null; cur = cur.getCause()) {
+            if (cur.getMessage() != null && cur.getMessage().toLowerCase().contains(needle.toLowerCase())) {
+                return true;
+            }
+        }
+        return false;
     }
 }

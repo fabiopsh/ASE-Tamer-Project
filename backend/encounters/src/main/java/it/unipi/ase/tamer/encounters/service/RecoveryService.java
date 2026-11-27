@@ -94,19 +94,69 @@ public class RecoveryService {
             return;
         }
         if (Duration.between(session.lastActionAt(), time.now()).compareTo(idleTimeout) > 0) {
+            boolean expired = false;
             session.lock().lock();
             try {
                 if (session.closed()) {
                     return;
                 }
+                completions.close(session, BattleCompletionService.EXPIRED, false);
                 session.close();
                 registry.remove(session);
-                completions.close(session, BattleCompletionService.EXPIRED, false);
+                expired = true;
             } finally {
                 session.lock().unlock();
             }
-            LOG.infof("Battle %s of player %s expired", session.encounterId(), playerId);
-            completions.processQuietly(session.encounterId());
+            if (expired) {
+                LOG.infof("Battle %s of player %s expired", session.encounterId(), playerId);
+                completions.processQuietly(session.encounterId());
+            }
         }
+    }
+
+    /**
+     * Sweeps all in-memory battles and closes any that have been idle longer than {@link #idleTimeout} (EN-5).
+     *
+     * @return number of battles expired
+     */
+    public int expireIdleBattles() {
+        int expiredCount = 0;
+        for (BattleSession candidate : registry.sessionsSnapshot()) {
+            if (Duration.between(candidate.lastActionAt(), time.now()).compareTo(idleTimeout) <= 0) {
+                continue;
+            }
+            UUID playerId = candidate.playerId();
+            try {
+                boolean expired = registry.withPlayerLock(playerId, () -> {
+                    BattleSession current = registry.get(playerId);
+                    if (current != candidate) {
+                        return false;
+                    }
+                    if (Duration.between(current.lastActionAt(), time.now()).compareTo(idleTimeout) <= 0) {
+                        return false;
+                    }
+                    current.lock().lock();
+                    try {
+                        if (current.closed()) {
+                            return false;
+                        }
+                        completions.close(current, BattleCompletionService.EXPIRED, false);
+                        current.close();
+                        registry.remove(current);
+                        return true;
+                    } finally {
+                        current.lock().unlock();
+                    }
+                });
+                if (expired) {
+                    expiredCount++;
+                    LOG.infof("Battle %s of player %s expired by sweep", candidate.encounterId(), playerId);
+                    completions.processQuietly(candidate.encounterId());
+                }
+            } catch (RuntimeException e) {
+                LOG.warnf("Idle expiry of battle %s failed: %s", candidate.encounterId(), e.toString());
+            }
+        }
+        return expiredCount;
     }
 }

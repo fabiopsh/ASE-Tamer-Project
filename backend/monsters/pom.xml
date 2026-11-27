@@ -55,7 +55,7 @@
                         <phase>generate-resources</phase>
                         <goals><goal>copy-resources</goal></goals>
                         <configuration>
-                            <outputDirectory>${project.build.outputDirectory}/META-INF/resources/images/monsters</outputDirectory>
+                            <outputDirectory>${project.build.outputDirectory}/seed/images/monsters</outputDirectory>
                             <resources>
                                 <resource>
                                     <directory>${project.basedir}/seed/images/monsters</directory>

@@ -34,6 +34,7 @@ for (const svc of ['auth', 'players', 'monsters', 'teams', 'encounters', 'histor
   exportFolder(`services-${svc}`, folder(services.items, svc).items);
 }
 exportFolder('e2e', folder(collection.items, 'e2e').items);
+exportFolder('access', folder(collection.items, 'access').items);
 
 // Environments: plain key/value pairs read from environments/*.bru
 for (const file of fs.readdirSync(path.join(root, 'environments'))) {

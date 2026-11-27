@@ -12,6 +12,8 @@ const ICONS: Record<LogLine['tone'], string> = {
   switch: 'M7 7h11l-3-3M17 17H6l3 3',
   flee: 'M5 12h12m-4-5 5 5-5 5',
   end: 'M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.8 6.6 19.5l1.2-6L3.3 9.3l6.1-.7L12 3Z',
+  ability: 'M12 3l2.2 6.8L21 12l-6.8 2.2L12 21l-2.2-6.8L3 12l6.8-2.2L12 3Z',
+  heal: 'M12 5v14M5 12h14',
   info: 'M12 11v6M12 7.5v.5',
 };
 
@@ -32,6 +34,7 @@ export function BattleLogLine({ line, index = 0, fresh = false }: { line: LogLin
         {line.detail && <span className="blog-line__detail">{line.detail}</span>}
       </span>
       {line.damage !== undefined && line.damage > 0 && <span className="blog-line__dmg num">−{line.damage}</span>}
+      {line.heal !== undefined && line.heal > 0 && <span className="blog-line__heal num">+{line.heal}</span>}
     </li>
   );
 }

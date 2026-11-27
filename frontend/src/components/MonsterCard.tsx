@@ -10,6 +10,7 @@ import './monster-card.css';
 export interface MonsterLike {
   monster_id: number;
   name: string;
+  nickname?: string | null;
   element: Element;
   rarity?: Rarity;
   image_url?: string;
@@ -39,7 +40,10 @@ export interface MonsterCardProps {
 
 /**
  * Monster card: rarity frame (shimmering for legendary), element-tinted glow,
- * sprite on a pedestal, name, element and rarity badges.
+ * sprite on a pedestal, nickname/species name, element and rarity badges.
+ *
+ * Screen readers read the full semantic content (name, nickname, level, badges, slot/stats)
+ * directly rather than a truncated aria-label.
  */
 export function MonsterCard({
   monster,
@@ -57,6 +61,7 @@ export function MonsterCard({
 }: MonsterCardProps) {
   const rarity = monster.rarity ?? 'common';
   const interactive = Boolean(to || onSelect);
+  const nickname = monster.nickname?.trim() || null;
   const classes = [
     'mcard',
     `mcard--${size}`,
@@ -94,7 +99,8 @@ export function MonsterCard({
           dim={dim}
         />
       </span>
-      <span className="mcard__name">{monster.name}</span>
+      <span className="mcard__name">{nickname ?? monster.name}</span>
+      {nickname && <span className="mcard__species">{monster.name}</span>}
       <span className="mcard__badges">
         <ElementBadge element={monster.element} size="sm" />
         {monster.rarity && <RarityBadge rarity={monster.rarity} size="sm" />}
@@ -117,7 +123,7 @@ export function MonsterCard({
 
   if (to) {
     return (
-      <Link {...common} to={to} aria-label={`${monster.name}, ${monster.element}, ${rarity}`}>
+      <Link {...common} to={to}>
         {body}
       </Link>
     );
@@ -129,7 +135,6 @@ export function MonsterCard({
         type="button"
         aria-pressed={selected}
         aria-disabled={disabled || undefined}
-        aria-label={`${monster.name}, ${monster.element}, ${rarity}`}
         onClick={() => {
           if (!disabled) onSelect();
         }}

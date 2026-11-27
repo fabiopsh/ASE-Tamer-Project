@@ -1,0 +1,27 @@
+meta {
+  name: GET /internal/auth/authorize - valid player on /api/players/me
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{authUrl}}/internal/auth/authorize
+  body: none
+  auth: bearer
+}
+
+headers {
+  X-Original-Method: GET
+  X-Original-URI: /api/players/me
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+tests {
+  test("204 with verified X-Auth-Subject", function () {
+    expect(res.getStatus()).to.equal(204);
+    expect(res.getHeader("x-auth-subject")).to.match(/^[0-9a-f-]{36}$/);
+  });
+}

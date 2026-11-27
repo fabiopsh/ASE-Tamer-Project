@@ -1,0 +1,44 @@
+meta {
+  name: 02 - Login session 1 (300 s TTL + refresh token)
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{authUrl}}/api/auth/token
+  body: formUrlEncoded
+  auth: none
+}
+
+body:form-urlencoded {
+  grant_type: password
+  username: {{accUser}}
+  password: access-pass-123
+}
+
+tests {
+  test("200 with expires_in=300 and refresh_token", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getHeader("cache-control")).to.include("no-store");
+    const b = res.getBody();
+    expect(b.token_type).to.equal("Bearer");
+    expect(b.expires_in).to.equal(300);
+    expect(b.refresh_token).to.be.a("string").and.not.be.empty;
+    bru.setVar("accToken1", b.access_token);
+    bru.setVar("accRefresh1", b.refresh_token);
+
+    const toB64Url = (s) => Buffer.from(s, "utf8").toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    const fromB64Url = (s) => {
+      const pad = s.length % 4 === 0 ? "" : "=".repeat(4 - (s.length % 4));
+      return Buffer.from(s.replace(/-/g, "+").replace(/_/g, "/") + pad, "base64").toString("utf8");
+    };
+    const parts = b.access_token.split(".");
+    const hdrNone = toB64Url('{"alg":"none","typ":"JWT"}');
+    bru.setVar("algNoneToken", `${hdrNone}.${parts[1]}.`);
+    const badSig = (parts[2][0] === "A" ? "B" : "A") + parts[2].slice(1);
+    bru.setVar("badSigToken", `${parts[0]}.${parts[1]}.${badSig}`);
+    const payload = JSON.parse(fromB64Url(parts[1]));
+    payload.sub = "00000000-0000-4000-8000-000000000000";
+    bru.setVar("tamperedPayloadToken", `${parts[0]}.${toB64Url(JSON.stringify(payload))}.${parts[2]}`);
+  });
+}

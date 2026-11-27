@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { ToneIcon } from './ErrorBanner';
 import { ToastContext, type ToastApi, type ToastInput } from './toast-context';
 import './feedback.css';
@@ -12,15 +12,46 @@ interface ToastItem extends Required<Omit<ToastInput, 'message'>> {
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<ToastItem[]>([]);
   const nextId = useRef(1);
+  const timers = useRef<Map<number, number>>(new Map());
 
-  const dismiss = useCallback((id: number) => setItems((list) => list.filter((t) => t.id !== id)), []);
+  const dismiss = useCallback((id: number) => {
+    const timer = timers.current.get(id);
+    if (timer !== undefined) {
+      window.clearTimeout(timer);
+      timers.current.delete(id);
+    }
+    setItems((list) => list.filter((t) => t.id !== id));
+  }, []);
+
+  useEffect(() => {
+    const activeTimers = timers.current;
+    return () => {
+      for (const timer of activeTimers.values()) {
+        window.clearTimeout(timer);
+      }
+      activeTimers.clear();
+    };
+  }, []);
 
   const show = useCallback(
     (input: ToastInput) => {
       const id = nextId.current++;
       const item: ToastItem = { id, tone: 'info', duration: 4500, ...input };
-      setItems((list) => [...list.slice(-3), item]);
-      if (item.duration > 0) window.setTimeout(() => dismiss(id), item.duration);
+      setItems((list) => {
+        const next = [...list.slice(-3), item];
+        const keptIds = new Set(next.map((t) => t.id));
+        for (const [tid, timer] of timers.current.entries()) {
+          if (!keptIds.has(tid)) {
+            window.clearTimeout(timer);
+            timers.current.delete(tid);
+          }
+        }
+        return next;
+      });
+      if (item.duration > 0) {
+        const timer = window.setTimeout(() => dismiss(id), item.duration);
+        timers.current.set(id, timer);
+      }
     },
     [dismiss],
   );

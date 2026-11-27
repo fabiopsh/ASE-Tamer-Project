@@ -4,7 +4,7 @@ Decisioni prese dal gruppo il 15/10/2026. Integra [`docs/design/area_giocatori_m
 
 I valori numerici delle formule di gioco (sezione 4) sono **valori iniziali**: vanno bilanciati con simulazioni prima del prototipo.
 
-> **Aggiornamento 09/11/2026:** il piano di implementazione in [`docs/plan/`](../plan/README.md) (06/11/2026) ha cambiato alcune decisioni di questo documento. Dove i due documenti non coincidono vale il piano. Le modifiche sono riassunte nella [sezione 10](#10-aggiornamento-del-091126-piano-di-implementazione). Le API effettive sono in [`docs/openapi/`](../openapi/). Il PDF (`architettura_backend.pdf`, da `.tex`) è fermo al 15/10.
+> **Aggiornamenti 09/11/2026 e 27/11/2026:** il piano di implementazione in [`docs/plan/`](../plan/README.md) ha aggiornato alcune decisioni iniziali di questo documento (dove i due documenti non coincidono vale il piano). Le modifiche della fase P1 sono riassunte nella [sezione 10](#10-aggiornamento-del-091126-piano-di-implementazione) e il completamento finale della fase P2 nella [sezione 11](#11-aggiornamento-del-271126-completamento-fase-p2). Le API effettive sono in [`docs/openapi/`](../openapi/). Il PDF (`architettura_backend.pdf`, da `.tex`) è fermo al 15/10.
 
 ---
 
@@ -454,4 +454,38 @@ Rispetto a [`area_giocatori_mostri.md`](../design/area_giocatori_mostri.md):
 - Outbox nel servizio `encounters`: se un servizio non risponde, ricompensa, XP e record di history restano in sospeso e vengono ritentati al successivo accesso del giocatore alla run (idempotenti per `encounter_id`).
 - Gateway: invia ai servizi `Host: <nome del servizio>`, non l'header `Host` del client (CI-2).
 - Immagini Docker: Postgres derivato senza `gosu` (`infra/postgres`), Jackson 2.22.4 sopra il BOM di Quarkus (CI-2, vedi [`docs/security/`](../security/README.md)).
+
+## 11. Aggiornamento del 27/11/26: completamento fase P2
+
+Tutti gli obiettivi della fase P2 sono stati implementati e verificati end-to-end.
+
+### Decision log P-22…P-28
+
+| # | Tema | Decisione |
+|---|---|---|
+| P-22 | Durata token e refresh (`AUTH-7`) | Access token (player e service) con TTL **300 s**; sessioni utente con refresh token opachi a rotazione, reuse detection, revoca di famiglia, `POST /api/auth/logout` e scadenza assoluta a 7 giorni |
+| P-23 | Autorizzazione al gateway (`INFRA-9`) | Nginx usa `auth_request` HTTPS verso `GET /internal/auth/authorize` in `auth` (con `X-Auth-Subject`), bloccando token invalidi o ruoli errati prima dell'inoltro; ogni servizio continua a verificare il JWT in locale; fail-closed 503 se l'adapter non è disponibile |
+| P-24 | Policy di accesso unica (`INFRA-10`) | Tabella canonica `backend/security/access-policy.json` (52 regole) applicata da `AccessPolicyFilter` su tutti i 6 servizi e dall'adapter del gateway, mantenuta sincronizzata da `scripts/check-policy-sync.sh` |
+| P-25 | Threat model (`SEC-2`) | [`THREAT_MODEL.md`](../../THREAT_MODEL.md) nella root del repository (DFD Mermaid, asset, trust boundaries, minacce STRIDE e valutazioni dei gap) |
+| P-26 | Audit log (`SEC-3`, `SEC-4`) | Una riga JSON per evento (`ts`, `event`, `user`, `outcome`) solo ai punti d'ingresso (`gateway` e `auth`), senza mai loggare password, token o segreti |
+| P-27 | Identità nei login falliti | Blind index HMAC dello username (`AUTH-8`) in caso di credenziali errate, `player_id` in caso di successo: nessuno username in chiaro nei log |
+| P-28 | Utente nei log del gateway | Popolato esclusivamente dal claim `sub` verificato restituito da `INFRA-9` (`X-Auth-Subject`) |
+
+### Funzionalità e controlli introdotti in P2
+
+- **Sicurezza e autenticazione (`AUTH-7`, `AUTH-8`, `INFRA-9`, `INFRA-10`, Threat #22):** rotazione e pulizia schedulata dei refresh token; cifratura AES-256-GCM degli username a riposo (`username-enc-key`, `INFRA-4`) con blind index HMAC; login backoff (blocco 15 min dopo 5 errori consecutivi) e denylist delle password comuni; rate limiting al gateway esteso sia su `/api/auth/*` sia su `/api/`.
+- **Hardening infrastrutturale (`INFRA-3`, `CI-3`, `CI-4`):** `pg_hba.conf` con `hostssl` obbligatorio, reti DB isolate per singolo servizio, container applicativi `read_only: true`, gate CI di regressione access-security (`TEST-5`/`CI-3`) e aggiornamenti automatici Dependabot (`.github/dependabot.yml`).
+- **Storico tamper-evident (`HI-2`, US-25):** trigger PostgreSQL append-only (`V2__append_only.sql` che blocca `UPDATE`/`DELETE`), catena di hash SHA-256 per giocatore ed endpoint di verifica `GET /api/history/verify`.
+- **Motore di battaglia e bilanciamento (`EN-4`, `EN-5`, `EN-6`):** motore v2 con tutte le 7 abilità P2 (`heal`, `reflect`, `stun`, `random_boost`, `revive`, `copy_ability`, `invert_advantage`), `EncounterSweepScheduler` per la scadenza periodica delle battaglie inattive e il retry di reward/reset in sospeso, moltiplicatore HP dei boss ricalibrato a `BOSS_HP_MULTIPLIER = 1.25`.
+- **Storie opzionali implementate:** `PATCH /api/players/me` (US-04, `display_name` e `avatar`) e `PATCH /api/collection/{owned_id}` (US-13, `nickname`).
+- **Frontend (`FE-3`):** coordinatore di refresh automatico su 401, logout lato server, sincronizzazione multi-tab, `ErrorBoundary`, header CSP HTTP, UI per US-04/US-13 e suite Vitest.
+
+### Verifica finale (27/11/2026)
+
+- **Backend JUnit (`mvn clean verify`):** 273/273 test verdi (`auth`: 93, `players`: 24, `monsters`: 15, `teams`: 17, `encounters`: 96, `history`: 28).
+- **Frontend:** `tsc -b` 0 errori, `eslint .` 0 errori, Vitest 16/16 (`storage.test.ts`, `session-refresh.test.ts`, `battleText.test.ts`), `vite build` pulito, `npm audit --omit=dev` 0 vulnerabilità.
+- **Bruno API (`npm test`):** 399/399 verdi (`component`: 201, `integration`: 128, `e2e`: 36, `access:component`: 17, `access:integration`: 17), esportati in 10 file Postman v2.1 in `docs/tests/json/`.
+- **Sicurezza e audit:** `scripts/check-audit-log.sh` 18/18 verdi (`user == player_id` verificato); `scripts/security-check.sh` 47/47 verdi, 0 falliti.
+- **Performance (Locust P2):** 3.334 richieste aggregate in [`docs/locust/results/run_stats.csv`](../locust/results/run_stats.csv) (30 utenti, 60 s, gateway HTTPS con `auth_request` attivo), **0 errori (0,00%)**, 56,09 req/s, mediana 20 ms, media 87 ms, p95 230 ms, p99 2300 ms.
+- **Playtest browser E2E:** run completa dalla registrazione fino al boss finale dello Stage 8 (`Omnivoid`, Lv 26, turno 23), 30 battaglie verificate con la catena `HI-2`, modifica profilo (US-04), nickname mostri (US-13), logout e ripresa sessione al re-login.
 

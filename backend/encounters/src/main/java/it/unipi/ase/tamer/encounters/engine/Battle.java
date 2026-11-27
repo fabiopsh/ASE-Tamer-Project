@@ -26,7 +26,7 @@ import java.util.Objects;
 public final class Battle {
 
     /** Version of the rules and of the RNG call order; stored in every history record. */
-    public static final int ENGINE_VERSION = 1;
+    public static final int ENGINE_VERSION = 2;
     public static final int MAX_TEAM_SIZE = 3;
 
     private final BattleRandom rng;
@@ -100,6 +100,8 @@ public final class Battle {
         }
         markOnField(active);
         markOnField(wild);
+        applyCopyAbility(active, wild, events);
+        rollRandomBoosts(active, wild, events);
 
         if (action.type() == Action.Type.FLEE) {
             double p = FleeCalculator.probability(abilities.speedEff(active, wild, turn),
@@ -124,9 +126,16 @@ public final class Battle {
                 continue;
             }
             Fighter target = attacker == wild ? active : wild;
+            if (attacker.stunned) {
+                String source = attacker.stunnedBy != null ? attacker.stunnedBy : "Stun";
+                attacker.stunned = false;
+                attacker.stunnedBy = null;
+                events.add(BattleEvent.ability(attacker.side, source, "stun", attacker.combatant.name(),
+                        attacker.combatant.name() + " is stunned and skips its action.", null));
+                continue;
+            }
             attack(attacker, target, events);
-            if (!target.alive()) {
-                events.add(BattleEvent.knockout(target.side, target == wild ? null : target.position));
+            if (!target.alive() || !attacker.alive()) {
                 break;
             }
         }
@@ -151,12 +160,55 @@ public final class Battle {
         }
     }
 
+    private void applyCopyAbility(Fighter teamFighter, Fighter wildFighter, List<BattleEvent> events) {
+        Ability teamOrig = teamFighter.ability();
+        Ability wildOrig = wildFighter.ability();
+        if (teamOrig != null && abilities.shouldCopyAbility(teamOrig, teamFighter, wildFighter, turn)
+                && wildOrig != null && !abilities.handler(wildOrig.effectType()).copiesAbility()) {
+            teamFighter.copiedAbility = wildOrig;
+            events.add(BattleEvent.ability(teamFighter.side, teamOrig.name(), "copy_ability",
+                    teamFighter.combatant.name(),
+                    teamFighter.combatant.name() + " copied " + wildOrig.name() + " from "
+                            + wildFighter.combatant.name() + ".", null));
+        }
+        if (wildOrig != null && abilities.shouldCopyAbility(wildOrig, wildFighter, teamFighter, turn)
+                && teamOrig != null && !abilities.handler(teamOrig.effectType()).copiesAbility()) {
+            wildFighter.copiedAbility = teamOrig;
+            events.add(BattleEvent.ability(wildFighter.side, wildOrig.name(), "copy_ability",
+                    wildFighter.combatant.name(),
+                    wildFighter.combatant.name() + " copied " + teamOrig.name() + " from "
+                            + teamFighter.combatant.name() + ".", null));
+        }
+    }
+
+    private void rollRandomBoosts(Fighter teamFighter, Fighter wildFighter, List<BattleEvent> events) {
+        teamFighter.clearRandomBoost();
+        wildFighter.clearRandomBoost();
+        rollRandomBoost(teamFighter, wildFighter, events);
+        rollRandomBoost(wildFighter, teamFighter, events);
+    }
+
+    private void rollRandomBoost(Fighter self, Fighter opponent, List<BattleEvent> events) {
+        if (!self.alive() || !abilities.isRandomBoostActive(self, opponent, turn)) {
+            return;
+        }
+        Ability a = self.ability();
+        int pick = rng.nextInt(3);
+        String stat = pick == 0 ? "attack" : (pick == 1 ? "defense" : "speed");
+        self.randomBoostStat = stat;
+        self.randomBoostFactor = abilities.handler(a.effectType()).randomBoostFactor(a.effectValue());
+        events.add(BattleEvent.ability(self.side, a.name(), "random_boost", self.combatant.name(),
+                self.combatant.name() + "'s " + stat + " increased by " + a.effectValue() + "% (" + a.name() + ").",
+                a.effectValue()));
+    }
+
     private void attack(Fighter attacker, Fighter defender, List<BattleEvent> events) {
         AbilityEngine.AttackModifiers m = abilities.attackModifiers(attacker, defender, turn);
         ElementChart.Effectiveness raw = chart.effectiveness(attacker.combatant.element(),
                 defender.combatant.element());
+        ElementChart.Effectiveness afterInvert = m.invertAdvantage() ? DamageCalculator.invert(raw) : raw;
         ElementChart.Effectiveness eff = DamageCalculator.effectiveness(chart, attacker.combatant.element(),
-                defender.combatant.element(), m.ignoreDisadvantage());
+                defender.combatant.element(), m.invertAdvantage(), m.ignoreDisadvantage());
         boolean dodged = m.dodgeChance() > 0 && rng.nextDouble() < m.dodgeChance();
         int dealt = 0;
         List<String> used = new ArrayList<>();
@@ -164,20 +216,121 @@ public final class Battle {
             used.add(defender.ability().name());
         } else {
             double variance = DamageCalculator.rollVariance(rng);
-            int damage = DamageCalculator.damage(attacker.combatant.attack() * m.attackFactor(),
-                    defender.combatant.defense(), eff.multiplier(), variance, m.boost(), m.reduction());
+            double effectiveAttack = attacker.combatant.attack() * m.attackerAttackFactor() * m.attackFactor();
+            double effectiveDefense = defender.combatant.defense() * m.defenseFactor();
+            int damage = DamageCalculator.damage(effectiveAttack, effectiveDefense, eff.multiplier(), variance,
+                    m.boost(), m.reduction());
             dealt = Math.min(damage, defender.hp);
             defender.hp -= dealt;
-            if (m.boost() != 1.0 || (m.ignoreDisadvantage() && raw != eff)) {
+            if (m.boost() != 1.0 || m.attackerAttackFactor() != 1.0
+                    || (m.ignoreDisadvantage() && afterInvert != eff)
+                    || (m.attackerInverts() && !m.defenderInverts() && afterInvert != raw)) {
                 used.add(attacker.ability().name());
             }
-            if (m.attackFactor() != 1.0 || m.reduction() != 1.0) {
+            if (m.attackFactor() != 1.0 || m.reduction() != 1.0 || m.defenseFactor() != 1.0
+                    || (m.defenderInverts() && !m.attackerInverts() && afterInvert != raw)) {
                 used.add(defender.ability().name());
             }
         }
         defender.attacksReceived++;
         events.add(BattleEvent.attack(attacker.side, attacker.combatant.name(), defender.combatant.name(), dealt,
                 eff.wireName(), dodged, used));
+
+        if (!defender.alive()) {
+            tryRevive(defender, events);
+        }
+        if (defender.alive()) {
+            tryHeal(defender, events);
+        }
+        if (!dodged && dealt > 0) {
+            tryReflect(defender, attacker, dealt, events);
+        }
+        if (!dodged && dealt > 0 && defender.alive()) {
+            tryStun(attacker, defender, events);
+        }
+        if (!defender.alive()) {
+            events.add(BattleEvent.knockout(defender.side, defender == wild ? null : defender.position));
+        }
+    }
+
+    private void tryRevive(Fighter fighter, List<BattleEvent> events) {
+        if (fighter.revived) {
+            return;
+        }
+        Ability a = fighter.ability();
+        if (a == null) {
+            return;
+        }
+        int pct = abilities.revivePercent(a);
+        if (pct <= 0) {
+            return;
+        }
+        fighter.revived = true;
+        int restored = Math.min(fighter.maxHp, Math.max(1, (fighter.maxHp * pct) / 100));
+        fighter.hp = restored;
+        events.add(BattleEvent.ability(fighter.side, a.name(), "revive", fighter.combatant.name(),
+                fighter.combatant.name() + " revived with " + restored + " HP (" + a.name() + ").", restored));
+    }
+
+    private void tryHeal(Fighter fighter, List<BattleEvent> events) {
+        if (fighter.healed || !fighter.alive()) {
+            return;
+        }
+        Ability a = fighter.ability();
+        if (a == null) {
+            return;
+        }
+        int pct = abilities.healPercent(a, fighter);
+        if (pct <= 0) {
+            return;
+        }
+        fighter.healed = true;
+        int rawHeal = Math.max(1, (fighter.maxHp * pct) / 100);
+        int healed = Math.min(fighter.maxHp - fighter.hp, rawHeal);
+        fighter.hp += healed;
+        events.add(BattleEvent.ability(fighter.side, a.name(), "heal", fighter.combatant.name(),
+                fighter.combatant.name() + " restored " + healed + " HP (" + a.name() + ").", healed));
+    }
+
+    private void tryReflect(Fighter defender, Fighter attacker, int dealt, List<BattleEvent> events) {
+        Ability a = defender.ability();
+        if (a == null || !attacker.alive()) {
+            return;
+        }
+        int pct = abilities.reflectPercent(a);
+        if (pct <= 0) {
+            return;
+        }
+        int rawReflect = Math.max(1, (dealt * pct) / 100);
+        int reflectDealt = Math.min(rawReflect, attacker.hp);
+        attacker.hp -= reflectDealt;
+        events.add(BattleEvent.ability(defender.side, a.name(), "reflect", defender.combatant.name(),
+                defender.combatant.name() + " reflected " + reflectDealt + " damage to "
+                        + attacker.combatant.name() + " (" + a.name() + ").", reflectDealt));
+        if (!attacker.alive()) {
+            tryRevive(attacker, events);
+        }
+        if (attacker.alive()) {
+            tryHeal(attacker, events);
+        }
+        if (!attacker.alive()) {
+            events.add(BattleEvent.knockout(attacker.side, attacker == wild ? null : attacker.position));
+        }
+    }
+
+    private void tryStun(Fighter attacker, Fighter defender, List<BattleEvent> events) {
+        Ability a = attacker.ability();
+        if (a == null) {
+            return;
+        }
+        double chance = abilities.stunChance(a);
+        if (chance > 0 && rng.nextDouble() < chance) {
+            defender.stunned = true;
+            defender.stunnedBy = a.name();
+            events.add(BattleEvent.ability(attacker.side, a.name(), "stun", attacker.combatant.name(),
+                    attacker.combatant.name() + " stunned " + defender.combatant.name() + " (" + a.name() + ").",
+                    null));
+        }
     }
 
     private RoundResult finish(Outcome result, List<BattleEvent> events) {

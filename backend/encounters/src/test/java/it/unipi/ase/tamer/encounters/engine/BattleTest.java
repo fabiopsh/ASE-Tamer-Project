@@ -267,4 +267,20 @@ class BattleTest {
         assertEquals(b.log().get(1), b.view().lastRound());
         assertEquals(2, b.view().turn());
     }
+
+    @Test
+    void engineVersionIsTwoAndDeterministicWithP2Abilities() {
+        assertEquals(2, Battle.ENGINE_VERSION);
+        Ability revive = Fixtures.ability("Hourglass Reversal", "revive", 50, "once");
+        Ability stun = Fixtures.ability("Dreamweaver", "stun", 35, "on_attack");
+        Ability entropy = Fixtures.ability("Entropy", "random_boost", 30, "always");
+        Combatant w = mon("Chronarch", "time", 50, 40, 30, 45, revive);
+        Combatant a = mon("Dreamer", "dream", 40, 45, 30, 50, stun);
+        Combatant c = mon("Chaos", "chaos", 40, 40, 35, 42, entropy);
+        Battle b1 = attackUntilEnd(battle(77L, w, a, c));
+        Battle b2 = attackUntilEnd(battle(77L, w, a, c));
+        assertTrue(b1.isFinished());
+        assertEquals(b1.log(), b2.log());
+        assertEquals(b1.view(), b2.view());
+    }
 }

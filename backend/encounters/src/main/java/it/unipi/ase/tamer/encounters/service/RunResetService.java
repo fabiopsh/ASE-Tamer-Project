@@ -13,6 +13,7 @@ import jakarta.inject.Inject;
 import jakarta.persistence.LockModeType;
 import java.util.UUID;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.jboss.logging.Logger;
 
 /**
  * {@code RunResetService} (docs/plan/07-encounters.md, "Run reset"), after a defeat, an abandon, or
@@ -25,9 +26,14 @@ import org.eclipse.microprofile.rest.client.inject.RestClient;
  *       {@code reset_done = true}.</li>
  * </ol>
  * Every step is idempotent, so {@link #resume} can always be re-run from the start.
+ *
+ * <p>Permanent 4xx responses ({@link it.unipi.ase.tamer.encounters.client.RemoteClientError}) are logged and
+ * skipped so {@code reset_pending} does not wedge forever, while transient 5xx / network errors remain retryable.
  */
 @ApplicationScoped
 public class RunResetService {
+
+    private static final Logger LOG = Logger.getLogger(RunResetService.class);
 
     @Inject
     BattleCompletionService completions;
@@ -78,13 +84,27 @@ public class RunResetService {
             }
         }
         UUID playerId = run.playerId;
-        Remote.call(() -> monsters.archive(playerId, new RunIdRequest(runId)));
-        Remote.call(() -> teams.reset(playerId, new RunIdRequest(runId)));
-        Remote.call(() -> players.newRun(playerId, new NewRunRequest(runId)));
+        runRemoteStep("monsters.archive", runId, () -> monsters.archive(playerId, new RunIdRequest(runId)));
+        runRemoteStep("teams.reset", runId, () -> teams.reset(playerId, new RunIdRequest(runId)));
+        runRemoteStep("players.newRun", runId, () -> players.newRun(playerId, new NewRunRequest(runId)));
         QuarkusTransaction.requiringNew().run(() -> {
             Run row = Run.findById(runId, LockModeType.PESSIMISTIC_WRITE);
             row.resetPending = false;
             row.resetDone = true;
         });
+    }
+
+    private void runRemoteStep(String step, UUID runId, Runnable call) {
+        try {
+            call.run();
+        } catch (ApiException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            if (Remote.permanent(e)) {
+                LOG.warnf("Run reset %s: %s rejected permanently (%s); step skipped", runId, step, e.getMessage());
+                return;
+            }
+            throw ApiException.dependencyUnavailable(e);
+        }
     }
 }

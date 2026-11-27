@@ -165,7 +165,12 @@
   border-radius: var(--radius-pill);
   background: var(--surface-1);
   border: var(--stroke-fine) solid var(--border-soft);
+  color: var(--text-1);
   max-width: 220px;
+}
+a.hud__player:hover {
+  text-decoration: none;
+  border-color: var(--accent);
 }
 .hud__avatar {
   display: grid;

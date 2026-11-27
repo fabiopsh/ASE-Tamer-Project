@@ -171,6 +171,9 @@ public class BattleService {
         }
         session.lock().lock();
         try {
+            if (session.closed()) {
+                throw EncounterErrors.noBattle();
+            }
             return BattleStateResponse.of(session.encounterId(), session.battle().view(), null);
         } finally {
             session.lock().unlock();

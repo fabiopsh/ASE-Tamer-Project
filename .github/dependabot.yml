@@ -1,0 +1,62 @@
+# Automated dependency updates (docs/plan/11-ci-security.md, CI-4).
+# Weekly PRs evaluated by the same CI build, test and security gates.
+version: 2
+updates:
+  - package-ecosystem: "maven"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    groups:
+      quarkus-platform:
+        patterns:
+          - "io.quarkus*"
+      jackson:
+        patterns:
+          - "com.fasterxml.jackson*"
+
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: "npm"
+    directory: "/docs/tests/bruno"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 3
+
+  - package-ecosystem: "npm"
+    directory: "/scripts/openapi"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 3
+
+  - package-ecosystem: "pip"
+    directory: "/docs/locust"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 3
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: "docker"
+    directories:
+      - "/gateway"
+      - "/frontend"
+      - "/infra/init-secrets"
+      - "/infra/postgres"
+      - "/backend/auth"
+      - "/backend/players"
+      - "/backend/monsters"
+      - "/backend/teams"
+      - "/backend/encounters"
+      - "/backend/history"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5

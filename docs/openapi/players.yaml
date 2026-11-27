@@ -8,17 +8,26 @@ components:
     ChooseStartersRequest:
       type: object
       properties:
-        monsterIds:
+        monster_ids:
           type: array
           items:
             type: integer
             format: int32
+    ChosenStartersResponse:
+      type: object
+      properties:
+        run_id:
+          $ref: "#/components/schemas/UUID"
+        starters:
+          type: array
+          items:
+            $ref: "#/components/schemas/StarterEntry"
     CreatePlayerRequest:
       type: object
       required:
-      - playerId
+      - player_id
       properties:
-        playerId:
+        player_id:
           $ref: "#/components/schemas/UUID"
     ErrorDetail:
       type: object
@@ -38,17 +47,72 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ErrorDetail"
+    Instant:
+      type: string
+      format: date-time
+      examples:
+      - 2022-03-10T16:15:50Z
     NewRunRequest:
       type: object
       required:
-      - endedRunId
+      - ended_run_id
       properties:
-        endedRunId:
+        ended_run_id:
           $ref: "#/components/schemas/UUID"
+    NewRunResponse:
+      type: object
+      properties:
+        current_run_id:
+          $ref: "#/components/schemas/UUID"
+    PlayerResponse:
+      type: object
+      properties:
+        player_id:
+          $ref: "#/components/schemas/UUID"
+        display_name:
+          type: string
+        avatar:
+          type: string
+        current_run_id:
+          $ref: "#/components/schemas/UUID"
+        starters_chosen:
+          type: boolean
+        created_at:
+          $ref: "#/components/schemas/Instant"
+    StarterEntry:
+      type: object
+      properties:
+        owned_id:
+          $ref: "#/components/schemas/UUID"
+        monster_id:
+          type: integer
+          format: int32
+        level:
+          type: integer
+          format: int32
+    StarterPoolResponse:
+      type: object
+      properties:
+        run_id:
+          $ref: "#/components/schemas/UUID"
+        pool:
+          type: array
+          items:
+            type: integer
+            format: int32
+        chosen:
+          type: boolean
     UUID:
       type: string
       format: uuid
       pattern: "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}"
+    UpdateProfileRequest:
+      type: object
+      properties:
+        display_name:
+          type: string
+        avatar:
+          type: string
   securitySchemes:
     bearerAuth:
       description: JWT access token from the auth service (player or service role)
@@ -57,6 +121,47 @@ components:
       bearerFormat: JWT
 paths:
   /api/players/me:
+    patch:
+      summary: Update my display name or avatar (US-04)
+      operationId: PlayersResource_updateProfile
+      tags:
+      - players
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProfileRequest"
+        required: true
+      responses:
+        "200":
+          description: Updated player profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlayerResponse"
+        "400":
+          description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: "UNAUTHORIZED: missing or invalid token"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: NOT_FOUND
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not Allowed
+      security:
+      - bearerAuth:
+        - player
     get:
       summary: Read my player profile (US-03)
       operationId: PlayersResource_profile
@@ -67,15 +172,20 @@ paths:
           description: Player profile
           content:
             application/json:
-              schema: {}
+              schema:
+                $ref: "#/components/schemas/PlayerResponse"
+        "401":
+          description: "UNAUTHORIZED: missing or invalid token"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "404":
           description: NOT_FOUND
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-        "401":
-          description: Not Authorized
         "403":
           description: Not Allowed
       security:
@@ -89,12 +199,23 @@ paths:
       - players
       responses:
         "200":
-          description: OK
+          description: Persistent starter pool
           content:
             application/json:
-              schema: {}
+              schema:
+                $ref: "#/components/schemas/StarterPoolResponse"
         "401":
-          description: Not Authorized
+          description: "UNAUTHORIZED: missing or invalid token"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: NOT_FOUND
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "403":
           description: Not Allowed
       security:
@@ -114,14 +235,34 @@ paths:
       responses:
         "201":
           description: Starters chosen
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChosenStartersResponse"
         "400":
           description: INVALID_STARTERS
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: "UNAUTHORIZED: missing or invalid token"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "409":
           description: STARTERS_ALREADY_CHOSEN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "503":
           description: DEPENDENCY_UNAVAILABLE
-        "401":
-          description: Not Authorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "403":
           description: Not Allowed
       security:
@@ -142,19 +283,40 @@ paths:
       responses:
         "201":
           description: Profile created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlayerResponse"
         "200":
           description: Profile already existed
           content:
             application/json:
-              schema: {}
+              schema:
+                $ref: "#/components/schemas/PlayerResponse"
         "400":
           description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "401":
           description: "UNAUTHORIZED: missing or invalid token"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "403":
           description: "FORBIDDEN: not a service token"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "503":
           description: DEPENDENCY_UNAVAILABLE
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
       security:
       - bearerAuth:
         - service
@@ -181,17 +343,38 @@ paths:
           description: Profile with the new run (unchanged when repeated)
           content:
             application/json:
-              schema: {}
+              schema:
+                $ref: "#/components/schemas/NewRunResponse"
         "400":
           description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "401":
           description: "UNAUTHORIZED: missing or invalid token"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "403":
           description: "FORBIDDEN: not a service token"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "404":
           description: NOT_FOUND
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "503":
           description: DEPENDENCY_UNAVAILABLE
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
       security:
       - bearerAuth:
         - service

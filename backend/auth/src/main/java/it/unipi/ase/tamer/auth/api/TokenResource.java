@@ -19,7 +19,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
-/** Public OAuth2 token endpoint (P-05). P1: {@code password} grant; P2 adds {@code refresh_token}. */
+/** Public OAuth2 token endpoint (P-05): {@code password} (US-02) and {@code refresh_token} (AUTH-7). */
 @Path("/api/auth/token")
 @Tag(name = "auth")
 public class TokenResource {
@@ -31,20 +31,24 @@ public class TokenResource {
     @PermitAll
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(summary = "Obtain an access token (US-02)",
-            description = "OAuth2 token endpoint, form-urlencoded. grant_type=password with username and password.")
-    @APIResponse(responseCode = "200", description = "Access token",
+    @Operation(summary = "Obtain or refresh an access token (US-02, AUTH-7)",
+            description = "OAuth2 token endpoint, form-urlencoded. Supports grant_type=password (username, password) and grant_type=refresh_token (refresh_token).")
+    @APIResponse(responseCode = "200", description = "Access and refresh tokens",
             content = @Content(schema = @Schema(implementation = TokenResponse.class)))
     @APIResponse(responseCode = "400", description = "invalid_request, invalid_grant or unsupported_grant_type",
             content = @Content(schema = @Schema(implementation = OAuthErrorResponse.class)))
     public Response token(@FormParam("grant_type") String grantType,
                           @FormParam("username") String username,
-                          @FormParam("password") String password) {
+                          @FormParam("password") String password,
+                          @FormParam("refresh_token") String refreshToken) {
         if (grantType == null || grantType.isBlank()) {
             throw OAuthException.invalidRequest("grant_type is required.");
         }
         if ("password".equals(grantType)) {
             return TokenResponses.ok(tokens.passwordGrant(username, password));
+        }
+        if ("refresh_token".equals(grantType)) {
+            return TokenResponses.ok(tokens.refreshGrant(refreshToken));
         }
         throw OAuthException.unsupportedGrantType();
     }

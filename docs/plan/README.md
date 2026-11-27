@@ -40,7 +40,7 @@ Every task in the area files is tagged **P1** or **P2**.
 
 ### Access Security follow-up (17/11/2026)
 
-These are **open P2 implementation tasks**. Existing P1 completion notes do not cover them.
+**Status (27/11/2026):** **All completed and verified** (`INFRA-10`, `INFRA-9`, `AUTH-7`, `FE-3`, `TEST-5`, `CI-3`, `CI-4`).
 
 | Gap or requested behavior | Task | Acceptance condition |
 |---|---|---|
@@ -56,7 +56,7 @@ Keep the project's OAuth2 form-urlencoded endpoints and `400 invalid_grant` for 
 
 ### Security Assessment follow-up (18/11/2026)
 
-**Status (18/11/2026):** SEC-2 and SEC-3 done, SEC-4 done except the verified `user` of gateway lines, which waits for INFRA-9. Still open: the read-aloud review of the diagram by a team member, and the `THREAT_MODEL.md` updates that each later P2 task brings.
+**Status (27/11/2026):** **All completed and verified** (`SEC-2`, `SEC-3`, `SEC-4` with verified `user == player_id` from `INFRA-9` `X-Auth-Subject`; `scripts/check-audit-log.sh` 18/18 passed; Threat #22 `/api/` rate limit mitigated).
 
 | Gap or requested behavior | Task | Acceptance condition |
 |---|---|---|
@@ -169,6 +169,7 @@ With 3 people, merge B and D: infrastructure first, then monsters/teams.
 | 09/11/2026 | TEST-1, TEST-2, TEST-3 (first run) | `00-setup` folders now use public endpoints only, so the integration run works through the gateway; internal requests use their own player. New requests for the missing matrix cases, `e2e/` core loop, JSON export (`npm run export`), Locust. Green: component 189, integration 117, e2e. Details in [`docs/tests/bruno/README.md`](../tests/bruno/README.md) and [`docs/locust/README.md`](../locust/README.md) |
 | 09/11/2026 | CI-1, CI-2 (first triage), DOC-1 (docs part) | Workflow `.github/workflows/ci.yml` (+ copy in `docs/ci/`), Semgrep/Trivy fixes in [`docs/security/`](../security/README.md); AC for every story in scope, completed backlog xlsx, OpenAPI in `docs/openapi/`, architecture section 10. Not yet run on GitHub; SEC-1 script written but not executed |
 | 18/11/2026 | SEC-2, SEC-3, SEC-4 (user field after INFRA-9) | [`THREAT_MODEL.md`](../../THREAT_MODEL.md) in the root: DFD, 10 assets, 7 attack surfaces, 4 trust boundaries, 25 STRIDE threats (6 Covered, 12 Partial, 5 Gap, 2 fixed), ratings and decisions. JSON audit log in auth (`AuditLog`, `UsernameBlindIndex`, 23 new tests, mutation-checked) and at the gateway (`log_format audit`); `scripts/check-audit-log.sh` added to the CI `compose-smoke` job. Next gap by rating: a per-IP rate limit on `/api/` (threat 22) |
+| 27/11/2026 | Full P2 completion (`INFRA-3/4/9/10`, `AUTH-7/8`, `HI-2`, `EN-4/5/6`, `FE-3`, `US-04`, `US-13`, `TEST-3/5`, `SEC-1/4`, `CI-3/4`, Threat #22) | **Backend JUnit** 273/273 (`auth`: 93, `players`: 24, `monsters`: 15, `teams`: 17, `encounters`: 96, `history`: 28); **Frontend** `tsc -b` 0, `eslint .` 0, Vitest 16/16, `vite build` clean, `npm audit --omit=dev` 0; **Bruno** 399/399 (`component` 201, `integration` 128, `e2e` 36, `access:component` 17, `access:integration` 17; 10 Postman JSON files exported); **Audit log** 18/18 (`user == player_id` via `INFRA-9`); **Self-attack** 47/47 (`scripts/security-check.sh`); **Locust P2** 0% failures across 3,334 requests in `run_stats.csv` (p50 20 ms, p95 230 ms); **Browser E2E playtest** Stage 1 → Stage 8 Final Boss (`Omnivoid`, Lv 26, Turn 23), 30 battles verified with `HI-2` hash chain |
 
 ## Definition of done (every task)
 

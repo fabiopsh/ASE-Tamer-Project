@@ -1,0 +1,18 @@
+meta {
+  name: 04 - Players: no token -> 401 + Bearer challenge
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{playersUrl}}/api/players/me
+  body: none
+  auth: none
+}
+
+tests {
+  test("401 with WWW-Authenticate: Bearer", function () {
+    expect(res.getStatus()).to.equal(401);
+    expect(res.getHeader("www-authenticate")).to.include("Bearer");
+  });
+}

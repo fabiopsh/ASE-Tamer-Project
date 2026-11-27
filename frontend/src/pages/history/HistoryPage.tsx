@@ -1,8 +1,10 @@
-import type { CSSProperties } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { fetchAllPages } from '../../api/client';
 import { listRuns } from '../../api/encounters';
-import { listHistory } from '../../api/history';
+import { listHistory, verifyHistory, type HistoryVerification } from '../../api/history';
 import type { BattleOutcome } from '../../api/types';
+import { Button } from '../../components/Button';
 import { EmptyState } from '../../components/EmptyState';
 import { ErrorBanner } from '../../components/ErrorBanner';
 import { FilterChips, type ChipOption } from '../../components/FilterChips';
@@ -15,21 +17,46 @@ import { HistoryRow } from './HistoryRow';
 import './history.css';
 
 const PAGE_SIZE = 10;
-const OUTCOMES: BattleOutcome[] = ['victory', 'defeat', 'fled', 'abandoned', 'expired', 'interrupted'];
+const OUTCOMES: readonly BattleOutcome[] = ['victory', 'defeat', 'fled', 'abandoned', 'expired', 'interrupted'];
 const OUTCOME_OPTIONS: ChipOption<BattleOutcome>[] = OUTCOMES.map((o) => ({ value: o, label: OUTCOME_LABELS[o] }));
 
-/** /history — finished battles, newest first, filtered by outcome and run (US-23). */
+function parseOutcome(raw: string | null): BattleOutcome | null {
+  if (!raw) return null;
+  return (OUTCOMES as readonly string[]).includes(raw) ? (raw as BattleOutcome) : null;
+}
+
+/** /history — finished battles, newest first, filtered by outcome and run (US-23), with HI-2 integrity verification. */
 export function HistoryPage() {
   const [params, setParams] = useSearchParams();
-  const outcome = (params.get('outcome') as BattleOutcome | null) ?? null;
+  const outcome = parseOutcome(params.get('outcome'));
   const runId = params.get('run') ?? undefined;
   const page = Math.max(0, Number.parseInt(params.get('page') ?? '0', 10) || 0);
+
+  const [verifying, setVerifying] = useState(false);
+  const [verification, setVerification] = useState<HistoryVerification | null>(null);
+  const [verifyError, setVerifyError] = useState<unknown>(null);
 
   const { data, error, loading, reload } = useAsync(
     (signal) => listHistory({ outcome: outcome ?? undefined, run_id: runId, page, size: PAGE_SIZE }, signal),
     `history:${outcome}:${runId}:${page}`,
   );
-  const runs = useAsync((signal) => listRuns({ size: 50 }, signal), 'history:runs');
+  const runs = useAsync(
+    (signal) => fetchAllPages((p, size) => listRuns({ page: p, size }, signal)),
+    'history:runs',
+  );
+
+  async function runVerify() {
+    setVerifying(true);
+    setVerifyError(null);
+    try {
+      const res = await verifyHistory();
+      setVerification(res);
+    } catch (err) {
+      setVerifyError(err);
+    } finally {
+      setVerifying(false);
+    }
+  }
 
   function update(next: { outcome?: BattleOutcome | null; run?: string | null; page?: number }) {
     const p = new URLSearchParams(params);
@@ -48,6 +75,7 @@ export function HistoryPage() {
   }
 
   const filtered = outcome !== null || runId !== undefined;
+  const runItems = runs.data ?? [];
 
   return (
     <div className="page">
@@ -55,7 +83,58 @@ export function HistoryPage() {
         eyebrow="Chronicle"
         title="Battle history"
         subtitle="Every finished battle, with the team you brought and what happened round by round."
+        actions={
+          <div className="cluster">
+            {verification && (
+              <span
+                className={`tag ${verification.valid ? 'tag--success' : 'tag--danger'}`}
+                title={verification.head_hash ? `Head hash: ${verification.head_hash}` : undefined}
+              >
+                {verification.valid ? 'Chain verified' : 'Chain tampered'}
+              </span>
+            )}
+            <Button variant="ghost" size="sm" loading={verifying} onClick={() => void runVerify()}>
+              Verify integrity
+            </Button>
+          </div>
+        }
       />
+
+      {verifyError !== null && (
+        <ErrorBanner
+          compact
+          title="History integrity check failed"
+          error={verifyError}
+          onRetry={() => void runVerify()}
+          onDismiss={() => setVerifyError(null)}
+        />
+      )}
+
+      {verification && (
+        <ErrorBanner
+          compact
+          tone={verification.valid ? 'success' : 'error'}
+          title={
+            verification.valid
+              ? `Integrity verified (${verification.records} ${verification.records === 1 ? 'record' : 'records'})`
+              : 'History integrity check detected tampering'
+          }
+          message={
+            verification.valid
+              ? verification.head_hash
+                ? `Hash chain intact. Head hash: ${verification.head_hash.slice(0, 12)}…`
+                : 'Hash chain intact.'
+              : [
+                  `Checked ${verification.records} ${verification.records === 1 ? 'record' : 'records'}.`,
+                  verification.first_broken_seq != null ? `First broken sequence: #${verification.first_broken_seq}.` : null,
+                  verification.first_invalid ? `First invalid record: ${verification.first_invalid}.` : null,
+                ]
+                  .filter(Boolean)
+                  .join(' ')
+          }
+          onDismiss={() => setVerification(null)}
+        />
+      )}
 
       <section className="panel panel--tight history-filters" aria-label="Filters">
         <FilterChips label="Outcome" options={OUTCOME_OPTIONS} value={outcome} onChange={(v) => update({ outcome: v })} />
@@ -65,12 +144,12 @@ export function HistoryPage() {
           </label>
           <select id="history-run" className="select" value={runId ?? ''} onChange={(e) => update({ run: e.target.value || null })}>
             <option value="">All runs</option>
-            {(runs.data?.items ?? []).map((r) => (
+            {runItems.map((r) => (
               <option key={r.run_id} value={r.run_id}>
                 {formatDate(r.started_at)} · {capitalize(r.status)} · stage {r.stage}
               </option>
             ))}
-            {runId && !(runs.data?.items ?? []).some((r) => r.run_id === runId) && <option value={runId}>Selected run</option>}
+            {runId && !runItems.some((r) => r.run_id === runId) && <option value={runId}>Selected run</option>}
           </select>
         </div>
       </section>

@@ -47,7 +47,6 @@ export function RunsPage() {
       current.reload();
       list.reload();
     } catch (e) {
-      setConfirmAbandon(false);
       setActionError(e);
     } finally {
       setBusy(null);
@@ -140,7 +139,14 @@ export function RunsPage() {
                 Details
               </Link>
               {run.status === 'active' && (
-                <Button variant="danger" onClick={() => setConfirmAbandon(true)} disabled={run.reset_pending}>
+                <Button
+                  variant="danger"
+                  onClick={() => {
+                    setActionError(null);
+                    setConfirmAbandon(true);
+                  }}
+                  disabled={run.reset_pending}
+                >
                   Abandon run
                 </Button>
               )}
@@ -185,7 +191,8 @@ export function RunsPage() {
                       </span>
                     </span>
                     <span className="run-row__bosses">
-                      <span className="num">{(r.bosses_defeated ?? []).length}</span> bosses defeated
+                      <span className="num">{(r.bosses_defeated ?? []).length}</span>{' '}
+                      {(r.bosses_defeated ?? []).length === 1 ? 'boss defeated' : 'bosses defeated'}
                     </span>
                     <span className="run-row__chev" aria-hidden="true">
                       ›
@@ -213,7 +220,10 @@ export function RunsPage() {
         danger
         busy={busy === 'abandon'}
         onConfirm={() => void abandon()}
-        onCancel={() => setConfirmAbandon(false)}
+        onCancel={() => {
+          setConfirmAbandon(false);
+          setActionError(null);
+        }}
       >
         <p>This cannot be undone. If a battle is open it ends as abandoned, without reward.</p>
         <ul className="dialog-list">

@@ -1,0 +1,22 @@
+meta {
+  name: 09 - Valid player access across services (players)
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{playersUrl}}/api/players/me
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accToken1}}
+}
+
+tests {
+  test("200 player profile", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().player_id).to.equal(bru.getVar("accPlayerId"));
+  });
+}

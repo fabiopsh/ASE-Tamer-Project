@@ -1,6 +1,6 @@
-import { useEffect, useState, type CSSProperties, type DragEvent } from 'react';
+import { useEffect, useState, type CSSProperties, type DragEvent, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { isApiError } from '../../api/client';
+import { fetchAllPages, isApiError } from '../../api/client';
 import { listCollection } from '../../api/monsters';
 import { createTeam, getTeam, updateTeam, validateTeam } from '../../api/teams';
 import type { OwnedMonster, TeamValidation, Uuid } from '../../api/types';
@@ -28,7 +28,10 @@ export function TeamEditorPage() {
   const { id } = useParams();
   const editing = id !== undefined;
   const team = useAsync((signal) => getTeam(id!, signal), editing ? `team:${id}` : null);
-  const collection = useAsync((signal) => listCollection({ size: 50 }, signal), 'editor:collection');
+  const collection = useAsync(
+    (signal) => fetchAllPages((page, size) => listCollection({ page, size }, signal)),
+    'editor:collection',
+  );
 
   if (editing && team.error !== null) {
     return (
@@ -56,7 +59,7 @@ export function TeamEditorPage() {
       teamId={team.data?.team_id}
       initialName={team.data?.name ?? ''}
       initialMembers={team.data?.members.map((m) => m.owned_id) ?? []}
-      collection={collection.data?.items}
+      collection={collection.data}
       collectionError={collection.error}
       reloadCollection={collection.reload}
     />
@@ -83,8 +86,8 @@ function Editor({ teamId, initialName, initialMembers, collection, collectionErr
 
   // Live validation: one request per change of the member list (debounced, the previous one aborted).
   const membersKey = members.join(',');
-  const [validation, setValidation] = useState<{ key: string; result: TeamValidation | null; error: unknown }>({
-    key: '',
+  const [validation, setValidation] = useState<{ key: string | null; result: TeamValidation | null; error: unknown }>({
+    key: null,
     result: null,
     error: null,
   });
@@ -153,6 +156,12 @@ function Editor({ teamId, initialName, initialMembers, collection, collectionErr
     }
   }
 
+  function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    if (saving) return;
+    void save();
+  }
+
   const saveCodes = isApiError(saveError) ? saveError.details.map((d) => d.code).filter(Boolean) : [];
   const nameRejected = saveCodes.includes('NAME_INVALID');
 
@@ -166,7 +175,7 @@ function Editor({ teamId, initialName, initialMembers, collection, collectionErr
       />
 
       <div className="editor">
-        <section className="panel editor__team" aria-labelledby="team-slots">
+        <form className="panel editor__team" aria-labelledby="team-slots" onSubmit={onSubmit} noValidate>
           <div className="field">
             <label className="field__label" htmlFor="team-name">
               Team name
@@ -314,11 +323,11 @@ function Editor({ teamId, initialName, initialMembers, collection, collectionErr
             <Link to="/teams" className="btn btn--ghost">
               Cancel
             </Link>
-            <Button variant="primary" loading={saving} onClick={() => void save()}>
+            <Button type="submit" variant="primary" loading={saving}>
               {teamId ? 'Save changes' : 'Create team'}
             </Button>
           </div>
-        </section>
+        </form>
 
         <section className="editor__pool" aria-labelledby="pool-title">
           <div className="row row--between">

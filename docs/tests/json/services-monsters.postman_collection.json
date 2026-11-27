@@ -1214,6 +1214,122 @@
               }
             }
           ]
+        },
+        {
+          "name": "PATCH /api/collection/{{owned1}} - valid: set nickname (US-13)",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{monstersUrl}}/api/collection/{{owned1}}",
+              "protocol": "",
+              "host": [
+                "{{monstersUrl}}"
+              ],
+              "path": [
+                "api",
+                "collection",
+                "{{owned1}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nickname\": \"Sparky\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"200 updated nickname\", function () {",
+                  "  expect(res.getStatus()).to.equal(200);",
+                  "  expect(res.getBody().nickname).to.equal(\"Sparky\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /api/collection/{{owned1}} - invalid: illegal characters (US-13)",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{monstersUrl}}/api/collection/{{owned1}}",
+              "protocol": "",
+              "host": [
+                "{{monstersUrl}}"
+              ],
+              "path": [
+                "api",
+                "collection",
+                "{{owned1}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nickname\": \"<script>bad</script>\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"400 VALIDATION_ERROR\", function () {",
+                  "  expect(res.getStatus()).to.equal(400);",
+                  "  expect(res.getBody().error).to.equal(\"VALIDATION_ERROR\");",
+                  "});"
+                ]
+              }
+            }
+          ]
         }
       ],
       "auth": {

@@ -1,4 +1,4 @@
-# Monster Tamers - continuous integration (docs/plan/11-ci-security.md, CI-1 and CI-2).
+# Monster Tamers - continuous integration (docs/plan/11-ci-security.md, CI-1, CI-2, CI-3).
 # A copy of this file is kept in docs/ci/ci.yml (requirements): the docs-sync job checks they are identical.
 # Every action is pinned to a commit SHA (tag in the comment) and every tool image to a digest.
 name: CI
@@ -7,6 +7,8 @@ on:
   push:
     branches: [main]
   pull_request:
+  schedule:
+    - cron: '0 6 * * 1'
   workflow_dispatch:
 
 permissions:
@@ -28,6 +30,8 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Policy and security-commons sync (INFRA-10)
+        run: scripts/check-policy-sync.sh
       - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
           distribution: temurin
@@ -43,7 +47,7 @@ jobs:
           retention-days: 7
 
   frontend:
-    name: Frontend lint and build
+    name: Frontend lint, tests and build
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     defaults:
@@ -57,13 +61,15 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
+      - run: npm run typecheck
       - run: npm run lint
+      - run: npm test
       - run: npm run build
 
   compose-smoke:
-    name: Compose smoke and API tests
+    name: Compose smoke, API tests and access regression
     runs-on: ubuntu-24.04
-    timeout-minutes: 40
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -71,40 +77,49 @@ jobs:
           node-version: "22.20.0"
           cache: npm
           cache-dependency-path: docs/tests/bruno/package-lock.json
-      - name: Start the stack (test override, waits for the health checks)
-        run: docker compose -f docker-compose.yml -f docker-compose.test.yml up -d --build --wait --wait-timeout 600
-      - name: Gateway health over HTTPS (verified against the local CA)
+      - name: Start the backend stack (test override) and frontend stack
+        run: |
+          docker compose -f docker-compose.yml -f docker-compose.test.yml up -d --build --wait --wait-timeout 600
+          docker compose -f docker-compose.frontend.yml up -d --build --wait --wait-timeout 180
+      - name: Gateway HTTPS, frontend HTTP + CSP, and CORS preflight
         run: |
           scripts/test-env.sh
           curl -fsS --cacert .test-secrets/ca.crt https://localhost:8443/health
+          curl -fsSI http://localhost:8080/ | grep -qi '^content-security-policy:'
+          curl -fsSI --cacert .test-secrets/ca.crt -X OPTIONS -H 'Origin: http://localhost:8080' https://localhost:8443/api/players/me | grep -qi 'access-control-allow-origin: http://localhost:8080'
       - name: Plain HTTP to the gateway is refused
         run: |
           code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8443/health || true)
           echo "HTTP status: $code"
           test "$code" != "200"
-      - name: Bruno component, integration and e2e tests
+      - name: Bruno component, integration, e2e and access-security tests (TEST-1, TEST-2, TEST-5)
         working-directory: docs/tests/bruno
         run: |
           npm ci
           npm test
-      - name: Audit log of the gateway and auth (SEC-3, SEC-4)
+      - name: Audit log of the gateway and auth (SEC-3, SEC-4, INFRA-9)
         env:
           COMPOSE: docker compose -f docker-compose.yml -f docker-compose.test.yml
         run: scripts/check-audit-log.sh https://localhost:8443 .test-secrets/ca.crt
+      - name: Self-attack security checks (SEC-1 / CI-3)
+        run: scripts/security-check.sh https://localhost:8443 .test-secrets/ca.crt
       - name: Service logs
         if: failure()
         run: docker compose -f docker-compose.yml -f docker-compose.test.yml logs --no-color --timestamps
       - name: Stop and delete everything
         if: always()
-        run: docker compose -f docker-compose.yml -f docker-compose.test.yml down -v
+        run: |
+          docker compose -f docker-compose.frontend.yml down || true
+          docker compose -f docker-compose.yml -f docker-compose.test.yml down -v || true
 
   docs-sync:
-    name: Workflow copy in docs/ci
+    name: Workflow copy in docs/ci and policy sync
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: diff -u .github/workflows/ci.yml docs/ci/ci.yml
+      - run: scripts/check-policy-sync.sh
 
   # ---------------------------------------------------------------- CI-2: security analysis
   sast:
@@ -140,18 +155,15 @@ jobs:
       - uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ~/.cache/trivy
-          key: trivy-db-${{ github.run_id }}
+          key: trivy-db-${{ github.ref_name }}
           restore-keys: trivy-db-
       - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
           distribution: temurin
           java-version: "21"
           cache: maven
-      # Trivy reads parent poms and transitive dependencies from ~/.m2; --offline-scan keeps it off
-      # Maven Central, which rate-limits (429) repeated pom downloads from shared runners.
       - name: Resolve Maven dependencies
         run: mvn -B -q -f backend/pom.xml dependency:resolve
-      # Maven poms, package-lock.json files and requirements.txt; .trivyignore lists justified exceptions
       - name: Trivy filesystem scan
         run: |
           docker run --rm -v "$HOME/.cache/trivy:/root/.cache/trivy" -v "$HOME/.m2:/root/.m2:ro" \
@@ -168,7 +180,7 @@ jobs:
       - uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ~/.cache/trivy
-          key: trivy-db-${{ github.run_id }}
+          key: trivy-db-${{ github.ref_name }}
           restore-keys: trivy-db-
       - name: Build every image
         run: |
@@ -197,7 +209,7 @@ jobs:
       - uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ~/.cache/trivy
-          key: trivy-db-${{ github.run_id }}
+          key: trivy-db-${{ github.ref_name }}
           restore-keys: trivy-db-
       - name: Trivy config scan (Dockerfiles, compose)
         run: |
