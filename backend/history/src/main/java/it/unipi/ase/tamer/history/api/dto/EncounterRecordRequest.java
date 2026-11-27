@@ -11,6 +11,8 @@ import jakarta.validation.constraints.Size;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * Body of {@code POST /internal/history}. {@code team_snapshot}, {@code reward} and {@code turns}
@@ -24,11 +26,11 @@ public record EncounterRecordRequest(
         @NotNull UUID runId,
         @NotNull @Valid TemplateInfo template,
         @NotNull @Valid WildInfo wild,
-        @Size(max = 6) List<@NotNull JsonNode> teamSnapshot,
+        @Size(max = 6) @Schema(type = SchemaType.ARRAY, implementation = Object[].class) List<@NotNull JsonNode> teamSnapshot,
         @NotNull Outcome outcome,
-        JsonNode reward,
+        @Schema(type = SchemaType.OBJECT, implementation = Object.class) JsonNode reward,
         @Min(0) @Max(1_000_000) Integer xpGained,
-        @Size(max = 500) List<@NotNull JsonNode> turns,
+        @Size(max = 500) @Schema(type = SchemaType.ARRAY, implementation = Object[].class) List<@NotNull JsonNode> turns,
         @Pattern(regexp = "-?[0-9]{1,19}") String rngSeed,
         @NotNull @Min(1) @Max(32767) Integer engineVersion,
         @NotNull Instant startedAt,

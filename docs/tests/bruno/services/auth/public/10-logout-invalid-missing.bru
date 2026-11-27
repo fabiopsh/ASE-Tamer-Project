@@ -1,0 +1,22 @@
+meta {
+  name: POST /api/auth/logout - invalid: missing refresh_token
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{authUrl}}/api/auth/logout
+  body: formUrlEncoded
+  auth: none
+}
+
+body:form-urlencoded {
+  refresh_token:
+}
+
+tests {
+  test("400 invalid_request", function () {
+    expect(res.getStatus()).to.equal(400);
+    expect(res.getBody().error).to.equal("invalid_request");
+  });
+}

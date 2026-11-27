@@ -1,7 +1,8 @@
 #!/bin/sh
 # Generates the local CA, one TLS certificate per container, the JWT key pair, database
-# passwords and service client secrets into /secrets (a named volume). Runs only once: if
-# /secrets/.done exists nothing is changed. Remove the volume to regenerate everything.
+# passwords, crypto keys and service client secrets into /secrets (a named volume). Runs only
+# once: if /secrets/.done exists only newly introduced keys are appended. Remove the volume to
+# regenerate everything.
 #
 # Layout: see docs/plan/02-infrastructure.md (INFRA-4). Every container mounts only its own
 # sub-directory (compose volume subpath), so a file is visible only where it is needed.
@@ -12,6 +13,7 @@ OUT=/secrets
 SERVICES="auth players monsters teams encounters history"
 # Clients that auth accepts on the client credentials grant ("tests" only with the test override)
 CALLERS="players teams encounters tests"
+SERVICE_CALLERS="players teams encounters"
 CA_DAYS=3650
 CERT_DAYS=825
 
@@ -19,12 +21,23 @@ random_secret() {
     openssl rand -hex 32
 }
 
+is_service_caller() {
+    case " $SERVICE_CALLERS " in
+        *" $1 "*) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
 if [ -f "$OUT/.done" ]; then
     # Keys added after the first release are appended to an existing volume, so that the
-    # stack starts without deleting it. SEC-3 (P-27): username blind index for the audit log.
+    # stack starts without deleting it.
     if ! grep -q '^tamer.crypto.username-hmac-key=' "$OUT/auth/secrets.properties"; then
         echo "tamer.crypto.username-hmac-key=$(random_secret)" >> "$OUT/auth/secrets.properties"
         echo "init-secrets: added the username HMAC key to an existing volume"
+    fi
+    if ! grep -q '^tamer.crypto.username-enc-key=' "$OUT/auth/secrets.properties"; then
+        echo "tamer.crypto.username-enc-key=$(random_secret)" >> "$OUT/auth/secrets.properties"
+        echo "init-secrets: added the username AES-GCM encryption key to an existing volume"
     fi
     echo "init-secrets: secrets already present, nothing to do"
     exit 0
@@ -69,8 +82,8 @@ openssl pkey -in "$TMP/jwt-private.pem" -pubout -out "$TMP/jwt-public.pem"
 echo "init-secrets: gateway certificate"
 issue_cert gateway localhost "DNS:localhost,IP:127.0.0.1,DNS:gateway"
 
-# Client secrets are generated first because auth needs all of them.
-for client in $SERVICES tests; do
+# Client secrets are generated only for services that request client_credentials tokens (and tests).
+for client in $CALLERS; do
     random_secret > "$TMP/client-$client"
 done
 
@@ -88,8 +101,10 @@ for svc in $SERVICES; do
         # Higher than application.properties (250), lower than environment variables (300)
         echo "config_ordinal=270"
         echo "quarkus.datasource.password=$db_password"
-        echo "tamer.service-client.id=$svc"
-        echo "tamer.service-client.secret=$(cat "$TMP/client-$svc")"
+        if is_service_caller "$svc"; then
+            echo "tamer.service-client.id=$svc"
+            echo "tamer.service-client.secret=$(cat "$TMP/client-$svc")"
+        fi
     } > "$OUT/$svc/secrets.properties"
 done
 
@@ -97,8 +112,9 @@ cp "$TMP/jwt-private.pem" "$OUT/auth/jwt-private.pem"
 for client in $CALLERS; do
     echo "tamer.service-clients.$client=$(cat "$TMP/client-$client")" >> "$OUT/auth/secrets.properties"
 done
-# Username blind index (SEC-3 audit log, P-27; AUTH-8 reuses it for the username_hmac column)
+# Username blind index (SEC-3, P-27) and AES-256-GCM encryption key (AUTH-8, P-14)
 echo "tamer.crypto.username-hmac-key=$(random_secret)" >> "$OUT/auth/secrets.properties"
+echo "tamer.crypto.username-enc-key=$(random_secret)" >> "$OUT/auth/secrets.properties"
 
 # Used only by the component tests through the test override (TEST-1)
 mkdir -p "$OUT/tests"

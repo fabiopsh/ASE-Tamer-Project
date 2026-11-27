@@ -82,6 +82,14 @@ button.mcard { font: inherit; width: 100%; }
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.mcard__species {
+  font-size: var(--text-xs);
+  color: var(--text-3);
+  margin-top: calc(var(--space-1) * -1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .mcard--lg .mcard__name { font-size: var(--text-lg); }
 
 .mcard__badges {

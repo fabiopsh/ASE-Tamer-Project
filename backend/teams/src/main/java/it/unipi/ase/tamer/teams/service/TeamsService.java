@@ -22,8 +22,10 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
@@ -42,27 +44,48 @@ public class TeamsService {
     EntityManager em;
 
     public TeamValidationResponse validate(UUID playerId, List<UUID> members) {
-        return check(playerId, null, members, false, 0).response();
+        List<MonsterInstance> fetched = fetchForValidation(playerId, members);
+        return validator.validate(null, members, fetched, false, 0).response();
     }
 
     public List<TeamResponse> teams(UUID playerId) {
         List<Team> owned = Team.list("playerId", Sort.by("createdAt"), playerId);
-        return owned.stream().map(team -> toResponse(team, playerId)).toList();
+        if (owned.isEmpty()) {
+            return List.of();
+        }
+        List<UUID> teamIds = owned.stream().map(t -> t.teamId).toList();
+        List<TeamSlot> allSlots = TeamSlot.list("teamId in ?1", teamIds);
+        Map<UUID, List<TeamSlot>> slotsByTeam = new HashMap<>();
+        Set<UUID> allOwnedIds = new LinkedHashSet<>();
+        for (TeamSlot slot : allSlots) {
+            slotsByTeam.computeIfAbsent(slot.teamId, k -> new ArrayList<>()).add(slot);
+            allOwnedIds.add(slot.ownedId);
+        }
+        slotsByTeam.values().forEach(list -> list.sort(Comparator.comparingInt(s -> s.position)));
+        Map<UUID, MonsterInstance> byId = map(instances(playerId, new ArrayList<>(allOwnedIds)));
+        return owned.stream()
+                .map(team -> toResponse(team, slotsByTeam.getOrDefault(team.teamId, List.of()), byId))
+                .toList();
     }
 
     public TeamResponse team(UUID playerId, UUID teamId) {
-        return toResponse(requireTeam(playerId, teamId), playerId);
+        Team team = requireTeam(playerId, teamId);
+        List<TeamSlot> slots = slots(team.teamId);
+        Map<UUID, MonsterInstance> byId = map(instances(playerId,
+                slots.stream().map(slot -> slot.ownedId).toList()));
+        return toResponse(team, slots, byId);
     }
 
     @Transactional
     public TeamResponse create(UUID playerId, TeamRequest request) {
         // Lock per player to enforce the five-teams limit even with concurrent create requests.
         lock("teams:" + playerId);
-        TeamValidator.Result preliminary = check(playerId, request.name(), request.members(), true, 0);
+        List<MonsterInstance> fetched = fetchForValidation(playerId, request.members());
+        TeamValidator.Result preliminary = validator.validate(request.name(), request.members(), fetched, true, 0);
         long count = preliminary.runId() == null ? 0
                 : Team.count("playerId = ?1 and runId = ?2", playerId, preliminary.runId());
         TeamValidator.Result result = count >= 5
-                ? check(playerId, request.name(), request.members(), true, count)
+                ? validator.validate(request.name(), request.members(), fetched, true, count)
                 : preliminary;
         requireValid(result);
         Team team = new Team();
@@ -73,19 +96,21 @@ public class TeamsService {
         team.createdAt = Instant.now();
         team.updatedAt = team.createdAt;
         team.persist();
-        saveSlots(team.teamId, request.members());
+        List<TeamSlot> savedSlots = saveSlots(team.teamId, request.members());
         em.flush();
-        return toResponse(team, playerId);
+        return toResponse(team, savedSlots, map(fetched));
     }
 
     @Transactional
     public TeamResponse update(UUID playerId, UUID teamId, TeamRequest request) {
+        lock("teams:" + playerId);
         Team team = requireTeam(playerId, teamId);
         if (request.name() == null) {
             throw new ApiException(400, "TEAM_INVALID", "Team name is required.",
                     List.of(new ErrorDetail("name", "NAME_INVALID")));
         }
-        TeamValidator.Result result = check(playerId, request.name(), request.members(), false, 0);
+        List<MonsterInstance> fetched = fetchForValidation(playerId, request.members());
+        TeamValidator.Result result = validator.validate(request.name(), request.members(), fetched, false, 0);
         requireValid(result);
         if (!team.runId.equals(result.runId())) {
             throw teamInvalid("MIXED_RUNS", "A team can only use monsters from its own run.");
@@ -94,9 +119,9 @@ public class TeamsService {
         team.updatedAt = Instant.now();
         TeamSlot.delete("teamId", teamId);
         em.flush();
-        saveSlots(teamId, request.members());
+        List<TeamSlot> savedSlots = saveSlots(teamId, request.members());
         em.flush();
-        return toResponse(team, playerId);
+        return toResponse(team, savedSlots, map(fetched));
     }
 
     @Transactional
@@ -110,17 +135,22 @@ public class TeamsService {
         Team team = requireTeam(playerId, teamId);
         List<TeamSlot> slots = slots(teamId);
         List<UUID> ids = slots.stream().map(s -> s.ownedId).toList();
-        TeamValidator.Result result = check(playerId, team.name, ids, false, 0);
+        List<MonsterInstance> fetched = fetchForValidation(playerId, ids);
+        TeamValidator.Result result = validator.validate(team.name, ids, fetched, false, 0);
         requireValid(result, 409);
         if (!team.runId.equals(result.runId())) {
             throw teamInvalid("MIXED_RUNS", "Team belongs to an earlier run.");
         }
-        Map<UUID, MonsterInstance> byId = map(instances(playerId, ids));
-        List<InternalTeamMember> members = slots.stream().map(slot -> {
+        Map<UUID, MonsterInstance> byId = map(fetched);
+        List<InternalTeamMember> members = new ArrayList<>(slots.size());
+        for (TeamSlot slot : slots) {
             MonsterInstance m = byId.get(slot.ownedId);
-            return new InternalTeamMember(slot.position, m.ownedId(), m.monsterId(), m.name(),
-                    m.level(), m.element(), m.rarity(), m.imageUrl(), m.stats(), m.ability());
-        }).toList();
+            if (m == null) {
+                throw teamInvalid("NOT_OWNED", "Monster is missing or does not belong to the player.");
+            }
+            members.add(new InternalTeamMember(slot.position, m.ownedId(), m.monsterId(), m.name(),
+                    m.level(), m.element(), m.rarity(), m.imageUrl(), m.stats(), m.ability()));
+        }
         return new InternalTeamResponse(team.teamId, team.name, team.runId, members);
     }
 
@@ -134,18 +164,16 @@ public class TeamsService {
         return new ResetTeamsResponse(affected.size());
     }
 
-    private TeamValidator.Result check(UUID playerId, String name, List<UUID> members,
-                                       boolean isCreate, long existingTeams) {
-        List<MonsterInstance> owned = members == null || members.isEmpty() || members.contains(null)
-                ? List.of() : instances(playerId, members);
-        return validator.validate(name, members, owned, isCreate, existingTeams);
+    /** Only queries monsters once local shape checks pass (non-null, 1..3, no nulls, no duplicates). */
+    private List<MonsterInstance> fetchForValidation(UUID playerId, List<UUID> members) {
+        if (!TeamValidator.hasValidMemberShape(members)) {
+            return null;
+        }
+        return instances(playerId, members);
     }
 
-    private TeamResponse toResponse(Team team, UUID playerId) {
-        List<TeamSlot> slots = slots(team.teamId);
-        Map<UUID, MonsterInstance> byId = map(instances(playerId,
-                slots.stream().map(slot -> slot.ownedId).toList()));
-        List<TeamMemberResponse> members = new ArrayList<>();
+    private TeamResponse toResponse(Team team, List<TeamSlot> slots, Map<UUID, MonsterInstance> byId) {
+        List<TeamMemberResponse> members = new ArrayList<>(slots.size());
         for (TeamSlot slot : slots) {
             MonsterInstance m = byId.get(slot.ownedId);
             if (m == null) {
@@ -173,8 +201,10 @@ public class TeamsService {
 
     private static Map<UUID, MonsterInstance> map(List<MonsterInstance> list) {
         Map<UUID, MonsterInstance> result = new HashMap<>();
-        for (MonsterInstance item : list) {
-            result.put(item.ownedId(), item);
+        if (list != null) {
+            for (MonsterInstance item : list) {
+                result.put(item.ownedId(), item);
+            }
         }
         return result;
     }
@@ -210,14 +240,17 @@ public class TeamsService {
         return new ApiException(409, "TEAM_INVALID", message, List.of(new ErrorDetail("members", code)));
     }
 
-    private static void saveSlots(UUID teamId, List<UUID> members) {
+    private static List<TeamSlot> saveSlots(UUID teamId, List<UUID> members) {
+        List<TeamSlot> saved = new ArrayList<>(members.size());
         for (int i = 0; i < members.size(); i++) {
             TeamSlot slot = new TeamSlot();
             slot.teamId = teamId;
             slot.position = (short) (i + 1);
             slot.ownedId = members.get(i);
             slot.persist();
+            saved.add(slot);
         }
+        return saved;
     }
 
     private void lock(String key) {

@@ -1,0 +1,27 @@
+meta {
+  name: 10 - Refresh rotation succeeds
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{authUrl}}/api/auth/token
+  body: formUrlEncoded
+  auth: none
+}
+
+body:form-urlencoded {
+  grant_type: refresh_token
+  refresh_token: {{accRefresh1}}
+}
+
+tests {
+  test("200 rotated token pair", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getHeader("cache-control")).to.include("no-store");
+    const b = res.getBody();
+    expect(b.expires_in).to.equal(300);
+    expect(b.refresh_token).to.be.a("string").and.not.equal(bru.getVar("accRefresh1"));
+    bru.setVar("accRefresh1Rotated", b.refresh_token);
+  });
+}

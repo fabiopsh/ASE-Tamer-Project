@@ -14,12 +14,15 @@ import java.util.List;
  *   <li>{@code auto_switch}: to (position);</li>
  *   <li>{@code knockout}: side, position (team only);</li>
  *   <li>{@code flee}: success;</li>
- *   <li>{@code end}: outcome ({@code victory|defeat|fled}).</li>
+ *   <li>{@code end}: outcome ({@code victory|defeat|fled});</li>
+ *   <li>{@code ability}: side, ability (name), effect (effect type), actor (combatant name), description,
+ *       amount (optional numeric value such as HP restored, damage reflected, or boost %).</li>
  * </ul>
  */
 public record BattleEvent(String type, String side, String attacker, String target, Integer damage,
                           String effectiveness, Boolean dodged, List<String> abilities, Integer position,
-                          Integer from, Integer to, Boolean success, String outcome) {
+                          Integer from, Integer to, Boolean success, String outcome, String ability,
+                          String effect, String actor, String description, Integer amount) {
 
     public static final String ATTACK = "attack";
     public static final String SWITCH = "switch";
@@ -27,6 +30,7 @@ public record BattleEvent(String type, String side, String attacker, String targ
     public static final String KNOCKOUT = "knockout";
     public static final String FLEE = "flee";
     public static final String END = "end";
+    public static final String ABILITY = "ability";
 
     public static final String SIDE_TEAM = "team";
     public static final String SIDE_WILD = "wild";
@@ -38,27 +42,37 @@ public record BattleEvent(String type, String side, String attacker, String targ
     public static BattleEvent attack(String side, String attacker, String target, int damage, String effectiveness,
                                      boolean dodged, List<String> abilities) {
         return new BattleEvent(ATTACK, side, attacker, target, damage, effectiveness, dodged, abilities,
-                null, null, null, null, null);
+                null, null, null, null, null, null, null, null, null, null);
     }
 
     public static BattleEvent switchMember(int from, int to) {
-        return new BattleEvent(SWITCH, SIDE_TEAM, null, null, null, null, null, null, null, from, to, null, null);
+        return new BattleEvent(SWITCH, SIDE_TEAM, null, null, null, null, null, null, null, from, to, null, null,
+                null, null, null, null, null);
     }
 
     public static BattleEvent autoSwitch(int to) {
-        return new BattleEvent(AUTO_SWITCH, null, null, null, null, null, null, null, null, null, to, null, null);
+        return new BattleEvent(AUTO_SWITCH, null, null, null, null, null, null, null, null, null, to, null, null,
+                null, null, null, null, null);
     }
 
     public static BattleEvent knockout(String side, Integer position) {
-        return new BattleEvent(KNOCKOUT, side, null, null, null, null, null, null, position, null, null, null, null);
+        return new BattleEvent(KNOCKOUT, side, null, null, null, null, null, null, position, null, null, null, null,
+                null, null, null, null, null);
     }
 
     public static BattleEvent flee(boolean success) {
-        return new BattleEvent(FLEE, null, null, null, null, null, null, null, null, null, null, success, null);
+        return new BattleEvent(FLEE, null, null, null, null, null, null, null, null, null, null, success, null,
+                null, null, null, null, null);
     }
 
     public static BattleEvent end(Outcome outcome) {
         return new BattleEvent(END, null, null, null, null, null, null, null, null, null, null, null,
-                outcome.wireName());
+                outcome.wireName(), null, null, null, null, null);
+    }
+
+    public static BattleEvent ability(String side, String ability, String effect, String actor, String description,
+                                      Integer amount) {
+        return new BattleEvent(ABILITY, side, null, null, null, null, null, null, null, null, null, null, null,
+                ability, effect, actor, description, amount);
     }
 }

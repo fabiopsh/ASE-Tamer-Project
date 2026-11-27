@@ -80,15 +80,16 @@ public class BattleCompletionService {
     // ---- closing ---------------------------------------------------------------------------------------------
 
     /**
-     * A battle finished by the engine ({@code victory | defeat | fled}): close it, process the outbox, run the
-     * reset after a defeat, and build the {@code result} object of the last action.
+     * A battle finished by the engine ({@code victory | defeat | fled}): commit the close + outbox first, then
+     * remove the session from memory, process the outbox, run the reset after a defeat, and build the
+     * {@code result} object of the last action.
      */
     public BattleResultResponse finish(BattleSession session) {
-        session.close();
-        registry.remove(session);
         Battle battle = session.battle();
         String outcome = battle.outcome().wireName();
         close(session, outcome, false);
+        session.close();
+        registry.remove(session);
         Processed processed = processQuietly(session.encounterId());
         if (battle.outcome() == Outcome.DEFEAT) {
             try {
@@ -223,6 +224,16 @@ public class BattleCompletionService {
                         "playerId = ?1 and (rewardDone = false or xpDone = false or historyDone = false) "
                                 + "order by createdAt", playerId)
                 .stream().map(c -> c.encounterId).toList());
+    }
+
+    /** Pending completion identifier for the background sweep. */
+    public record PendingEntry(UUID playerId, UUID encounterId) {
+    }
+
+    public List<PendingEntry> allPending() {
+        return QuarkusTransaction.requiringNew().call(() -> BattleCompletion.<BattleCompletion>list(
+                        "rewardDone = false or xpDone = false or historyDone = false order by createdAt")
+                .stream().map(c -> new PendingEntry(c.playerId, c.encounterId)).toList());
     }
 
     public List<UUID> pendingForRun(UUID runId) {

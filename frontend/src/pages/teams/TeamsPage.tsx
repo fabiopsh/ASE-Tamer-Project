@@ -15,12 +15,15 @@ import { useAsync } from '../../hooks/useAsync';
 import { formatDate } from '../../lib/format';
 import './teams.css';
 
+const MAX_TEAMS = 5;
+
 /** /teams — saved teams of the current run, in battle order (US-14, US-16). */
 export function TeamsPage() {
   const toast = useToast();
   const { data, error, reload } = useAsync((signal) => listTeams(signal), 'teams');
   const [toDelete, setToDelete] = useState<Team | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const atLimit = (data?.length ?? 0) >= MAX_TEAMS;
 
   async function confirmDelete() {
     if (!toDelete) return;
@@ -44,11 +47,26 @@ export function TeamsPage() {
         title="Your teams"
         subtitle="A team is one to three monsters of this run. The first slot enters the battle first; the others step in when it falls."
         actions={
-          <Link to="/teams/new" className="btn btn--primary">
-            <PlusIcon /> New team
-          </Link>
+          atLimit ? (
+            <Button variant="primary" disabled title="Maximum of 5 teams per run reached">
+              <PlusIcon /> New team
+            </Button>
+          ) : (
+            <Link to="/teams/new" className="btn btn--primary">
+              <PlusIcon /> New team
+            </Link>
+          )
         }
       />
+
+      {atLimit && (
+        <ErrorBanner
+          compact
+          tone="info"
+          title="Team limit reached"
+          message={`You can keep up to ${MAX_TEAMS} teams per run. Delete an existing team to create a new one.`}
+        />
+      )}
 
       {error !== null && <ErrorBanner title="Your teams could not be loaded" error={error} onRetry={reload} />}
 

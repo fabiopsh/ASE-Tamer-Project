@@ -15,8 +15,9 @@ interface MonsterHeroProps {
   children?: ReactNode;
 }
 
-/** Large detail header: sprite on an element-coloured stage, number, name, badges, then children. */
+/** Large detail header: sprite on an element-coloured stage, number, nickname/name, badges, then children. */
 export function MonsterHero({ monster, level, tags, children }: MonsterHeroProps) {
+  const nickname = monster.nickname?.trim() || null;
   return (
     <section className="mhero panel panel--flush fade-in" data-element={monster.element} data-rarity={monster.rarity}>
       <div className="mhero__stage">
@@ -28,7 +29,8 @@ export function MonsterHero({ monster, level, tags, children }: MonsterHeroProps
       <div className="mhero__info">
         <div className="stack stack--sm">
           <p className="mhero__dex num">{dexNumber(monster.monster_id)}</p>
-          <h1 className="mhero__name">{monster.name}</h1>
+          <h1 className="mhero__name">{nickname ?? monster.name}</h1>
+          {nickname && <p className="mhero__species">Species: {monster.name}</p>}
           <div className="cluster">
             {level !== undefined && <LevelBadge level={level} />}
             <ElementBadge element={monster.element} />

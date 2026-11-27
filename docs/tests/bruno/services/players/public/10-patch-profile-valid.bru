@@ -1,0 +1,31 @@
+meta {
+  name: PATCH /api/players/me - valid: update display_name and avatar (US-04)
+  type: http
+  seq: 10
+}
+
+patch {
+  url: {{playersUrl}}/api/players/me
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{playerToken}}
+}
+
+body:json {
+  {
+    "display_name": "Ash Ketchum",
+    "avatar": "scout"
+  }
+}
+
+tests {
+  test("200 updated profile", function () {
+    expect(res.getStatus()).to.equal(200);
+    const b = res.getBody();
+    expect(b.display_name).to.equal("Ash Ketchum");
+    expect(b.avatar).to.equal("scout");
+  });
+}

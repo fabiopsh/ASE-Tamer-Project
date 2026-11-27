@@ -1,0 +1,26 @@
+meta {
+  name: GET /internal/auth/authorize - invalid: service token on player route -> 403
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{authUrl}}/internal/auth/authorize
+  body: none
+  auth: bearer
+}
+
+headers {
+  X-Original-Method: GET
+  X-Original-URI: /api/players/me
+}
+
+auth:bearer {
+  token: {{serviceToken}}
+}
+
+tests {
+  test("403 FORBIDDEN", function () {
+    expect(res.getStatus()).to.equal(403);
+  });
+}

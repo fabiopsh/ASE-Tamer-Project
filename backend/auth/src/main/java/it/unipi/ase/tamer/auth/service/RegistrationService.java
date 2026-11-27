@@ -17,7 +17,9 @@ import jakarta.inject.Inject;
 import jakarta.persistence.PersistenceException;
 import java.time.Instant;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.hibernate.exception.ConstraintViolationException;
@@ -34,6 +36,19 @@ public class RegistrationService {
     public static final String USERNAME_TAKEN = "USERNAME_TAKEN";
     static final String REGISTER = "register";
 
+    /** Curated common weak passwords rejected at registration (AUTH-8). */
+    private static final Set<String> COMMON_PASSWORDS = Set.of(
+            "password", "password1", "password12", "password123", "password1234", "passw0rd",
+            "p@ssword", "p@ssw0rd", "pa$$word", "12345678", "123456789", "1234567890",
+            "00000000", "11111111", "87654321", "987654321", "qwerty123", "qwertyui",
+            "qwertyuiop", "asdfghjkl", "zxcvbnm1", "admin123", "admin1234", "administrator",
+            "letmein1", "letmein123", "welcome1", "welcome123", "iloveyou", "iloveyou1",
+            "sunshine", "princess", "football", "baseball", "dragon123", "monkey123",
+            "master123", "shadow123", "trustno1", "superman", "abc12345", "abcd1234",
+            "aaaaaaaa", "1q2w3e4r", "1qaz2wsx", "qazwsxedc", "changeme", "changeme1",
+            "test1234", "default1", "guest123"
+    );
+
     @Inject
     PasswordHasher hasher;
 
@@ -44,22 +59,32 @@ public class RegistrationService {
     @Inject
     UsernameBlindIndex blindIndex;
 
+    @Inject
+    UsernameCrypto usernameCrypto;
+
     public RegisterResponse register(RegisterRequest request) {
         String username = UsernameNormalizer.normalize(request.username());
+        String usernameHmac = blindIndex.of(username);
+        if (UsernameBlindIndex.MALFORMED.equals(usernameHmac)) {
+            throw new ApiException(400, ErrorCodes.VALIDATION_ERROR, "Request validation failed.",
+                    List.of(new ErrorDetail("username", "PATTERN")));
+        }
         validatePassword(username, request.password());
 
-        // Hash outside the transaction: bcrypt is slow and must not hold a DB connection.
+        // Hash and encrypt outside the transaction: bcrypt is slow and must not hold a DB connection.
         String hash = hasher.hash(request.password());
+        byte[] usernameEnc = usernameCrypto.encrypt(username);
         UUID playerId = UUID.randomUUID();
 
         try {
             QuarkusTransaction.requiringNew().run(() -> {
-                if (Account.findByUsername(username).isPresent()) {
+                if (Account.findByUsernameHmac(usernameHmac).isPresent()) {
                     throw usernameTaken();
                 }
                 Account account = new Account();
                 account.playerId = playerId;
-                account.username = username;
+                account.usernameHmac = usernameHmac;
+                account.usernameEnc = usernameEnc;
                 account.passwordHash = hash;
                 account.createdAt = Instant.now();
                 try {
@@ -81,12 +106,12 @@ public class RegistrationService {
         } catch (ApiException e) {
             // 409: the username exists (denied); 503: players unavailable (failure)
             AuditLog.audit(REGISTER, e.status() == 409 ? Outcome.DENIED : Outcome.FAILURE,
-                    blindIndex.of(username), Map.of("reason", e.code()));
+                    usernameHmac, Map.of("reason", e.code()));
             throw e;
         }
 
         AuditLog.audit(REGISTER, Outcome.SUCCESS, playerId.toString());
-        return new RegisterResponse(playerId, username);
+        return new RegisterResponse(playerId, usernameCrypto.decrypt(usernameEnc));
     }
 
     private static void validatePassword(String normalizedUsername, String password) {
@@ -97,6 +122,10 @@ public class RegistrationService {
         if (password.equalsIgnoreCase(normalizedUsername)) {
             throw new ApiException(400, ErrorCodes.VALIDATION_ERROR, "Password must differ from the username.",
                     List.of(new ErrorDetail("password", "EQUALS_USERNAME")));
+        }
+        if (COMMON_PASSWORDS.contains(password.toLowerCase(Locale.ROOT))) {
+            throw new ApiException(400, ErrorCodes.VALIDATION_ERROR, "Password is too common.",
+                    List.of(new ErrorDetail("password", "COMMON_PASSWORD")));
         }
     }
 

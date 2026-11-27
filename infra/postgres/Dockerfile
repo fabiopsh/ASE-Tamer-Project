@@ -4,5 +4,7 @@ FROM postgres:17.11-alpine3.24
 # postgres user. Our containers already start as postgres (user 70:70 in docker-compose.yml), so it
 # is never executed; it is removed because its Go runtime carries known CVEs.
 USER root
-RUN apk upgrade --no-cache && rm -f /usr/local/bin/gosu
+RUN apk upgrade --no-cache && rm -f /usr/local/bin/gosu \
+    && mkdir -p /etc/postgresql
+COPY --chown=70:70 --chmod=0640 pg_hba.conf /etc/postgresql/pg_hba.conf
 USER 70:70

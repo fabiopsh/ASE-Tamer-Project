@@ -1,0 +1,21 @@
+meta {
+  name: 15 - Logout repeat is idempotent (204)
+  type: http
+  seq: 15
+}
+
+post {
+  url: {{authUrl}}/api/auth/logout
+  body: formUrlEncoded
+  auth: none
+}
+
+body:form-urlencoded {
+  refresh_token: {{accRefresh2Rotated}}
+}
+
+tests {
+  test("204 idempotent logout", function () {
+    expect(res.getStatus()).to.equal(204);
+  });
+}

@@ -790,6 +790,100 @@
               }
             }
           ]
+        },
+        {
+          "name": "GET /api/history/verify - valid: intact hash chain (US-25 / HI-2)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{historyUrl}}/api/history/verify",
+              "protocol": "",
+              "host": [
+                "{{historyUrl}}"
+              ],
+              "path": [
+                "api",
+                "history",
+                "verify"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"200 valid hash chain\", function () {",
+                  "  expect(res.getStatus()).to.equal(200);",
+                  "  const b = res.getBody();",
+                  "  expect(b.valid).to.equal(true);",
+                  "  expect(b.records).to.be.at.least(1);",
+                  "  expect(b.head_hash).to.match(/^[0-9a-f]{64}$/);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/history/verify - invalid: no token -> 401",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "{{historyUrl}}/api/history/verify",
+              "protocol": "",
+              "host": [
+                "{{historyUrl}}"
+              ],
+              "path": [
+                "api",
+                "history",
+                "verify"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"401 UNAUTHORIZED\", function () {",
+                  "  expect(res.getStatus()).to.equal(401);",
+                  "  expect(res.getHeader(\"www-authenticate\")).to.include(\"Bearer\");",
+                  "});"
+                ]
+              }
+            }
+          ]
         }
       ],
       "auth": {

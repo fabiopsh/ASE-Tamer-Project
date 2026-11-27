@@ -697,6 +697,124 @@
               }
             }
           ]
+        },
+        {
+          "name": "PATCH /api/players/me - valid: update display_name and avatar (US-04)",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{playersUrl}}/api/players/me",
+              "protocol": "",
+              "host": [
+                "{{playersUrl}}"
+              ],
+              "path": [
+                "api",
+                "players",
+                "me"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"display_name\": \"Ash Ketchum\",\n  \"avatar\": \"scout\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"200 updated profile\", function () {",
+                  "  expect(res.getStatus()).to.equal(200);",
+                  "  const b = res.getBody();",
+                  "  expect(b.display_name).to.equal(\"Ash Ketchum\");",
+                  "  expect(b.avatar).to.equal(\"scout\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /api/players/me - invalid: unknown avatar (US-04)",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{playersUrl}}/api/players/me",
+              "protocol": "",
+              "host": [
+                "{{playersUrl}}"
+              ],
+              "path": [
+                "api",
+                "players",
+                "me"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"avatar\": \"not-a-valid-avatar\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"400 VALIDATION_ERROR\", function () {",
+                  "  expect(res.getStatus()).to.equal(400);",
+                  "  expect(res.getBody().error).to.equal(\"VALIDATION_ERROR\");",
+                  "});"
+                ]
+              }
+            }
+          ]
         }
       ],
       "auth": {

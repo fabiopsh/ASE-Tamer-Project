@@ -4,10 +4,10 @@
  * - Base URL from VITE_GATEWAY_URL (default https://localhost:8443).
  * - JSON bodies by default; `form` bodies are sent as application/x-www-form-urlencoded (token endpoint).
  * - Errors are thrown as ApiError, parsed from {error, message, details} or the OAuth2 format.
- * - A 401 on an authenticated call runs the handler registered by the SessionProvider
- *   (clear session, go to /login).
+ * - Authenticated calls proactively refresh expired tokens and retry once on 401 via the single-flight
+ *   refresh coordinator registered by SessionProvider. Never refreshes on 403 or /api/auth/* endpoints.
  */
-import type { ErrorDetail } from './types';
+import type { ErrorDetail, Page } from './types';
 
 export const GATEWAY_URL: string = (import.meta.env.VITE_GATEWAY_URL ?? 'https://localhost:8443').replace(
   /\/+$/,
@@ -59,14 +59,20 @@ export function errorMessage(e: unknown): string {
   return 'Something went wrong.';
 }
 
-// ---------------------------------------------------------------- token + 401 hooks
+// ---------------------------------------------------------------- token + refresh + 401 hooks
 
 let tokenProvider: () => string | null = () => null;
+let refreshProvider: ((failedAccessToken?: string) => Promise<string | null>) | null = null;
 let unauthorizedHandler: () => void = () => {};
 
-/** Registered by the SessionProvider. */
-export function configureClient(opts: { getToken: () => string | null; onUnauthorized: () => void }): void {
+/** Registered by the SessionProvider (or tests). */
+export function configureClient(opts: {
+  getToken: () => string | null;
+  refreshSession?: (failedAccessToken?: string) => Promise<string | null>;
+  onUnauthorized: () => void;
+}): void {
   tokenProvider = opts.getToken;
+  refreshProvider = opts.refreshSession ?? null;
   unauthorizedHandler = opts.onUnauthorized;
 }
 
@@ -86,8 +92,13 @@ export interface RequestOptions {
   signal?: AbortSignal;
 }
 
+function isAuthEndpoint(path: string): boolean {
+  return path.startsWith('/api/auth/');
+}
+
 function buildUrl(path: string, query?: Query): string {
-  const url = new URL(`${GATEWAY_URL}${path}`);
+  const base = GATEWAY_URL || (typeof window !== 'undefined' ? window.location.origin : 'https://localhost:8443');
+  const url = new URL(path, `${base}/`);
   if (query) {
     for (const [key, value] of Object.entries(query)) {
       if (value === undefined || value === null || value === '') continue;
@@ -144,25 +155,15 @@ function defaultMessage(status: number): string {
   }
 }
 
-export async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
-  const { method = 'GET', query, body, form, auth = true, signal } = opts;
-  const headers: Record<string, string> = { Accept: 'application/json' };
-  let payload: BodyInit | undefined;
-
-  if (form) {
-    headers['Content-Type'] = 'application/x-www-form-urlencoded';
-    payload = new URLSearchParams(form).toString();
-  } else if (body !== undefined) {
-    headers['Content-Type'] = 'application/json';
-    payload = JSON.stringify(body);
-  }
-
-  const token = auth ? tokenProvider() : null;
-  if (token) headers.Authorization = `Bearer ${token}`;
-
-  let res: Response;
+async function executeFetch(
+  url: string,
+  method: string,
+  headers: Record<string, string>,
+  payload: BodyInit | undefined,
+  signal: AbortSignal | undefined,
+): Promise<Response> {
   try {
-    res = await fetch(buildUrl(path, query), { method, headers, body: payload, signal });
+    return await fetch(url, { method, headers, body: payload, signal });
   } catch (e) {
     if (e instanceof DOMException && e.name === 'AbortError') throw e;
     throw new ApiError(
@@ -171,12 +172,64 @@ export async function request<T>(path: string, opts: RequestOptions = {}): Promi
       `Cannot reach the game server at ${GATEWAY_URL}. Is it running, and is its certificate accepted?`,
     );
   }
+}
+
+export async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
+  const { method = 'GET', query, body, form, auth = true, signal } = opts;
+  const useAuth = auth && !isAuthEndpoint(path);
+
+  const baseHeaders: Record<string, string> = { Accept: 'application/json' };
+  let payload: BodyInit | undefined;
+
+  if (form) {
+    baseHeaders['Content-Type'] = 'application/x-www-form-urlencoded';
+    payload = new URLSearchParams(form).toString();
+  } else if (body !== undefined) {
+    baseHeaders['Content-Type'] = 'application/json';
+    payload = JSON.stringify(body);
+  }
+
+  let token: string | null = null;
+  let didPreFlightRefresh = false;
+
+  if (useAuth) {
+    token = tokenProvider();
+    if (!token && refreshProvider) {
+      didPreFlightRefresh = true;
+      token = await refreshProvider();
+    }
+  }
+
+  const url = buildUrl(path, query);
+  const headers: Record<string, string> = token
+    ? { ...baseHeaders, Authorization: `Bearer ${token}` }
+    : { ...baseHeaders };
+
+  let res = await executeFetch(url, method, headers, payload, signal);
+
+  // Retry once on 401 if we have not already refreshed in this request lifecycle.
+  if (res.status === 401 && useAuth && refreshProvider && !didPreFlightRefresh) {
+    const refreshedToken = await refreshProvider(token ?? undefined);
+    if (refreshedToken) {
+      const retryHeaders: Record<string, string> = {
+        ...baseHeaders,
+        Authorization: `Bearer ${refreshedToken}`,
+      };
+      res = await executeFetch(url, method, retryHeaders, payload, signal);
+    } else {
+      const err = await parseError(res);
+      unauthorizedHandler();
+      throw err;
+    }
+  }
 
   if (!res.ok) {
     const err = await parseError(res);
-    if (res.status === 401 && auth) unauthorizedHandler();
+    // Never refresh on 403; only end session on unrecovered 401.
+    if (res.status === 401 && useAuth) unauthorizedHandler();
     throw err;
   }
+
   if (res.status === 204 || res.status === 202) {
     const text = await res.text();
     return (text ? JSON.parse(text) : undefined) as T;
@@ -195,4 +248,23 @@ export async function requestOrNull<T>(path: string, opts: RequestOptions = {}):
     if (isApiError(e) && e.status === 404) return null;
     throw e;
   }
+}
+
+/**
+ * Fetches every page of a paginated endpoint (page 0 .. total_pages - 1) so lists past 50 items
+ * are never truncated in pickers, filters or editors.
+ */
+export async function fetchAllPages<T>(
+  fetchPage: (page: number, size: number) => Promise<Page<T>>,
+  size = 50,
+): Promise<T[]> {
+  const first = await fetchPage(0, size);
+  const totalPages = Math.max(1, first.total_pages);
+  if (totalPages <= 1) return first.items;
+  const items = [...first.items];
+  for (let p = 1; p < totalPages; p++) {
+    const next = await fetchPage(p, size);
+    items.push(...next.items);
+  }
+  return items;
 }

@@ -66,7 +66,7 @@ svg { stroke-linecap: square; stroke-linejoin: miter; }
 .element-badge, .element-badge[data-element='chaos'] { color: var(--el); background: var(--surface-sunken); border-color: var(--el); }
 .rarity-badge, .rarity-badge[data-rarity='legendary'] { color: var(--rarity); background: var(--surface-sunken); border-color: var(--rarity); animation: none; text-shadow: none; }
 .mhero__ring, .auth__ring { border-style: dashed; border-color: var(--border-mid); box-shadow: none; }
-.dash-shortcut__icon, .coming-next__icon { background: var(--bg-0); color: var(--accent); border-color: var(--border-mid); box-shadow: none; }
+.dash-shortcut__icon { background: var(--bg-0); color: var(--accent); border-color: var(--border-mid); box-shadow: none; }
 .dash-shortcut:active { transform: translateY(2px); }
 .run-stat[data-highlight], .run-strip__item--boss[data-state='ready'] { background: var(--bg-0); border-color: var(--gold); box-shadow: var(--rule-boss); }
 .team-card__slot, .slot__num, .team-slot { background: var(--el, var(--accent)); }

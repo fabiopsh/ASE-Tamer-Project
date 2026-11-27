@@ -1,7 +1,10 @@
 # Security analysis and self-attack
 
-CI-2 and SEC-1 of [docs/plan/11-ci-security.md](../plan/11-ci-security.md). The CI runs Semgrep and
-Trivy on every push and pull request ([.github/workflows/ci.yml](../../.github/workflows/ci.yml)).
+CI-2, CI-3, CI-4 and SEC-1 of [docs/plan/11-ci-security.md](../plan/11-ci-security.md). The CI runs
+Semgrep, Trivy, policy-sync (`scripts/check-policy-sync.sh`), access-security regression (`TEST-5` /
+`CI-3`) and audit-log verification on every push and pull request
+([.github/workflows/ci.yml](../../.github/workflows/ci.yml)), while `.github/dependabot.yml`
+automates dependency updates (`CI-4`).
 
 The threat model (data flow diagram, STRIDE threats with their control, test and status, rated
 gaps) is [THREAT_MODEL.md](../../THREAT_MODEL.md) in the repository root (SEC-2). The audit log
@@ -72,16 +75,51 @@ the last build of the base image (10/11/2026).
 | expat, libxml2, python3, python3-libs, libblkid, libmount, libsmartcols, libuuid (13 HIGH) | the six service images | **Fixed**: `microdnf -y update` in the runtime stage of every service Dockerfile |
 | krb5-libs 1.21.1-10.el9_8.1: CVE-2026-107364, -112315 … -112323, -118380, -119079, -71199, -71200 (14 HIGH) | the six service images | **Accepted until 30/11/2026** in `.trivyignore`. The fix (`el9_9.2`) is only in the subscription RHEL repositories, not in the public UBI ones, so the update cannot install it. The package cannot be removed (libcurl, cyrus-sasl and cups-libs link it). Every CVE is in the KDC or kadmind, Kerberos server daemons not present in the images, or in Kerberos authentication, which no service uses. The entries expire so that the CI checks again |
 
-`.trivyignore` holds only the krb5-libs entries above. **To verify** on a machine with enough memory: the image scan after the
-fixes above, and `trivy fs` with the offline mode.
+`.trivyignore` holds only the krb5-libs entries above.
 
-## Self-attack (SEC-1)
+## Self-attack and P2 verification — 27/11/2026
 
-`scripts/security-check.sh` runs the checklist of the plan against the gateway and prints PASS/FAIL
-per check: SQL injection, JWT (`alg:none`, wrong signature, altered payload, garbage, missing),
-IDOR on team/owned/run/encounter ids, `/internal/*` and `/q/*` through the gateway, forged battle
-results, concurrent actions and starter choices, oversized body, XSS payloads, TLS (plain HTTP,
-TLS 1.1, untrusted CA, no trust-all) and brute force (429). Expired tokens, wrong issuer/audience
-and internal replay are covered by JUnit (`TokenVerificationTest`) and Bruno (`monsters/internal/08`, `10`).
+### Self-attack (`scripts/security-check.sh`, SEC-1)
 
-Results: not run yet. Record the output here and in the report before 15/12.
+`scripts/security-check.sh` runs the plan's attack checklist against the gateway (`https://localhost:8443`)
+and prints PASS/FAIL per check. Executed on **27/11/2026** against the complete P2 stack:
+
+- **Result: 47/47 passed, 0 failed** (1 expected warning when run against the `docker-compose.test.yml` override because the override raises the auth rate limit for Locust/Bruno; real rate limits on both `/api/auth/*` and `/api/` are active in `docker-compose.yml`).
+- **Covered vectors:**
+  - SQL injection on auth and query parameters
+  - JWT attacks (`alg:none`, invalid signature, tampered payload, garbage token, missing token) — rejected at the gateway (`INFRA-9` `auth_request`) and independently by every service (`INFRA-10` `AccessPolicyFilter`)
+  - IDOR on foreign team, owned monster, run and encounter IDs (404, never 403)
+  - Direct `/internal/*` and `/q/*` access through the gateway (404)
+  - Forged battle outcomes and unexpected JSON fields (400)
+  - Concurrent battle actions and starter choices
+  - Oversized request body (`413 Payload Too Large`)
+  - XSS payload handling, `X-Content-Type-Options: nosniff` and HTTP `Content-Security-Policy` headers
+  - TLS 1.2+ enforcement (plain HTTP and legacy TLS refused, local CA verification, no trust-all)
+
+Expired tokens, wrong issuer/audience, refresh reuse detection, login backoff and internal replay
+are also covered by JUnit (`TokenVerificationTest`, `AuthorizeResourceTest`, `RefreshAndLogoutTest`,
+`LoginBackoffTest`, `AccessPolicyTest` across all 6 services) and Bruno (`access/` + `services/*/internal/`).
+
+### Audit log verification (`scripts/check-audit-log.sh`, SEC-3 & SEC-4)
+
+Executed on **27/11/2026** against the running P2 stack:
+
+- **Result: 18/18 passed, 0 failed.**
+- Verified that gateway audit lines populate `user == player_id` from the verified `X-Auth-Subject`
+  returned by `GET /internal/auth/authorize` (`INFRA-9`), that `auth` emits structured JSON audit
+  lines for `register`, `login`, `refresh` and `logout`, and that no passwords, tokens or secrets
+  appear in any log stream.
+
+### Access policy, hardening and dependencies (P2)
+
+- **Single access policy (`INFRA-10`):** `backend/security/access-policy.json` (52 rules) is kept in
+  sync across all 6 services (`scripts/check-policy-sync.sh`) and enforced by both the gateway
+  `auth_request` adapter and each service's `AccessPolicyFilter`.
+- **Access-security Bruno suite (`TEST-5` / `CI-3`):** `17/17` component + `17/17` integration passed.
+- **Database and container hardening (`INFRA-3`, `INFRA-4`):** PostgreSQL enforces `hostssl` in
+  `pg_hba.conf`, each service uses an isolated DB network, application containers run with
+  `read_only: true`, usernames are encrypted at rest with AES-256-GCM (`username-enc-key`) + HMAC
+  blind index (`AUTH-8`), and encounter history enforces PostgreSQL append-only triggers plus a
+  SHA-256 hash chain verified by `GET /api/history/verify` (`HI-2`).
+- **Frontend dependency audit:** `npm audit --omit=dev` reports **0 vulnerabilities**; automated
+  updates are configured in `.github/dependabot.yml` (`CI-4`).

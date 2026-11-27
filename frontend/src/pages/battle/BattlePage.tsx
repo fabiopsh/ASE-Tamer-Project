@@ -12,7 +12,7 @@ import { Spinner } from '../../components/Spinner';
 import { Sprite } from '../../components/Sprite';
 import { useToast } from '../../components/toast-context';
 import { useMediaQuery, usePrefersReducedMotion } from '../../hooks/useMediaQuery';
-import { describeEvent, describeRound, namesFrom } from '../../lib/battleText';
+import { describeEvent, describeRound, namesFrom, type LogLine } from '../../lib/battleText';
 import { useGameStatus } from '../../session/useGameStatus';
 import { Arena } from './Arena';
 import { eventsOf, revealStep, shownState } from './battleView';
@@ -42,6 +42,7 @@ export function BattlePage() {
   const [switchMode, setSwitchMode] = useState(false);
   const [rounds, setRounds] = useState<Round[]>(() => (initial?.last_round ? [initial.last_round] : []));
   const [logOpen, setLogOpen] = useState(false);
+  const [shortcutsEnabled, setShortcutsEnabled] = useState(true);
   const [nonce, setNonce] = useState(0);
   const pendingRef = useRef(false);
 
@@ -101,7 +102,7 @@ export function BattlePage() {
         setBattle(next);
         setRevealed(reducedMotion ? Number.POSITIVE_INFINITY : 0);
         if (next.last_round) setRounds((r) => [...r, next.last_round!]);
-        refresh();
+        if (next.status === 'finished') refresh();
       } catch (e) {
         if (isApiError(e) && e.code === 'INVALID_ACTION') {
           toast.show({ title: 'That move is not possible', message: e.message, tone: 'warning' });
@@ -131,8 +132,9 @@ export function BattlePage() {
 
   // Keyboard: A attack, S switch, F flee, 1-3 switch to that slot, Esc closes the switch choice.
   useEffect(() => {
+    if (!shortcutsEnabled) return;
     function onKey(e: KeyboardEvent) {
-      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey || e.isComposing || e.repeat) return;
       const t = e.target as HTMLElement | null;
       if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
       if (document.querySelector('dialog[open]')) return;
@@ -151,7 +153,7 @@ export function BattlePage() {
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [act, battle]);
+  }, [act, battle, shortcutsEnabled]);
 
   // ---------------------------------------------------------------- empty / loading states
   if (battle === undefined) {
@@ -194,14 +196,13 @@ export function BattlePage() {
 
   // ---------------------------------------------------------------- battle
   const names = namesFrom(battle.wild.name, battle.team);
-  const currentLines = describeRound(battle.last_round, names);
-  const visibleCount = Math.min(revealed, currentLines.length);
-  const lastLine = revealing
-    ? visibleCount > 0
-      ? describeEvent(events[visibleCount - 1], names)
-      : null
-    : currentLines[currentLines.length - 1] ?? null;
-  const fxEvent = revealing && revealed > 0 ? events[revealed - 1] : null;
+  const eventLines = events.map((event) => describeEvent(event, names));
+  const revealedCount = revealing ? Math.min(revealed, events.length) : events.length;
+  const visibleLines = eventLines
+    .slice(0, revealedCount)
+    .filter((l): l is LogLine => l !== null);
+  const lastLine = visibleLines[visibleLines.length - 1] ?? null;
+  const fxEvent = revealing && revealed > 0 && revealed <= events.length ? events[revealed - 1] : null;
   const fx = fxEvent ? { event: fxEvent, key: `${battle.turn}-${revealed}` } : null;
   const finished = battle.status === 'finished' && !revealing;
   const active = shown!.team.find((m) => m.position === shown!.activePosition);
@@ -311,7 +312,17 @@ export function BattlePage() {
               <div className={`bench${switchMode ? ' bench--choose' : ''}`}>
                 <div className="bench__head">
                   <h2 className="bench__title">{switchMode ? 'Choose who steps in' : 'Bench'}</h2>
-                  <span className="subtle text-sm">{switchMode ? 'Press 1–3 or click. Esc to cancel.' : 'Click a monster to switch it in.'}</span>
+                  <div className="cluster">
+                    <span className="subtle text-sm">{switchMode ? 'Press 1–3 or click. Esc to cancel.' : 'Click a monster to switch it in.'}</span>
+                    <button
+                      type="button"
+                      className="btn btn--ghost btn--sm"
+                      aria-pressed={shortcutsEnabled}
+                      onClick={() => setShortcutsEnabled((v) => !v)}
+                    >
+                      Shortcuts: {shortcutsEnabled ? 'On' : 'Off'}
+                    </button>
+                  </div>
                 </div>
                 {benchMembers.length === 0 ? (
                   <p className="muted text-sm">No other monster in this team.</p>
@@ -370,7 +381,20 @@ export function BattlePage() {
               ▾
             </span>
           </button>
-          <div id="battle-log-body" className="battle-log__body" onClick={revealing ? skip : undefined}>
+          <div
+            id="battle-log-body"
+            className="battle-log__body"
+            onClick={revealing ? skip : undefined}
+            role={revealing ? 'button' : undefined}
+            tabIndex={revealing ? 0 : undefined}
+            aria-label={revealing ? 'Skip round animation and show all battle log lines' : undefined}
+            onKeyDown={(e) => {
+              if (revealing && (e.key === 'Enter' || e.key === ' ')) {
+                e.preventDefault();
+                skip();
+              }
+            }}
+          >
             {battle.last_round ? (
               <section className="blog-round" aria-label={`Turn ${battle.last_round.turn}`}>
                 <h3 className="blog-round__turn">
@@ -378,7 +402,7 @@ export function BattlePage() {
                   {revealing && <span className="battle-log__live">live</span>}
                 </h3>
                 <ol className="blog-lines">
-                  {currentLines.slice(0, revealing ? visibleCount : currentLines.length).map((l, i) => (
+                  {visibleLines.map((l, i) => (
                     <BattleLogLine key={`${battle.turn}-${i}`} line={l} index={i} fresh={prev !== null} />
                   ))}
                 </ol>

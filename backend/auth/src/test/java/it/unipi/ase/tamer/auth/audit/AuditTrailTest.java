@@ -2,7 +2,9 @@ package it.unipi.ase.tamer.auth.audit;
 
 import static io.restassured.RestAssured.given;
 import static it.unipi.ase.tamer.auth.TestData.PASSWORD;
+import static it.unipi.ase.tamer.auth.TestData.logout;
 import static it.unipi.ase.tamer.auth.TestData.passwordGrant;
+import static it.unipi.ase.tamer.auth.TestData.refreshGrant;
 import static it.unipi.ase.tamer.auth.TestData.register;
 import static it.unipi.ase.tamer.auth.TestData.uniqueUsername;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -14,6 +16,7 @@ import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.WithTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
+import io.restassured.response.Response;
 import io.smallrye.faulttolerance.api.CircuitBreakerMaintenance;
 import it.unipi.ase.tamer.auth.JwtKeysTestResource;
 import it.unipi.ase.tamer.auth.client.PlayersClient;
@@ -27,10 +30,8 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 /**
- * SEC-3: the login, the service token and the registration leave one audit line each, with
+ * SEC-3: login, refresh, logout, service token and registration leave one audit line each, with
  * who and the outcome, and never a password, a token, a secret or the plain username.
- * Removing an {@code AuditLog.audit(...)} call in TokenService or RegistrationService turns
- * these tests red.
  */
 @QuarkusTest
 @WithTestResource(JwtKeysTestResource.class)
@@ -103,14 +104,56 @@ class AuditTrailTest {
         String playerId = register(username, PASSWORD).then().statusCode(201).extract().path("player_id");
         capture.clear();
 
-        String token = passwordGrant(username, PASSWORD).then().statusCode(200).extract().path("access_token");
+        Response response = passwordGrant(username, PASSWORD).then().statusCode(200).extract().response();
+        String token = response.path("access_token");
+        String refresh = response.path("refresh_token");
 
         Map<String, String> event = single("login");
         assertEquals("success", event.get("outcome"));
         assertEquals(playerId, event.get("user"));
         assertFalse(capture.text().contains(PASSWORD), "password in the audit log");
         assertFalse(capture.text().contains(token), "access token in the audit log");
+        assertFalse(capture.text().contains(refresh), "refresh token in the audit log");
         assertFalse(capture.text().contains(username), "plain username in the audit log (P-27)");
+    }
+
+    @Test
+    void refreshReuseAndLogoutAreAuditedWithoutTokens() {
+        String username = uniqueUsername();
+        String playerId = register(username, PASSWORD).then().statusCode(201).extract().path("player_id");
+        String refresh1 = passwordGrant(username, PASSWORD).then().statusCode(200).extract().path("refresh_token");
+        capture.clear();
+
+        Response rotated = refreshGrant(refresh1).then().statusCode(200).extract().response();
+        String access2 = rotated.path("access_token");
+        String refresh2 = rotated.path("refresh_token");
+        Map<String, String> refreshEvent = single("refresh");
+        assertEquals("success", refreshEvent.get("outcome"));
+        assertEquals(playerId, refreshEvent.get("user"));
+
+        capture.clear();
+        refreshGrant(refresh1).then().statusCode(400);
+        Map<String, String> reuseEvent = single("refresh_reuse");
+        assertEquals("denied", reuseEvent.get("outcome"));
+        assertEquals(playerId, reuseEvent.get("user"));
+
+        capture.clear();
+        refreshGrant("unknown-refresh-token").then().statusCode(400);
+        Map<String, String> unknownRefresh = single("refresh");
+        assertEquals("denied", unknownRefresh.get("outcome"));
+        assertEquals("-", unknownRefresh.get("user"));
+        assertEquals("invalid_grant", unknownRefresh.get("reason"));
+
+        capture.clear();
+        logout(refresh2).then().statusCode(204);
+        Map<String, String> logoutEvent = single("logout");
+        assertEquals("success", logoutEvent.get("outcome"));
+        assertEquals(playerId, logoutEvent.get("user"));
+
+        assertFalse(capture.text().contains(refresh1));
+        assertFalse(capture.text().contains(refresh2));
+        assertFalse(capture.text().contains(access2));
+        assertFalse(capture.text().contains(username));
     }
 
     @Test
@@ -183,7 +226,7 @@ class AuditTrailTest {
         return events.get(0);
     }
 
-    private static io.restassured.response.Response clientCredentials(String id, String secret) {
+    private static Response clientCredentials(String id, String secret) {
         return given().contentType(ContentType.URLENC)
                 .formParam("grant_type", "client_credentials")
                 .formParam("client_id", id)

@@ -3,6 +3,8 @@ package it.unipi.ase.tamer.history.api.dto;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.time.Instant;
 import java.util.UUID;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /** One entry of the history list: no team snapshot details and no turn log. */
 public record RecordSummary(
@@ -10,8 +12,8 @@ public record RecordSummary(
         UUID runId,
         String outcome,
         TemplateInfo template,
-        JsonNode wild,
-        JsonNode reward,
+        @Schema(type = SchemaType.OBJECT, implementation = Object.class) JsonNode wild,
+        @Schema(type = SchemaType.OBJECT, implementation = Object.class) JsonNode reward,
         int xpGained,
         Instant startedAt,
         Instant endedAt) {

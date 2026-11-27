@@ -16,7 +16,10 @@ export function RunStatusTag({ status }: { status: RunStatus | string }) {
 export function StageDots({ run }: { run: Run }) {
   const beaten = new Set(run.bosses_defeated ?? []);
   return (
-    <ol className="stage-dots" aria-label={`Stage ${run.stage} of 8, ${beaten.size} bosses defeated`}>
+    <ol
+      className="stage-dots"
+      aria-label={`Stage ${run.stage} of 8, ${beaten.size} ${beaten.size === 1 ? 'boss' : 'bosses'} defeated`}
+    >
       {Array.from({ length: 8 }, (_, i) => {
         const s = i + 1;
         const state = beaten.has(s) ? 'done' : s === run.stage ? 'current' : 'todo';

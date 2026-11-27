@@ -1,0 +1,21 @@
+meta {
+  name: 14 - Logout revokes session 2 family (204)
+  type: http
+  seq: 14
+}
+
+post {
+  url: {{authUrl}}/api/auth/logout
+  body: formUrlEncoded
+  auth: none
+}
+
+body:form-urlencoded {
+  refresh_token: {{accRefresh2Rotated}}
+}
+
+tests {
+  test("204 No Content", function () {
+    expect(res.getStatus()).to.equal(204);
+  });
+}

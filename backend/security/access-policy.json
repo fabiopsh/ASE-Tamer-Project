@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "rules": [
+    { "service": "gateway", "method": "GET", "path": "/health", "access": "public" },
+
+    { "service": "auth", "method": "POST", "path": "/api/auth/register", "access": "public" },
+    { "service": "auth", "method": "POST", "path": "/api/auth/token", "access": "public" },
+    { "service": "auth", "method": "POST", "path": "/api/auth/logout", "access": "public_credential" },
+    { "service": "auth", "method": "POST", "path": "/internal/auth/token", "access": "client_credentials" },
+    { "service": "auth", "method": "GET", "path": "/internal/auth/authorize", "access": "bearer_adapter" },
+
+    { "service": "players", "method": "GET", "path": "/api/players/me", "access": "roles", "roles": ["player"] },
+    { "service": "players", "method": "PATCH", "path": "/api/players/me", "access": "roles", "roles": ["player"] },
+    { "service": "players", "method": "GET", "path": "/api/players/me/starters", "access": "roles", "roles": ["player"] },
+    { "service": "players", "method": "POST", "path": "/api/players/me/starters", "access": "roles", "roles": ["player"] },
+    { "service": "players", "method": "POST", "path": "/internal/players", "access": "roles", "roles": ["service"] },
+    { "service": "players", "method": "POST", "path": "/internal/players/{pid}/new-run", "access": "roles", "roles": ["service"] },
+
+    { "service": "monsters", "method": "GET", "path": "/api/monsters", "access": "roles", "roles": ["player"] },
+    { "service": "monsters", "method": "GET", "path": "/api/monsters/{id}", "access": "roles", "roles": ["player"] },
+    { "service": "monsters", "method": "GET", "path": "/api/abilities", "access": "roles", "roles": ["player"] },
+    { "service": "monsters", "method": "GET", "path": "/api/abilities/{id}", "access": "roles", "roles": ["player"] },
+    { "service": "monsters", "method": "GET", "path": "/api/elements", "access": "roles", "roles": ["player"] },
+    { "service": "monsters", "method": "GET", "path": "/api/collection", "access": "roles", "roles": ["player"] },
+    { "service": "monsters", "method": "GET", "path": "/api/collection/{owned_id}", "access": "roles", "roles": ["player"] },
+    { "service": "monsters", "method": "PATCH", "path": "/api/collection/{owned_id}", "access": "roles", "roles": ["player"] },
+    { "service": "monsters", "method": "GET", "path": "/images/monsters/{filename}", "access": "public" },
+    { "service": "monsters", "method": "HEAD", "path": "/images/monsters/{filename}", "access": "public" },
+    { "service": "monsters", "method": "GET", "path": "/internal/monsters", "access": "roles", "roles": ["service"] },
+    { "service": "monsters", "method": "GET", "path": "/internal/monsters/{id}/stats", "access": "roles", "roles": ["service"] },
+    { "service": "monsters", "method": "POST", "path": "/internal/collections/{pid}/starters", "access": "roles", "roles": ["service"] },
+    { "service": "monsters", "method": "POST", "path": "/internal/collections/{pid}/monsters", "access": "roles", "roles": ["service"] },
+    { "service": "monsters", "method": "POST", "path": "/internal/collections/{pid}/xp", "access": "roles", "roles": ["service"] },
+    { "service": "monsters", "method": "GET", "path": "/internal/collections/{pid}/instances", "access": "roles", "roles": ["service"] },
+    { "service": "monsters", "method": "POST", "path": "/internal/collections/{pid}/archive", "access": "roles", "roles": ["service"] },
+
+    { "service": "teams", "method": "GET", "path": "/api/teams", "access": "roles", "roles": ["player"] },
+    { "service": "teams", "method": "POST", "path": "/api/teams", "access": "roles", "roles": ["player"] },
+    { "service": "teams", "method": "GET", "path": "/api/teams/{id}", "access": "roles", "roles": ["player"] },
+    { "service": "teams", "method": "PUT", "path": "/api/teams/{id}", "access": "roles", "roles": ["player"] },
+    { "service": "teams", "method": "DELETE", "path": "/api/teams/{id}", "access": "roles", "roles": ["player"] },
+    { "service": "teams", "method": "POST", "path": "/api/teams/validate", "access": "roles", "roles": ["player"] },
+    { "service": "teams", "method": "GET", "path": "/internal/teams/{id}", "access": "roles", "roles": ["service"] },
+    { "service": "teams", "method": "POST", "path": "/internal/teams/{pid}/reset", "access": "roles", "roles": ["service"] },
+
+    { "service": "encounters", "method": "GET", "path": "/api/encounters", "access": "roles", "roles": ["player"] },
+    { "service": "encounters", "method": "GET", "path": "/api/encounters/{template_id}", "access": "roles", "roles": ["player"] },
+    { "service": "encounters", "method": "GET", "path": "/api/runs", "access": "roles", "roles": ["player"] },
+    { "service": "encounters", "method": "POST", "path": "/api/runs", "access": "roles", "roles": ["player"] },
+    { "service": "encounters", "method": "GET", "path": "/api/runs/current", "access": "roles", "roles": ["player"] },
+    { "service": "encounters", "method": "POST", "path": "/api/runs/current/abandon", "access": "roles", "roles": ["player"] },
+    { "service": "encounters", "method": "GET", "path": "/api/runs/{run_id}", "access": "roles", "roles": ["player"] },
+    { "service": "encounters", "method": "POST", "path": "/api/battles", "access": "roles", "roles": ["player"] },
+    { "service": "encounters", "method": "GET", "path": "/api/battles/current", "access": "roles", "roles": ["player"] },
+    { "service": "encounters", "method": "POST", "path": "/api/battles/current/actions", "access": "roles", "roles": ["player"] },
+    { "service": "encounters", "method": "POST", "path": "/internal/runs", "access": "roles", "roles": ["service"] },
+
+    { "service": "history", "method": "GET", "path": "/api/history", "access": "roles", "roles": ["player"] },
+    { "service": "history", "method": "GET", "path": "/api/history/verify", "access": "roles", "roles": ["player"] },
+    { "service": "history", "method": "GET", "path": "/api/history/{encounter_id}", "access": "roles", "roles": ["player"] },
+    { "service": "history", "method": "POST", "path": "/internal/history", "access": "roles", "roles": ["service"] }
+  ]
+}

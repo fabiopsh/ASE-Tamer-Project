@@ -4,7 +4,8 @@ package it.unipi.ase.tamer.encounters.engine;
 public final class HpCalculator {
 
     public static final double WILD_HP_MULTIPLIER = 1.5;
-    public static final double BOSS_HP_MULTIPLIER = 1.5;
+    /** Tuned for engine v2 (EN-6): keeps stages 4–7 bosses fair with P2 legendary abilities active. */
+    public static final double BOSS_HP_MULTIPLIER = 1.25;
 
     private HpCalculator() {
     }

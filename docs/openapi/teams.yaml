@@ -5,13 +5,142 @@ tags:
 - name: teams-internal
 components:
   schemas:
+    Ability:
+      type: object
+      properties:
+        ability_id:
+          type: integer
+          format: int32
+        name:
+          type: string
+        description:
+          type: string
+        effect_type:
+          type: string
+        effect_value:
+          type: integer
+          format: int32
+        trigger:
+          type: string
+    ErrorDetail:
+      type: object
+      properties:
+        field:
+          type: string
+        code:
+          type: string
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        details:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorDetail"
+    Instant:
+      type: string
+      format: date-time
+      examples:
+      - 2022-03-10T16:15:50Z
+    InternalTeamMember:
+      type: object
+      properties:
+        position:
+          type: integer
+          format: int32
+        owned_id:
+          $ref: "#/components/schemas/UUID"
+        monster_id:
+          type: integer
+          format: int32
+        name:
+          type: string
+        level:
+          type: integer
+          format: int32
+        element:
+          type: string
+        rarity:
+          type: string
+        image_url:
+          type: string
+        stats:
+          $ref: "#/components/schemas/Stats"
+        ability:
+          $ref: "#/components/schemas/Ability"
+    InternalTeamResponse:
+      type: object
+      properties:
+        team_id:
+          $ref: "#/components/schemas/UUID"
+        name:
+          type: string
+        run_id:
+          $ref: "#/components/schemas/UUID"
+        members:
+          type: array
+          items:
+            $ref: "#/components/schemas/InternalTeamMember"
     ResetTeamsRequest:
       type: object
       required:
-      - runId
+      - run_id
       properties:
-        runId:
+        run_id:
           $ref: "#/components/schemas/UUID"
+    ResetTeamsResponse:
+      type: object
+      properties:
+        count:
+          type: integer
+          format: int64
+    Stats:
+      type: object
+      properties:
+        hp:
+          type: integer
+          format: int32
+        attack:
+          type: integer
+          format: int32
+        defense:
+          type: integer
+          format: int32
+        speed:
+          type: integer
+          format: int32
+    TeamError:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        owned_id:
+          $ref: "#/components/schemas/UUID"
+    TeamMemberResponse:
+      type: object
+      properties:
+        position:
+          type: integer
+          format: int32
+        owned_id:
+          $ref: "#/components/schemas/UUID"
+        monster_id:
+          type: integer
+          format: int32
+        name:
+          type: string
+        level:
+          type: integer
+          format: int32
+        element:
+          type: string
+        image_url:
+          type: string
     TeamRequest:
       type: object
       properties:
@@ -23,6 +152,32 @@ components:
             type: string
             format: uuid
             pattern: "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}"
+    TeamResponse:
+      type: object
+      properties:
+        team_id:
+          $ref: "#/components/schemas/UUID"
+        name:
+          type: string
+        run_id:
+          $ref: "#/components/schemas/UUID"
+        members:
+          type: array
+          items:
+            $ref: "#/components/schemas/TeamMemberResponse"
+        created_at:
+          $ref: "#/components/schemas/Instant"
+        updated_at:
+          $ref: "#/components/schemas/Instant"
+    TeamValidationResponse:
+      type: object
+      properties:
+        valid:
+          type: boolean
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/TeamError"
     UUID:
       type: string
       format: uuid
@@ -54,9 +209,16 @@ paths:
           description: Teams of the current run
           content:
             application/json:
-              schema: {}
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TeamResponse"
         "401":
           description: "UNAUTHORIZED: missing or invalid token"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "403":
           description: Not Allowed
       security:
@@ -76,13 +238,29 @@ paths:
       responses:
         "201":
           description: Team created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TeamResponse"
         "400":
           description: "TEAM_INVALID (details: TEAM_SIZE, DUPLICATE_MEMBER, NOT_OWNED,\
             \ TEAM_LIMIT, ...)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "401":
           description: "UNAUTHORIZED: missing or invalid token"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "503":
           description: DEPENDENCY_UNAVAILABLE
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "403":
           description: Not Allowed
       security:
@@ -105,13 +283,26 @@ paths:
           description: "{valid, errors}: invalid teams are reported here, not as errors"
           content:
             application/json:
-              schema: {}
+              schema:
+                $ref: "#/components/schemas/TeamValidationResponse"
         "400":
           description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "401":
           description: "UNAUTHORIZED: missing or invalid token"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "503":
           description: DEPENDENCY_UNAVAILABLE
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "403":
           description: Not Allowed
       security:
@@ -140,17 +331,38 @@ paths:
           description: Team updated
           content:
             application/json:
-              schema: {}
+              schema:
+                $ref: "#/components/schemas/TeamResponse"
         "400":
           description: TEAM_INVALID
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "401":
           description: "UNAUTHORIZED: missing or invalid token"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "404":
           description: "NOT_FOUND: missing or owned by another player"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "409":
           description: "TEAM_INVALID: MIXED_RUNS"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "503":
           description: DEPENDENCY_UNAVAILABLE
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "403":
           description: Not Allowed
       security:
@@ -172,11 +384,20 @@ paths:
           description: Team with ordered members
           content:
             application/json:
-              schema: {}
+              schema:
+                $ref: "#/components/schemas/TeamResponse"
         "401":
           description: "UNAUTHORIZED: missing or invalid token"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "404":
           description: "NOT_FOUND: missing or owned by another player"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "403":
           description: Not Allowed
       security:
@@ -198,8 +419,16 @@ paths:
           description: Team deleted
         "401":
           description: "UNAUTHORIZED: missing or invalid token"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "404":
           description: "NOT_FOUND: missing or owned by another player"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "403":
           description: Not Allowed
       security:
@@ -226,17 +455,44 @@ paths:
           description: Team with member stats
           content:
             application/json:
-              schema: {}
+              schema:
+                $ref: "#/components/schemas/InternalTeamResponse"
+        "400":
+          description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "401":
           description: "UNAUTHORIZED: missing or invalid token"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "403":
           description: "FORBIDDEN: not a service token"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "404":
           description: NOT_FOUND
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "409":
           description: TEAM_INVALID
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "503":
           description: DEPENDENCY_UNAVAILABLE
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
       security:
       - bearerAuth:
         - service
@@ -263,13 +519,26 @@ paths:
           description: Number of removed teams (0 when repeated)
           content:
             application/json:
-              schema: {}
+              schema:
+                $ref: "#/components/schemas/ResetTeamsResponse"
         "400":
           description: VALIDATION_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "401":
           description: "UNAUTHORIZED: missing or invalid token"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "403":
           description: "FORBIDDEN: not a service token"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
       security:
       - bearerAuth:
         - service

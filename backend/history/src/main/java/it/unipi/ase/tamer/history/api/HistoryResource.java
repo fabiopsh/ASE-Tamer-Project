@@ -3,6 +3,7 @@ package it.unipi.ase.tamer.history.api;
 import it.unipi.ase.tamer.history.api.dto.EncounterRecordResponse;
 import it.unipi.ase.tamer.history.api.dto.PageResponse;
 import it.unipi.ase.tamer.history.api.dto.RecordSummary;
+import it.unipi.ase.tamer.history.api.dto.VerifyHistoryResponse;
 import it.unipi.ase.tamer.history.security.CurrentPlayer;
 import it.unipi.ase.tamer.history.service.HistoryService;
 import jakarta.annotation.security.RolesAllowed;
@@ -43,6 +44,15 @@ public class HistoryResource {
             @Parameter(description = "Zero-based page, default 0") @QueryParam("page") Integer page,
             @Parameter(description = "Page size, default 20, max 50") @QueryParam("size") Integer size) {
         return service.list(currentPlayer.id(), runId, outcome, page, size);
+    }
+
+    @GET
+    @Path("/verify")
+    @Operation(summary = "Verify the append-only hash chain of my encounter history (US-25)")
+    @APIResponse(responseCode = "200", description = "Verification result")
+    @APIResponse(responseCode = "401", description = "Missing or invalid token")
+    public VerifyHistoryResponse verify() {
+        return service.verify(currentPlayer.id());
     }
 
     @GET

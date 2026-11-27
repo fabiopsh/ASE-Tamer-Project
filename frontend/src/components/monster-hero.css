@@ -65,3 +65,8 @@
   overflow-wrap: anywhere;
   color: var(--el, var(--text-1));
 }
+.mhero__species {
+  font-size: var(--text-sm);
+  color: var(--text-2);
+  font-weight: var(--weight-medium);
+}

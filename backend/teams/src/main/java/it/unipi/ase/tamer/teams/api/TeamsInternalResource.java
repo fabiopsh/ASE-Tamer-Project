@@ -1,6 +1,11 @@
 package it.unipi.ase.tamer.teams.api;
 
+import it.unipi.ase.tamer.teams.api.dto.InternalTeamResponse;
 import it.unipi.ase.tamer.teams.api.dto.ResetTeamsRequest;
+import it.unipi.ase.tamer.teams.api.dto.ResetTeamsResponse;
+import it.unipi.ase.tamer.teams.error.ApiException;
+import it.unipi.ase.tamer.teams.error.ErrorCodes;
+import it.unipi.ase.tamer.teams.error.ErrorResponse;
 import it.unipi.ase.tamer.teams.service.TeamsService;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
@@ -16,8 +21,10 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import java.util.UUID;
 import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 @Path("/internal/teams")
 @Produces(MediaType.APPLICATION_JSON)
@@ -31,15 +38,23 @@ public class TeamsInternalResource {
     @GET
     @Path("/{id}")
     @Operation(summary = "Revalidate a team and return full member stats for a battle")
-    @APIResponse(responseCode = "200", description = "Team with member stats")
-    @APIResponse(responseCode = "401", description = "UNAUTHORIZED: missing or invalid token")
-    @APIResponse(responseCode = "403", description = "FORBIDDEN: not a service token")
-    @APIResponse(responseCode = "404", description = "NOT_FOUND")
-    @APIResponse(responseCode = "409", description = "TEAM_INVALID")
-    @APIResponse(responseCode = "503", description = "DEPENDENCY_UNAVAILABLE")
-    public Object team(@PathParam("id") UUID id, @QueryParam("player_id") UUID playerId) {
+    @APIResponse(responseCode = "200", description = "Team with member stats",
+            content = @Content(schema = @Schema(implementation = InternalTeamResponse.class)))
+    @APIResponse(responseCode = "400", description = "VALIDATION_ERROR",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @APIResponse(responseCode = "401", description = "UNAUTHORIZED: missing or invalid token",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @APIResponse(responseCode = "403", description = "FORBIDDEN: not a service token",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @APIResponse(responseCode = "404", description = "NOT_FOUND",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @APIResponse(responseCode = "409", description = "TEAM_INVALID",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @APIResponse(responseCode = "503", description = "DEPENDENCY_UNAVAILABLE",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    public InternalTeamResponse team(@PathParam("id") UUID id, @QueryParam("player_id") UUID playerId) {
         if (playerId == null) {
-            throw new it.unipi.ase.tamer.teams.error.ApiException(400, "VALIDATION_ERROR",
+            throw new ApiException(400, ErrorCodes.VALIDATION_ERROR,
                     "The player_id parameter is required.");
         }
         return service.internalTeam(playerId, id);
@@ -49,11 +64,15 @@ public class TeamsInternalResource {
     @Path("/{pid}/reset")
     @Consumes(MediaType.APPLICATION_JSON)
     @Operation(summary = "Idempotently remove all teams of a completed run")
-    @APIResponse(responseCode = "200", description = "Number of removed teams (0 when repeated)")
-    @APIResponse(responseCode = "400", description = "VALIDATION_ERROR")
-    @APIResponse(responseCode = "401", description = "UNAUTHORIZED: missing or invalid token")
-    @APIResponse(responseCode = "403", description = "FORBIDDEN: not a service token")
-    public Object reset(@PathParam("pid") UUID playerId, @Valid @NotNull ResetTeamsRequest request) {
+    @APIResponse(responseCode = "200", description = "Number of removed teams (0 when repeated)",
+            content = @Content(schema = @Schema(implementation = ResetTeamsResponse.class)))
+    @APIResponse(responseCode = "400", description = "VALIDATION_ERROR",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @APIResponse(responseCode = "401", description = "UNAUTHORIZED: missing or invalid token",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @APIResponse(responseCode = "403", description = "FORBIDDEN: not a service token",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    public ResetTeamsResponse reset(@PathParam("pid") UUID playerId, @Valid @NotNull ResetTeamsRequest request) {
         return service.reset(playerId, request.runId());
     }
 }

@@ -5,154 +5,6 @@
   },
   "item": [
     {
-      "name": "internal",
-      "item": [
-        {
-          "name": "POST /internal/auth/token - valid: client credentials",
-          "request": {
-            "method": "POST",
-            "header": [],
-            "auth": {
-              "type": "noauth"
-            },
-            "description": "",
-            "url": {
-              "raw": "{{authUrl}}/internal/auth/token",
-              "protocol": "",
-              "host": [
-                "{{authUrl}}"
-              ],
-              "path": [
-                "internal",
-                "auth",
-                "token"
-              ],
-              "query": [],
-              "variable": []
-            },
-            "body": {
-              "mode": "urlencoded",
-              "urlencoded": [
-                {
-                  "key": "grant_type",
-                  "value": "client_credentials",
-                  "disabled": false,
-                  "type": "default",
-                  "description": ""
-                },
-                {
-                  "key": "client_id",
-                  "value": "tests",
-                  "disabled": false,
-                  "type": "default",
-                  "description": ""
-                },
-                {
-                  "key": "client_secret",
-                  "value": "{{process.env.TESTS_CLIENT_SECRET}}",
-                  "disabled": false,
-                  "type": "default",
-                  "description": ""
-                }
-              ]
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "packages": {},
-                "requests": {},
-                "exec": [
-                  "// Tests",
-                  "test(\"200 service token\", function () {",
-                  "  expect(res.getStatus()).to.equal(200);",
-                  "  const body = res.getBody();",
-                  "  expect(body.token_type).to.equal(\"Bearer\");",
-                  "  expect(body.scope).to.equal(\"service\");",
-                  "  expect(body.expires_in).to.equal(300);",
-                  "  bru.setVar(\"serviceToken\", body.access_token);",
-                  "});"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "POST /internal/auth/token - invalid: wrong client secret",
-          "request": {
-            "method": "POST",
-            "header": [],
-            "auth": {
-              "type": "noauth"
-            },
-            "description": "",
-            "url": {
-              "raw": "{{authUrl}}/internal/auth/token",
-              "protocol": "",
-              "host": [
-                "{{authUrl}}"
-              ],
-              "path": [
-                "internal",
-                "auth",
-                "token"
-              ],
-              "query": [],
-              "variable": []
-            },
-            "body": {
-              "mode": "urlencoded",
-              "urlencoded": [
-                {
-                  "key": "grant_type",
-                  "value": "client_credentials",
-                  "disabled": false,
-                  "type": "default",
-                  "description": ""
-                },
-                {
-                  "key": "client_id",
-                  "value": "tests",
-                  "disabled": false,
-                  "type": "default",
-                  "description": ""
-                },
-                {
-                  "key": "client_secret",
-                  "value": "wrong-secret",
-                  "disabled": false,
-                  "type": "default",
-                  "description": ""
-                }
-              ]
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "packages": {},
-                "requests": {},
-                "exec": [
-                  "// Tests",
-                  "test(\"401 invalid_client\", function () {",
-                  "  expect(res.getStatus()).to.equal(401);",
-                  "  expect(res.getBody().error).to.equal(\"invalid_client\");",
-                  "});"
-                ]
-              }
-            }
-          ]
-        }
-      ],
-      "auth": {
-        "type": "noauth"
-      }
-    },
-    {
       "name": "public",
       "item": [
         {
@@ -397,9 +249,11 @@
                   "  const body = res.getBody();",
                   "  expect(body.token_type).to.equal(\"Bearer\");",
                   "  expect(body.scope).to.equal(\"player\");",
-                  "  expect(body.expires_in).to.be.above(0);",
+                  "  expect(body.expires_in).to.equal(300);",
                   "  expect(body.access_token.split(\".\")).to.have.lengthOf(3);",
+                  "  expect(body.refresh_token).to.be.a(\"string\").and.not.be.empty;",
                   "  bru.setVar(\"playerToken\", body.access_token);",
+                  "  bru.setVar(\"playerRefreshToken\", body.refresh_token);",
                   "});"
                 ]
               }
@@ -597,6 +451,510 @@
               }
             }
           ]
+        },
+        {
+          "name": "POST /api/auth/token - valid: refresh_token grant",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "{{authUrl}}/api/auth/token",
+              "protocol": "",
+              "host": [
+                "{{authUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "token"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "refresh_token",
+                  "disabled": false,
+                  "type": "default",
+                  "description": ""
+                },
+                {
+                  "key": "refresh_token",
+                  "value": "{{playerRefreshToken}}",
+                  "disabled": false,
+                  "type": "default",
+                  "description": ""
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"200 rotated access and refresh tokens\", function () {",
+                  "  expect(res.getStatus()).to.equal(200);",
+                  "  expect(res.getHeader(\"cache-control\")).to.include(\"no-store\");",
+                  "  const body = res.getBody();",
+                  "  expect(body.expires_in).to.equal(300);",
+                  "  expect(body.refresh_token).to.not.equal(bru.getVar(\"playerRefreshToken\"));",
+                  "  bru.setVar(\"playerRefreshToken\", body.refresh_token);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/auth/logout - valid: revokes refresh family",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "{{authUrl}}/api/auth/logout",
+              "protocol": "",
+              "host": [
+                "{{authUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "logout"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "refresh_token",
+                  "value": "{{playerRefreshToken}}",
+                  "disabled": false,
+                  "type": "default",
+                  "description": ""
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"204 No Content\", function () {",
+                  "  expect(res.getStatus()).to.equal(204);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/auth/logout - invalid: missing refresh_token",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "{{authUrl}}/api/auth/logout",
+              "protocol": "",
+              "host": [
+                "{{authUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "logout"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "refresh_token",
+                  "value": "",
+                  "disabled": false,
+                  "type": "default",
+                  "description": ""
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"400 invalid_request\", function () {",
+                  "  expect(res.getStatus()).to.equal(400);",
+                  "  expect(res.getBody().error).to.equal(\"invalid_request\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "auth": {
+        "type": "noauth"
+      }
+    },
+    {
+      "name": "internal",
+      "item": [
+        {
+          "name": "POST /internal/auth/token - valid: client credentials",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "{{authUrl}}/internal/auth/token",
+              "protocol": "",
+              "host": [
+                "{{authUrl}}"
+              ],
+              "path": [
+                "internal",
+                "auth",
+                "token"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "client_credentials",
+                  "disabled": false,
+                  "type": "default",
+                  "description": ""
+                },
+                {
+                  "key": "client_id",
+                  "value": "tests",
+                  "disabled": false,
+                  "type": "default",
+                  "description": ""
+                },
+                {
+                  "key": "client_secret",
+                  "value": "{{process.env.TESTS_CLIENT_SECRET}}",
+                  "disabled": false,
+                  "type": "default",
+                  "description": ""
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"200 service token\", function () {",
+                  "  expect(res.getStatus()).to.equal(200);",
+                  "  const body = res.getBody();",
+                  "  expect(body.token_type).to.equal(\"Bearer\");",
+                  "  expect(body.scope).to.equal(\"service\");",
+                  "  expect(body.expires_in).to.equal(300);",
+                  "  bru.setVar(\"serviceToken\", body.access_token);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /internal/auth/token - invalid: wrong client secret",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "{{authUrl}}/internal/auth/token",
+              "protocol": "",
+              "host": [
+                "{{authUrl}}"
+              ],
+              "path": [
+                "internal",
+                "auth",
+                "token"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "client_credentials",
+                  "disabled": false,
+                  "type": "default",
+                  "description": ""
+                },
+                {
+                  "key": "client_id",
+                  "value": "tests",
+                  "disabled": false,
+                  "type": "default",
+                  "description": ""
+                },
+                {
+                  "key": "client_secret",
+                  "value": "wrong-secret",
+                  "disabled": false,
+                  "type": "default",
+                  "description": ""
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"401 invalid_client\", function () {",
+                  "  expect(res.getStatus()).to.equal(401);",
+                  "  expect(res.getBody().error).to.equal(\"invalid_client\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /internal/auth/authorize - valid player on /api/players/me",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Original-Method",
+                "value": "GET",
+                "description": "",
+                "disabled": false,
+                "type": "default"
+              },
+              {
+                "key": "X-Original-URI",
+                "value": "/api/players/me",
+                "description": "",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{authUrl}}/internal/auth/authorize",
+              "protocol": "",
+              "host": [
+                "{{authUrl}}"
+              ],
+              "path": [
+                "internal",
+                "auth",
+                "authorize"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"204 with verified X-Auth-Subject\", function () {",
+                  "  expect(res.getStatus()).to.equal(204);",
+                  "  expect(res.getHeader(\"x-auth-subject\")).to.match(/^[0-9a-f-]{36}$/);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /internal/auth/authorize - invalid: missing token -> 401",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Original-Method",
+                "value": "GET",
+                "description": "",
+                "disabled": false,
+                "type": "default"
+              },
+              {
+                "key": "X-Original-URI",
+                "value": "/api/players/me",
+                "description": "",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "{{authUrl}}/internal/auth/authorize",
+              "protocol": "",
+              "host": [
+                "{{authUrl}}"
+              ],
+              "path": [
+                "internal",
+                "auth",
+                "authorize"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"401 with WWW-Authenticate: Bearer\", function () {",
+                  "  expect(res.getStatus()).to.equal(401);",
+                  "  expect(res.getHeader(\"www-authenticate\")).to.include(\"Bearer\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /internal/auth/authorize - invalid: service token on player route -> 403",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Original-Method",
+                "value": "GET",
+                "description": "",
+                "disabled": false,
+                "type": "default"
+              },
+              {
+                "key": "X-Original-URI",
+                "value": "/api/players/me",
+                "description": "",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{serviceToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "",
+            "url": {
+              "raw": "{{authUrl}}/internal/auth/authorize",
+              "protocol": "",
+              "host": [
+                "{{authUrl}}"
+              ],
+              "path": [
+                "internal",
+                "auth",
+                "authorize"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                  "// Tests",
+                  "test(\"403 FORBIDDEN\", function () {",
+                  "  expect(res.getStatus()).to.equal(403);",
+                  "});"
+                ]
+              }
+            }
+          ]
         }
       ],
       "auth": {
@@ -607,11 +965,6 @@
   "variable": [
     {
       "key": "authUrl",
-      "value": "",
-      "type": "default"
-    },
-    {
-      "key": "process.env.TESTS_CLIENT_SECRET",
       "value": "",
       "type": "default"
     },
@@ -627,6 +980,26 @@
     },
     {
       "key": "$randomInt",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "playerRefreshToken",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "process.env.TESTS_CLIENT_SECRET",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "playerToken",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "serviceToken",
       "value": "",
       "type": "default"
     }

@@ -58,3 +58,11 @@ export function listCollection(q: CollectionQuery = {}, signal?: AbortSignal): P
 export function getOwnedMonster(ownedId: Uuid, signal?: AbortSignal): Promise<OwnedMonster> {
   return request<OwnedMonster>(`/api/collection/${encodeURIComponent(ownedId)}`, { signal });
 }
+
+/** US-13: set or clear the personal nickname of an owned monster. */
+export function updateNickname(ownedId: Uuid, nickname: string | null): Promise<OwnedMonster> {
+  return request<OwnedMonster>(`/api/collection/${encodeURIComponent(ownedId)}`, {
+    method: 'PATCH',
+    body: { nickname },
+  });
+}

@@ -21,14 +21,16 @@ import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 /** The only access players has to the monsters database. */
 @RegisterRestClient(configKey = "monsters")
 @RegisterProvider(ServiceTokenFilter.class)
+@RegisterProvider(ClientErrorResponseMapper.class)
 public interface MonstersClient {
 
     @GET
     @Path("/internal/monsters")
     @Produces(MediaType.APPLICATION_JSON)
     @Timeout(2000)
-    @Retry(maxRetries = 2, delay = 200)
-    @CircuitBreaker(requestVolumeThreshold = 10, failureRatio = 0.5, delay = 5000)
+    @Retry(maxRetries = 2, delay = 200, abortOn = RemoteClientException.class)
+    @CircuitBreaker(requestVolumeThreshold = 10, failureRatio = 0.5, delay = 5000,
+            skipOn = RemoteClientException.class)
     List<MonsterCandidate> candidates(@QueryParam("rarity") String rarity);
 
     @POST
@@ -36,7 +38,8 @@ public interface MonstersClient {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Timeout(2000)
-    @Retry(maxRetries = 2, delay = 200)
-    @CircuitBreaker(requestVolumeThreshold = 10, failureRatio = 0.5, delay = 5000)
+    @Retry(maxRetries = 2, delay = 200, abortOn = RemoteClientException.class)
+    @CircuitBreaker(requestVolumeThreshold = 10, failureRatio = 0.5, delay = 5000,
+            skipOn = RemoteClientException.class)
     List<StarterEntry> createStarters(@PathParam("pid") UUID playerId, StarterGrantRequest request);
 }

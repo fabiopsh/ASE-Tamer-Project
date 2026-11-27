@@ -20,6 +20,10 @@ public class OAuthException extends RuntimeException {
         return new OAuthException(400, "invalid_grant", "Invalid username or password.");
     }
 
+    public static OAuthException invalidRefreshGrant() {
+        return new OAuthException(400, "invalid_grant", "Invalid or expired refresh token.");
+    }
+
     public static OAuthException unsupportedGrantType() {
         return new OAuthException(400, "unsupported_grant_type", "Unsupported grant_type.");
     }

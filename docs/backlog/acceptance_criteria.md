@@ -17,24 +17,25 @@ Test references:
 |---|---|---|
 | 1 | **Given** no account named `ash` exists, **when** I register `ash` with a valid password, **then** I receive 201 with my `player_id` and a player profile exists. | `RegistrationResourceTest#validRegistrationCreatesAccountAndProfile`; Bruno `services/auth/public/01-register-valid` |
 | 2 | **Given** an account `ash` exists, **when** I register `ash` or `ASH`, **then** I receive 409 `USERNAME_TAKEN` and no account is created. | `RegistrationResourceTest#duplicateUsernameIsRejected`, `#duplicateUsernameIsCaseInsensitive`; Bruno `services/auth/public/02-register-invalid-duplicate` |
-| 3 | **Given** any state, **when** I register with a password shorter than 8 characters, longer than 72 characters or 72 bytes, or equal to the username, **then** I receive 400 `VALIDATION_ERROR` and no account is created. | `RegistrationResourceTest#shortPasswordIsRejected`, `#passwordLongerThan72CharactersIsRejected`, `#passwordLongerThan72BytesIsRejected`, `#passwordEqualToUsernameIsRejected`; Bruno `services/auth/public/03-register-invalid-short-password` |
+| 3 | **Given** any state, **when** I register with a password shorter than 8 characters, longer than 72 characters or 72 bytes, equal to the username, or in the common-password denylist, **then** I receive 400 `VALIDATION_ERROR` and no account is created. | `RegistrationResourceTest#shortPasswordIsRejected`, `#passwordLongerThan72CharactersIsRejected`, `#passwordLongerThan72BytesIsRejected`, `#passwordEqualToUsernameIsRejected`, `#commonWeakPasswordIsRejected`; Bruno `services/auth/public/03-register-invalid-short-password` |
 | 4 | **Given** any state, **when** I register a username that is shorter than 3 or longer than 20 characters, or contains characters other than letters, digits and `_`, **then** I receive 400 `VALIDATION_ERROR`. | `RegistrationResourceTest#invalidUsernameIsRejected` |
 | 5 | **Given** any state, **when** the request body contains unknown fields or is not valid JSON, **then** I receive 400 `VALIDATION_ERROR`. | `RegistrationResourceTest#unknownFieldIsRejected`, `#malformedJsonIsRejected` |
 | 6 | **Given** the players service is unavailable, **when** I register, **then** I receive 503 `DEPENDENCY_UNAVAILABLE` and no account is created. | `RegistrationResourceTest#playersUnavailableRollsBackTheAccount` |
-| 7 | **Given** I registered, **then** my password is stored only as a bcrypt hash. | `RegistrationResourceTest#validRegistrationCreatesAccountAndProfile`, `PasswordHasherTest#hashIsBcryptAndNotThePassword` |
+| 7 | **Given** I registered, **then** my password is stored only as a bcrypt hash and my username is encrypted at rest (AES-256-GCM) with an HMAC blind index. | `RegistrationResourceTest#validRegistrationCreatesAccountAndProfile`, `PasswordHasherTest#hashIsBcryptAndNotThePassword`, `UsernameCryptoTest#encryptAndDecryptRoundtrip` |
 
 ## US-02 — Log in
 
-**Dependencies:** US-01 · **Service:** auth · **Phase:** P1
+**Dependencies:** US-01 · **Service:** auth · **Phase:** P1, P2 (AUTH-7: 300 s access tokens, rotating refresh tokens, server logout)
 
 | # | Criterion | Tests |
 |---|---|---|
-| 1 | **Given** a registered account, **when** I request a token with `grant_type=password` and the correct credentials (username in any case), **then** I receive 200 with a Bearer access token, `expires_in` and `Cache-Control: no-store`. | `TokenResourceTest#correctCredentialsReturnAPlayerToken`; Bruno `services/auth/public/04-token-valid` |
+| 1 | **Given** a registered account, **when** I request a token with `grant_type=password` and the correct credentials (username in any case), **then** I receive 200 with a Bearer access token (`expires_in` = 300 s), a rotating `refresh_token` and `Cache-Control: no-store`. | `TokenResourceTest#correctCredentialsReturnAPlayerToken`, `RefreshAndLogoutTest#passwordLoginReturns300sAccessTokenAndStoresOnlyRefreshHash`; Bruno `services/auth/public/04-token-valid` |
 | 2 | **Given** a registered account, **when** I use a wrong password or an unknown username, **then** I receive the same 400 `invalid_grant` error. | `TokenResourceTest#wrongPasswordAndUnknownUserGiveTheSameError`; Bruno `services/auth/public/05-token-invalid-wrong-password`, `06-token-invalid-unknown-user` |
 | 3 | **Given** any state, **when** the request misses `grant_type`, `username` or `password`, or uses an unsupported grant type, **then** I receive 400 `invalid_request` or `unsupported_grant_type`. | `TokenResourceTest#missingGrantTypeIsInvalidRequest`, `#missingPasswordIsInvalidRequest`, `#unsupportedGrantTypeIsRejected`; Bruno `services/auth/public/07-token-invalid-unsupported-grant` |
-| 4 | **Given** a token I received, **when** I call a protected endpoint of any service, **then** the token is accepted and identifies me (`sub` = my `player_id`). | `TokenVerificationTest#playerTokenIsAccepted`, `CommonsTest#playerIdComesFromSubject` (players) |
-| 5 | **Given** no token, an expired token, a tampered or unsigned token, or a token from another issuer or for another audience, **when** I call a protected endpoint, **then** I receive 401 `UNAUTHORIZED`. | `TokenVerificationTest#missingTokenIs401`, `#tamperedTokenIs401`, `#unsignedTokenIs401`, `#expiredTokenIs401`, `#wrongIssuerIs401`, `#wrongAudienceIs401`; `CommonsTest#noTokenIs401WithErrorBody` |
-| 6 | **Given** a player token, **when** I call an internal endpoint, **then** I receive 403 `FORBIDDEN` (and through the gateway, 404). | `TokenVerificationTest#playerTokenOnInternalEndpointIs403`, `CommonsTest#playerOnInternalIs403` |
+| 4 | **Given** a token I received, **when** I call a protected endpoint of any service, **then** the gateway (`auth_request`) and the service accept the token and identify me (`sub` = my `player_id`). | `TokenVerificationTest#playerTokenIsAccepted`, `AuthorizeResourceTest#validPlayerTokenOnPlayerRouteReturns204WithSubject`, `CommonsTest#playerIdComesFromSubject` (players); Bruno `access/09-players-valid-200` |
+| 5 | **Given** no token, an expired token, a tampered or unsigned token, or a token from another issuer or for another audience, **when** I call a protected endpoint, **then** I receive 401 `UNAUTHORIZED`. | `TokenVerificationTest#missingTokenIs401`, `#tamperedTokenIs401`, `#unsignedTokenIs401`, `#expiredTokenIs401`, `#wrongIssuerIs401`, `#wrongAudienceIs401`, `AuthorizeResourceTest#forgedExpiredUnsignedAndMissingSubTokensAre401`, `CommonsTest#noTokenIs401WithErrorBody`; Bruno `access/04`…`08` |
+| 6 | **Given** a player token, **when** I call an internal endpoint, **then** I receive 403 `FORBIDDEN` (and through the gateway, 404). | `TokenVerificationTest#playerTokenOnInternalEndpointIs403`, `AuthorizeResourceTest#internalManagementTraversalAndUnmappedRoutesAre403`, `CommonsTest#playerOnInternalIs403`, `AccessPolicyTest` (all 6 services) |
+| 7 | **Given** a valid refresh token, **when** I exchange it with `grant_type=refresh_token`, **then** I receive a rotated access/refresh pair and the old token is revoked; reusing a consumed token revokes the entire session family; `POST /api/auth/logout` revokes the family idempotently. | `RefreshAndLogoutTest#rotationIssuesNewPairRevokesOldAndPreservesFamilyAndExpiry`, `#reuseOfConsumedTokenRevokesEntireFamilyAndCommitsDespite400`, `#logoutRevokesWholeFamilyIdempotentlyAndValidatesMissingParam`; Bruno `services/auth/public/08-token-refresh-valid`, `09-logout-valid`, `10-logout-invalid-missing`, `access/10`…`17` |
 
 ## US-03 — Resume saved progress
 
@@ -47,19 +48,30 @@ Test references:
 | 3 | **Given** I have chosen starters, **when** I consult my collection or return after a restart, **then** the saved instances and run remain available through the owning services. | Bruno `services/monsters/public/13-get-collection-valid`; e2e `e2e/06-collection`, `e2e/14-collection-after-battle` |
 | 4 | **Given** my run was lost or abandoned (roguelike rule R14), **when** I come back, **then** I start a new run with a new starter pool, and I can still consult my past runs, their archived monsters and their history. | `BattleApiTest#abandonClosesTheBattleAndResetsTheRun`; Bruno `services/encounters/public/19-post-abandon-valid`, `services/encounters/public/02-get-runs-list-valid`, `services/monsters/internal/19-get-collection-archived-valid` |
 
+## US-04 — Choose or update my player name and avatar
+
+**Dependencies:** US-01, US-02 · **Service:** players · **Phase:** P2 (optional green story)
+
+| # | Criterion | Tests |
+|---|---|---|
+| 1 | **Given** I am authenticated, **when** I send `PATCH /api/players/me` with a valid `display_name` and/or `avatar`, **then** my profile is updated and subsequent `GET /api/players/me` returns the new values. | `PlayersResourceTest#patchProfileUpdatesAndValidatesDisplayNameAndAvatar`; Bruno `services/players/public/10-patch-profile-valid` |
+| 2 | **Given** I send an invalid `display_name` or disallowed `avatar`, **when** I call `PATCH /api/players/me`, **then** I receive 400 `VALIDATION_ERROR` and my profile does not change. | `PlayersResourceTest#patchProfileUpdatesAndValidatesDisplayNameAndAvatar`; Bruno `services/players/public/11-patch-profile-invalid-avatar` |
+| 3 | **Given** I am not authenticated, **when** I call `PATCH /api/players/me`, **then** I receive 401 `UNAUTHORIZED`. | `PlayersResourceTest#profileWithoutTokenReturns401WithBearerChallenge`; Bruno `access/04-players-no-token-401` |
+
 ## US-05 — Protect my account data
 
-**Dependencies:** US-01, US-02 · **Service:** auth, gateway, every service · **Phase:** P1 (access control), P2 (encryption at rest, refresh/logout, login backoff: AUTH-7, AUTH-8)
+**Dependencies:** US-01, US-02 · **Service:** auth, gateway, every service · **Phase:** P1 (access control), P2 (completed: gateway auth_request, shared access policy, refresh/logout, encryption at rest, login backoff, audit log)
 
 | # | Criterion | Tests |
 |---|---|---|
 | 1 | **Given** another player's team, monster, run or encounter, **when** I request, change or use it with my token, **then** I receive 404, never 403, and nothing changes (P-11). | Bruno `services/teams/public/10-put-update-invalid-foreign`, `14-get-get-invalid-foreign`, `13-post-create-invalid-foreign-monster`, `services/monsters/public/17-get-instance-invalid-foreign`, `services/history/internal/11-get-detail-invalid-foreign`; `scripts/security-check.sh` §3 |
 | 2 | **Given** I registered, **then** my password is stored only as a bcrypt hash and never returned by any API. | `PasswordHasherTest#hashIsBcryptAndNotThePassword`, `RegistrationResourceTest#validRegistrationCreatesAccountAndProfile`; e2e `e2e/01-register` |
-| 3 | **Given** no token, a tampered, unsigned or expired token, **when** I call any protected endpoint, **then** I receive 401; a player token on an internal endpoint gets 403 (404 through the gateway). | `TokenVerificationTest`; e2e `e2e/15-internal-not-exposed`, `16-no-token`, `17-bad-token`; `scripts/security-check.sh` §2, §4 |
-| 4 | **Given** many wrong login attempts from the same address, **when** I keep trying, **then** the gateway answers 429. | `scripts/security-check.sh` §10 |
-| 5 | **Given** any client, **when** it talks to the backend, **then** every hop uses TLS (client→gateway, gateway→service, service→service, service→database) and plain HTTP is refused. | CI job `compose-smoke` (plain HTTP refused); `scripts/security-check.sh` §9 |
-| 6 | **P2** — **Given** the auth database is read by an attacker, **then** usernames are encrypted (AES-GCM, HMAC index) and refresh tokens are stored only as hashes. | Not implemented yet (AUTH-7, AUTH-8) |
-| 7 | **P2** — **Given** I log out, **when** my refresh token is used again, **then** it is rejected. | Not implemented yet (AUTH-7) |
+| 3 | **Given** no token, a tampered, unsigned or expired token, **when** I call any protected endpoint, **then** I receive 401 (enforced both at the gateway via `auth_request` and in each service via the shared `access-policy.json`); a player token on an internal endpoint gets 403 (404 through the gateway). | `TokenVerificationTest`, `AuthorizeResourceTest`, `AccessPolicyTest` (all 6 services); Bruno `access/04`…`09`, `services/auth/internal/03`…`05`, e2e `e2e/15-internal-not-exposed`, `16-no-token`, `17-bad-token`; `scripts/check-policy-sync.sh`; `scripts/security-check.sh` §2, §4 |
+| 4 | **Given** repeated failed login attempts from the same IP or against the same account, **when** I keep trying, **then** the gateway rate-limits (`/api/auth/*` and `/api/`) with 429 and `auth` locks the account for 15 minutes after 5 consecutive failures. | `LoginBackoffTest#fiveWrongAttemptsLockSixthEvenWithCorrectPassword`, `#successfulLoginClearsFailureCounter`; `scripts/security-check.sh` §10 |
+| 5 | **Given** any client, **when** it talks to the backend, **then** every hop uses TLS (client→gateway, gateway→service, service→service, service→database with `pg_hba.conf` `hostssl`) and plain HTTP is refused. | CI job `compose-smoke` (plain HTTP refused); `scripts/security-check.sh` §9 |
+| 6 | **Given** the auth database is read by an attacker, **then** usernames are encrypted (AES-256-GCM with random IV and HMAC blind index) and refresh tokens are stored only as SHA-256 hashes. | `UsernameCryptoTest#encryptAndDecryptRoundtrip`, `#randomIvProducesDifferentCiphertextsForSamePlaintext`, `#tamperedCiphertextOrIvFailsDecryption`; `RefreshAndLogoutTest#passwordLoginReturns300sAccessTokenAndStoresOnlyRefreshHash` |
+| 7 | **Given** I log out or a consumed refresh token is reused, **when** any refresh token from that session family is used again, **then** it is rejected with `400 invalid_grant` while independent sessions remain unaffected. | `RefreshAndLogoutTest#logoutRevokesWholeFamilyIdempotentlyAndValidatesMissingParam`, `#reuseOfConsumedTokenRevokesEntireFamilyAndCommitsDespite400`, `#independentSessionRemainsUsableWhenAnotherFamilyIsRevoked`; Bruno `services/auth/public/09-logout-valid`, `access/11`…`17` |
+| 8 | **Given** authentication events or gateway requests occur, **then** structured JSON audit lines record verified identity (`player_id` or HMAC blind index), action, timestamp and outcome without leaking any secret. | `AuditLogTest`, `AuditTrailTest`, `UsernameBlindIndexTest`; `scripts/check-audit-log.sh` (18/18 passed) |
 
 ## US-06 — Receive a starter collection
 
@@ -120,6 +132,16 @@ Test references:
 | 2 | **Given** the same encounter reward is retried, **when** monsters processes it again, **then** it returns the original instance and no duplicate is created. | Bruno `services/monsters/internal/08-post-reward-idempotent` |
 | 3 | **Given** the same XP award is retried, **when** monsters processes it again, **then** levels and XP are applied only once. | `LevelingTest#reachesSeveralLevelsInOneGrant`; Bruno `services/monsters/internal/09-post-xp-valid`, `10-post-xp-idempotent` |
 
+## US-13 — Improve or customize my monsters
+
+**Dependencies:** US-09, US-12 · **Service:** monsters · **Phase:** P1 (XP and levels), P2 (nickname customization)
+
+| # | Criterion | Tests |
+|---|---|---|
+| 1 | **Given** my team wins an encounter, **when** XP is awarded, **then** each member gains XP and levels up automatically with recalculated effective stats. | `LevelingTest#reachesSeveralLevelsInOneGrant`, `StatCalculatorTest`; Bruno `services/monsters/internal/09-post-xp-valid`, e2e `e2e/14-collection-after-battle` |
+| 2 | **Given** I own a monster instance, **when** I send `PATCH /api/collection/{owned_id}` with a valid `nickname` (or `null` to clear it), **then** the nickname is persisted and returned by `GET /api/collection/{owned_id}`. | `MonstersResourceTest#playerCollectionViewsAndNicknamePatch`; Bruno `services/monsters/public/18-patch-nickname-valid` |
+| 3 | **Given** an invalid nickname or a monster owned by another player, **when** I call `PATCH /api/collection/{owned_id}`, **then** I receive 400 `VALIDATION_ERROR` (invalid nickname) or 404 `NOT_FOUND` (foreign/missing). | `MonstersResourceTest#playerCollectionViewsAndNicknamePatch`; Bruno `services/monsters/public/19-patch-nickname-invalid` |
+
 ## US-14 — Create a team
 
 **Dependencies:** US-09 · **Service:** teams · **Phase:** P1
@@ -179,13 +201,13 @@ Test references:
 
 | # | Criterion | Tests |
 |---|---|---|
-| 1 | **Given** a battle in progress, **when** I send `attack`, **then** the response contains the round events computed by the server and the updated HP. | `BattleApiTest#validActionsResolveRounds`; Bruno `services/encounters/public/18-post-action-attack-valid` |
+| 1 | **Given** a battle in progress, **when** I send `attack`, **then** the response contains the round events computed by the server (including P1 and P2 monster abilities in engine v2) and the updated HP. | `BattleApiTest#validActionsResolveRounds`, `AbilityEngineTest` (all 7 P2 abilities); Bruno `services/encounters/public/18-post-action-attack-valid` |
 | 2 | **Given** a battle in progress, **when** the wild monster's HP reaches 0, **then** the outcome is `victory`; **when** all my team is KO, **then** the outcome is `defeat`, the run is `lost` and it is reset (collection archived, teams removed, new starter pool). | `BattleApiTest#victoryGrantsRewardXpAndHistoryWithTheSameEncounterId`, `#defeatLosesTheRunAndResetsIt`, `BattleTest#victoryIsPossible`, `#defeatIsPossible` |
 | 3 | **Given** any state, **when** I try to send an outcome or HP values, **then** the request is rejected (400) because only actions are accepted. | `BattleApiTest#invalidActionsAreRejected`; Bruno `services/encounters/public/16-post-action-invalid-outcome-field` |
-| 4 | **Given** a victory, **when** the battle ends, **then** the wild monster joins my collection at its level, every team member gets the XP, and the record is stored in history, all with the same `encounter_id`; if monsters is down the reward is shown as pending and granted at my next request. | `BattleApiTest#victoryGrantsRewardXpAndHistoryWithTheSameEncounterId`, `#rewardServiceDownMeansPendingRewardRetriedOnNextRequest` |
+| 4 | **Given** a victory, **when** the battle ends, **then** the wild monster joins my collection at its level, every team member gets the XP, and the record is stored in history, all with the same `encounter_id`; if monsters is down the reward is shown as pending and retried both lazily and by the scheduled sweep. | `BattleApiTest#victoryGrantsRewardXpAndHistoryWithTheSameEncounterId`, `#rewardServiceDownMeansPendingRewardRetriedOnNextRequest`, `EncounterSweepSchedulerTest#sweepRetriesPendingBattleCompletions` |
 | 5 | **Given** I beat a stage boss, **when** the battle ends, **then** the run moves to the next stage; beating the stage-8 boss wins the run and `POST /api/runs` lets me choose new starters. | `RunRulesTest#stageEightBossWinsTheRun`, `BattleApiTest#bossVictoryMovesToTheNextStage`, `#stageEightBossWinsTheRunAndANewRunCanStart` |
-| 6 | **Given** a battle left idle for more than 30 minutes, or lost because the service restarted, **when** I make my next request, **then** it is closed as `expired` or `interrupted` without reward and my run continues. | `BattleApiTest#idleBattleExpires`, `#battleMissingFromMemoryIsClosedAsInterrupted` |
-| 7 | **Given** the run reset fails because a service is down, **when** I make my next request, **then** the reset is resumed; until it succeeds, starting a battle gives `409 RESET_PENDING`. | `BattleApiTest#failedResetIsResumedLater` |
+| 6 | **Given** a battle left idle for more than 30 minutes, or lost because the service restarted, **when** the scheduled sweep runs or I make my next request, **then** it is closed as `expired` or `interrupted` without reward and my run continues. | `BattleApiTest#idleBattleExpires`, `#battleMissingFromMemoryIsClosedAsInterrupted`, `EncounterSweepSchedulerTest#sweepExpiresIdleBattleWithoutPlayerRequest` |
+| 7 | **Given** the run reset fails because a service is down, **when** the scheduled sweep runs or I make my next request, **then** the reset is resumed; until it succeeds, starting a battle gives `409 RESET_PENDING`. | `BattleApiTest#failedResetIsResumedLater`, `EncounterSweepSchedulerTest#sweepResumesPendingRunResets`, `#permanent4xxDuringRunResetDoesNotWedgeResetPendingForever` |
 
 ## US-20 — View encounter result details
 
@@ -244,7 +266,7 @@ Test references:
 
 ## US-25 — Protect my saved progress from tampering
 
-**Dependencies:** US-12, US-19, US-23 · **Service:** encounters, monsters, history · **Phase:** P1 (server-side rules, internal-only writes, idempotency), P2 (append-only hash chain: HI-2; encryption at rest)
+**Dependencies:** US-12, US-19, US-23 · **Service:** encounters, monsters, history · **Phase:** P1 (server-side rules, internal-only writes, idempotency), P2 (completed: append-only trigger, SHA-256 hash chain, `/api/history/verify` — HI-2)
 
 | # | Criterion | Tests |
 |---|---|---|
@@ -253,15 +275,15 @@ Test references:
 | 3 | **Given** a reward, XP grant or history record is retried, **when** the service processes it again, **then** nothing is duplicated. | Bruno `services/monsters/internal/08-post-reward-idempotent`, `10-post-xp-idempotent`, `services/history/internal/02-post-store-idempotent` |
 | 4 | **Given** a stored encounter, **then** no API can change or delete it. | No update/delete endpoint exists in history (OpenAPI `docs/openapi/history.yaml`) |
 | 5 | **Given** two actions sent at the same time, **then** the battle advances one round per accepted action. | `scripts/security-check.sh` §6 |
-| 6 | **P2** — **Given** a record is changed directly in the database, **when** I call `GET /api/history/verify`, **then** the broken link of the hash chain is reported; `UPDATE`/`DELETE` are rejected by a trigger. | Not implemented yet (HI-2) |
+| 6 | **Given** a record is changed directly in the database, **when** I call `GET /api/history/verify`, **then** the broken link of the SHA-256 hash chain is reported; `UPDATE`/`DELETE` statements are rejected by the PostgreSQL append-only trigger (`V2__append_only.sql`). | `HashChainTest#hashIsDeterministic64HexAndKeyOrderInvariant`, `#hashChangesWhenPayloadSeqOrPrevHashChanges`, `HistoryResourceTest#verifyReturnsValidForEmptyAndPopulatedChain`, `#databaseTriggerBlocksUpdateAndDelete`, `#verifyDetectsTamperedRow`, `#concurrentInsertsForSamePlayerProduceValidSequentialChain`; Bruno `services/history/public/09-get-verify-valid`, `10-get-verify-unauthorized` |
 
 ## US-28 — Play through a simple interface
 
-**Dependencies:** US-01, US-02, US-06, US-09, US-14, US-17, US-18, US-19, US-23 · **Service:** frontend (React) through the gateway · **Phase:** P1
+**Dependencies:** US-01, US-02, US-06, US-09, US-14, US-17, US-18, US-19, US-23 · **Service:** frontend (React) through the gateway · **Phase:** P1, P2 (completed: FE-3 refresh coordinator, server logout, multi-tab sync, ErrorBoundary, HTTP CSP, US-04/US-13 UI, Vitest)
 
 | # | Criterion | Tests |
 |---|---|---|
-| 1 | **Given** a browser, **when** I open the frontend, **then** I can register, log in, choose starters, build a team, fight a battle and read my history without technical tools. | Manual walkthrough (README Get Started §3); the same flow through the API: e2e `e2e/01-register` … `14-collection-after-battle` |
-| 2 | **Given** an action is refused (invalid team, no active run, network error), **when** the API returns an error, **then** the UI shows its message instead of failing silently. | Manual walkthrough |
-| 3 | **Given** a monster or team name containing HTML, **when** the UI shows it, **then** it is rendered as text. | `scripts/security-check.sh` §8 (no raw HTML rendering in `frontend/src`); CSP in the production build (`frontend/vite.config.ts`) |
-| 4 | **Given** the frontend source, **when** CI runs, **then** lint and build succeed. | CI job `frontend` |
+| 1 | **Given** a browser, **when** I open the frontend, **then** I can register, log in, edit my profile (US-04), choose starters, nickname monsters (US-13), build a team, fight battles through Stage 8 (`Omnivoid`), verify my history hash chain, log out and resume on re-login without technical tools. | Full interactive browser E2E playtest (27/11/2026: Stage 1 → Stage 8 `Omnivoid`, 30 battles, hash chain verified); API loop: e2e `e2e/01-register` … `14-collection-after-battle` |
+| 2 | **Given** an action is refused (invalid team, no active run, expired access token, network error), **when** the API returns an error, **then** the UI transparently refreshes tokens or shows a clear error / ErrorBoundary fallback instead of failing silently. | Vitest (`session-refresh.test.ts`, `storage.test.ts`, `battleText.test.ts`, 16/16 passed); browser E2E playtest |
+| 3 | **Given** a monster or team name containing HTML, **when** the UI shows it, **then** it is rendered as text and protected by an HTTP Content-Security-Policy header. | `scripts/security-check.sh` §8 (no raw HTML rendering in `frontend/src`, CSP & `X-Content-Type-Options: nosniff`) |
+| 4 | **Given** the frontend source, **when** CI runs, **then** typecheck, lint, unit tests, production build and dependency audit succeed. | CI job `frontend` (`tsc -b` 0 errors, `eslint .` 0 errors, Vitest 16/16, `vite build` clean, `npm audit --omit=dev` 0 vulnerabilities) |

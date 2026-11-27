@@ -78,6 +78,15 @@ export interface Player {
   starters_chosen: boolean;
   created_at: Instant;
 }
+
+export const AVATARS = ['scout', 'warden', 'keeper', 'sage', 'nomad', 'scholar', 'archivist', 'ranger'] as const;
+export type Avatar = (typeof AVATARS)[number];
+
+/** UpdatePlayerRequest.java (PATCH /api/players/me). */
+export interface UpdatePlayerRequest {
+  display_name?: string;
+  avatar?: string | null;
+}
 /** StarterPoolResponse.java — 10 monster ids. */
 export interface StarterPool {
   run_id: Uuid;
@@ -148,6 +157,7 @@ export interface OwnedMonster {
   owned_id: Uuid;
   monster_id: number;
   name: string;
+  nickname?: string | null;
   element: Element;
   rarity: Rarity;
   image_url: string;
@@ -322,7 +332,23 @@ export type BattleEvent =
   | { type: 'auto_switch'; to: number }
   | { type: 'switch'; side?: BattleSide; from: number; to: number }
   | { type: 'flee'; success: boolean }
-  | { type: 'ability'; side?: BattleSide; ability?: string; description?: string; [key: string]: unknown }
+  | {
+      type: 'ability';
+      side?: BattleSide;
+      ability?: string;
+      effect?: string;
+      effect_type?: string;
+      monster?: string;
+      actor?: string;
+      target?: string;
+      amount?: number;
+      value?: number;
+      stat?: string;
+      copied?: string;
+      copied_ability?: string;
+      description?: string;
+      [key: string]: unknown;
+    }
   | { type: 'end'; outcome: BattleOutcome };
 
 export interface Round {

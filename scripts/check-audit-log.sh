@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Audit log check of SEC-3/SEC-4 (docs/plan/13-threat-model.md) against the running stack.
 # Makes a few requests through the gateway, then reads the gateway and auth container logs and
-# checks that every request left one JSON line with the expected outcome, that auth recorded
-# who logged in, and that no password, token or plain username was written anywhere.
+# checks that every request left one JSON line with the expected outcome and verified user
+# (INFRA-9 + P-28), that auth recorded login/register/refresh/logout events, and that no
+# password, access token, refresh token or plain username was written anywhere.
 #
 #   docker compose up -d --build --wait            # or with -f docker-compose.test.yml
 #   scripts/export-ca.sh                            # ./tamer-ca.crt
@@ -15,7 +16,7 @@ export MSYS_NO_PATHCONV=1
 
 GW="${1:-https://localhost:8443}"
 CA="${2:-tamer-ca.crt}"
-COMPOSE="${COMPOSE:-docker compose}"
+read -r -a COMPOSE_CMD <<< "${COMPOSE:-docker compose}"
 [ -f "$CA" ] || { echo "CA file not found: $CA (run scripts/export-ca.sh)"; exit 2; }
 command -v jq >/dev/null || { echo "jq is required"; exit 2; }
 
@@ -52,18 +53,24 @@ call badlogin POST /api/auth/token --data-urlencode grant_type=password \
 call login    POST /api/auth/token --data-urlencode grant_type=password \
     --data-urlencode "username=$USER_NAME" --data-urlencode "password=$PASSWORD"
 TOKEN=$(jq -r '.access_token // empty' "$TMP/login.body")
+REFRESH=$(jq -r '.refresh_token // empty' "$TMP/login.body")
 PLAYER_ID=$(jq -r '.player_id // empty' "$TMP/register.body")
 call me       GET  /api/players/me -H "Authorization: Bearer $TOKEN"
+call refresh  POST /api/auth/token --data-urlencode grant_type=refresh_token \
+    --data-urlencode "refresh_token=$REFRESH"
+REFRESH2=$(jq -r '.refresh_token // empty' "$TMP/refresh.body")
+call logout   POST /api/auth/logout --data-urlencode "refresh_token=$REFRESH2"
 
-printf '\nRequests: health %s, no token %s, register %s, wrong login %s, login %s, profile %s\n' \
-    "$(status health)" "$(status noauth)" "$(status register)" "$(status badlogin)" "$(status login)" "$(status me)"
-if [ "$(status register)" != 201 ] || [ "$(status login)" != 200 ] || [ -z "$TOKEN" ]; then
+printf '\nRequests: health %s, no token %s, register %s, wrong login %s, login %s, profile %s, refresh %s, logout %s\n' \
+    "$(status health)" "$(status noauth)" "$(status register)" "$(status badlogin)" \
+    "$(status login)" "$(status me)" "$(status refresh)" "$(status logout)"
+if [ "$(status register)" != 201 ] || [ "$(status login)" != 200 ] || [ -z "$TOKEN" ] || [ -z "$REFRESH" ]; then
     echo "The stack did not answer as expected (rate limit? run with docker-compose.test.yml or wait a minute)"
     exit 2
 fi
 
 sleep 2   # the gateway writes the line after the response
-$COMPOSE logs --no-color --no-log-prefix --since "$SINCE" gateway auth > "$TMP/all.log" 2>&1
+"${COMPOSE_CMD[@]}" logs --no-color --no-log-prefix --since "$SINCE" gateway auth > "$TMP/all.log" 2>&1
 grep -E '^\{"ts":' "$TMP/all.log" > "$TMP/audit.log" || true
 
 printf '\nFormat\n'
@@ -88,13 +95,13 @@ expect_line() {
     if jq -e "$4" >/dev/null <<<"$found"; then ok "$1"; else ko "$1: $found"; fi
 }
 
-printf '\nGateway (SEC-4): one line per request\n'
-expect_line "request without token → denied, 401" request "$(rid noauth)" \
+printf '\nGateway (SEC-4 + INFRA-9): one line per request with verified subject\n'
+expect_line "request without token → denied, 401, user '-'" request "$(rid noauth)" \
     '.outcome == "denied" and .status == "401" and .method == "GET" and .path == "/api/players/me" and .user == "-"'
 expect_line "wrong login → failure, 400" request "$(rid badlogin)" \
     '.outcome == "failure" and .status == "400" and .path == "/api/auth/token"'
-expect_line "profile with a valid token → success, 200" request "$(rid me)" \
-    '.outcome == "success" and .status == "200"'
+expect_line "profile with a valid token → success, 200, verified player_id" request "$(rid me)" \
+    ".outcome == \"success\" and .status == \"200\" and .user == \"$PLAYER_ID\""
 if [ -z "$(line request "$(rid health)")" ] && ! jq -e 'select(.path == "/health")' "$TMP/audit.log" >/dev/null 2>&1; then
     ok "health checks are not recorded"
 else ko "a /health request was recorded"; fi
@@ -106,13 +113,19 @@ expect_line "wrong password → denied with the username blind index" login "$(r
     '.outcome == "denied" and (.user | test("^[0-9a-f]{64}$")) and .reason == "invalid_grant"'
 expect_line "correct password → success with the player_id" login "$(rid login)" \
     ".outcome == \"success\" and .user == \"$PLAYER_ID\""
+expect_line "refresh rotation → success with the player_id" refresh "$(rid refresh)" \
+    ".outcome == \"success\" and .user == \"$PLAYER_ID\""
+expect_line "logout → success with the player_id" logout "$(rid logout)" \
+    ".outcome == \"success\" and .user == \"$PLAYER_ID\""
 
 printf '\nNever recorded (whole gateway and auth logs)\n'
 for secret in "$PASSWORD:the password" "$WRONG:the wrong password" "$TOKEN:the access token" \
+              "$REFRESH:the first refresh token" "$REFRESH2:the rotated refresh token" \
               "$USER_NAME:the plain username (P-27)" "Bearer:an Authorization header"; do
     value=${secret%%:*}; what=${secret#*:}
+    [ -z "$value" ] && continue
     if grep -qF -- "$value" "$TMP/all.log"; then ko "$what appears in the logs"; else ok "$what is not in the logs"; fi
 done
 
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
-[ "$FAIL" = 0 ]
+[ "$FAIL" -eq 0 ]

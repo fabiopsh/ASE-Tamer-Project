@@ -62,6 +62,17 @@ components:
           type: boolean
         outcome:
           type: string
+        ability:
+          type: string
+        effect:
+          type: string
+        actor:
+          type: string
+        description:
+          type: string
+        amount:
+          type: integer
+          format: int32
     BattleResultResponse:
       type: object
       properties:

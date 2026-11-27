@@ -14,3 +14,24 @@ export function login(username: string, password: string): Promise<TokenResponse
     auth: false,
   });
 }
+
+/**
+ * OAuth2 refresh_token grant, form-urlencoded.
+ * Never attaches Authorization and never auto-retries on error.
+ */
+export function refreshToken(token: string): Promise<TokenResponse> {
+  return request<TokenResponse>('/api/auth/token', {
+    method: 'POST',
+    form: { grant_type: 'refresh_token', refresh_token: token },
+    auth: false,
+  });
+}
+
+/** Server-side refresh token revocation. Never attaches Authorization. */
+export function logoutServer(token: string): Promise<void> {
+  return request<void>('/api/auth/logout', {
+    method: 'POST',
+    form: { refresh_token: token },
+    auth: false,
+  });
+}

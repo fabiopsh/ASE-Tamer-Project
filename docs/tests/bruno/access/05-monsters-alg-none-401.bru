@@ -1,0 +1,22 @@
+meta {
+  name: 05 - Monsters: alg=none token -> 401
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{monstersUrl}}/api/monsters
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{algNoneToken}}
+}
+
+tests {
+  test("401 alg=none rejected", function () {
+    expect(res.getStatus()).to.equal(401);
+    expect(res.getHeader("www-authenticate")).to.include("Bearer");
+  });
+}

@@ -13,13 +13,15 @@ import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 
 @RegisterRestClient(configKey = "encounters")
 @RegisterProvider(ServiceTokenFilter.class)
+@RegisterProvider(ClientErrorResponseMapper.class)
 @Path("/internal/runs")
 public interface EncountersClient {
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Timeout(2000)
-    @Retry(maxRetries = 2, delay = 200)
-    @CircuitBreaker(requestVolumeThreshold = 10, failureRatio = 0.5, delay = 5000)
+    @Retry(maxRetries = 2, delay = 200, abortOn = RemoteClientException.class)
+    @CircuitBreaker(requestVolumeThreshold = 10, failureRatio = 0.5, delay = 5000,
+            skipOn = RemoteClientException.class)
     void openRun(OpenRunRequest request);
 }

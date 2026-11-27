@@ -1,7 +1,8 @@
 """Locust performance tests against the gateway only (TEST-3, requirements §5).
 
 Every simulated user registers its own account, chooses starters and saves a team, then
-repeats the core functionalities: catalogue, collection, encounters, battles, history.
+repeats the core functionalities: catalogue, collection, encounters, battles (wild + boss,
+attack/switch/flee), team editing/validation, and history + integrity verification.
 
     pip install -r docs/locust/requirements.txt
     docker compose -f docker-compose.yml -f docker-compose.test.yml up -d --build --wait
@@ -9,8 +10,8 @@ repeats the core functionalities: catalogue, collection, encounters, battles, hi
     CA_PATH=.test-secrets/ca.crt locust -f docs/locust/locustfile.py --host https://localhost:8443 \
         --headless -u 50 -r 5 -t 3m --csv docs/locust/results/run
 
-The test override raises the gateway rate limit on /api/auth/*: without it the registrations
-of many users from one IP are throttled (429).
+The test override raises the gateway rate limits so concurrent virtual users from one host
+are not throttled with 429.
 """
 import os
 import random
@@ -33,15 +34,15 @@ class Tamer(HttpUser):
         self.client.verify = CA_PATH
         self.username = "locust_" + uuid.uuid4().hex[:12]
         self.token = None
+        self.refresh_token = None
         self.owned = []
         self.team_id = None
         self.monster_ids = []
-        self.encounter_ids = []
         with self.client.post("/api/auth/register", json={"username": self.username, "password": PASSWORD},
                               name="/api/auth/register", catch_response=True) as res:
             if res.status_code != 201:
                 res.failure(f"register: {res.status_code} {res.text[:200]}")
-                raise StopUser()  # without an account every other request would fail
+                raise StopUser()
         self.login()
         if not self.token:
             raise StopUser()
@@ -50,28 +51,45 @@ class Tamer(HttpUser):
     # ---- helpers --------------------------------------------------------------------------
 
     def login(self):
-        with self.client.post("/api/auth/token", name="/api/auth/token", catch_response=True,
+        with self.client.post("/api/auth/token", name="/api/auth/token [password]", catch_response=True,
                               data={"grant_type": "password", "username": self.username, "password": PASSWORD}) as res:
             if res.status_code != 200:
                 res.failure(f"token: {res.status_code}")
-                return
-            self.token = res.json()["access_token"]
+                return False
+            data = res.json()
+            self.token = data["access_token"]
+            self.refresh_token = data.get("refresh_token")
+            return True
+
+    def refresh(self):
+        if not self.refresh_token:
+            return self.login()
+        with self.client.post("/api/auth/token", name="/api/auth/token [refresh]", catch_response=True,
+                              data={"grant_type": "refresh_token", "refresh_token": self.refresh_token}) as res:
+            if res.status_code != 200:
+                res.failure(f"refresh: {res.status_code}")
+                return self.login()
+            data = res.json()
+            self.token = data["access_token"]
+            self.refresh_token = data.get("refresh_token")
+            return True
 
     @property
     def auth(self):
         return {"Authorization": f"Bearer {self.token}"}
 
-    def get(self, path, name=None, ok=(200,)):
-        """GET with the player token; re-login once on 401 (token expiry during long runs)."""
+    def get(self, path, name=None, ok=(200,), retry_auth=True):
+        """GET with the player token; refreshes once and retries on 401 instead of hiding errors."""
         with self.client.get(path, headers=self.auth, name=name or path, catch_response=True) as res:
-            if res.status_code == 401:
-                self.login()
+            if res.status_code == 401 and retry_auth:
                 res.success()
+                if self.refresh():
+                    return self.get(path, name=name, ok=ok, retry_auth=False)
                 return None
             if res.status_code not in ok:
                 res.failure(f"{res.status_code} {res.text[:200]}")
                 return None
-            res.success()  # expected statuses other than 2xx (e.g. 404 with no active run)
+            res.success()
             return res.json() if res.status_code == 200 and res.content else None
 
     def start_run(self):
@@ -81,7 +99,7 @@ class Tamer(HttpUser):
             return False
         with self.client.post("/api/players/me/starters", headers=self.auth, json={"monster_ids": pool["pool"][:3]},
                               name="/api/players/me/starters [choose]", catch_response=True) as res:
-            if res.status_code == 409:  # already chosen for this run
+            if res.status_code == 409:
                 res.success()
                 return self.load_team()
             if res.status_code != 201:
@@ -114,7 +132,6 @@ class Tamer(HttpUser):
         if self.monster_ids:
             monster_id = random.choice(self.monster_ids)
             self.get(f"/api/monsters/{monster_id}", name="/api/monsters/[id]")
-            # Sprites are public (P-16): no token
             self.client.get(f"/images/monsters/{monster_id:03d}.png", name="/images/monsters/[file]")
         if random.random() < 0.3:
             self.get("/api/elements")
@@ -130,7 +147,6 @@ class Tamer(HttpUser):
 
     @task(2)
     def list_encounters(self):
-        # 409 NO_ACTIVE_RUN / 404: a defeat reset the run and the user has not chosen new starters yet
         self.get("/api/encounters", ok=(200, 409))
         self.get("/api/runs/current", ok=(200, 404))
 
@@ -142,9 +158,15 @@ class Tamer(HttpUser):
         if not templates:
             self.team_id = None
             return
-        template = next((t for t in templates if not t["is_boss"]), templates[0])
+        # Prefer boss encounter when unlocked to cover both wild and boss flows
+        boss = next((t for t in templates if t["is_boss"]), None)
+        template = boss if boss else random.choice(templates)
         with self.client.post("/api/battles", headers=self.auth, name="/api/battles [start]", catch_response=True,
                               json={"template_id": template["template_id"], "team_id": self.team_id}) as res:
+            if res.status_code == 401:
+                res.success()
+                self.refresh()
+                return
             if res.status_code == 409:
                 code = res.json().get("error")
                 res.success()
@@ -154,20 +176,40 @@ class Tamer(HttpUser):
                     return
                 if code != "BATTLE_IN_PROGRESS":
                     return
+                battle = self.get("/api/battles/current", ok=(200, 404))
+                if not battle:
+                    return
             elif res.status_code != 201:
                 res.failure(f"start: {res.status_code} {res.text[:200]}")
                 return
-        for _ in range(MAX_ROUNDS):
-            with self.client.post("/api/battles/current/actions", headers=self.auth, json={"type": "attack"},
+            else:
+                battle = res.json()
+
+        switched = False
+        for round_idx in range(MAX_ROUNDS):
+            payload = {"type": "attack"}
+            if not switched and round_idx == 1 and random.random() < 0.15:
+                bench = next((m["position"] for m in battle.get("team", [])
+                              if not m["active"] and not m["knocked_out"]), None)
+                if bench is not None:
+                    payload = {"type": "switch", "slot": bench}
+                    switched = True
+            elif round_idx == 2 and not template["is_boss"] and random.random() < 0.05:
+                payload = {"type": "flee"}
+
+            with self.client.post("/api/battles/current/actions", headers=self.auth, json=payload,
                                   name="/api/battles/current/actions", catch_response=True) as res:
+                if res.status_code == 401:
+                    res.success()
+                    self.refresh()
+                    return
                 if res.status_code != 200:
                     res.failure(f"action: {res.status_code} {res.text[:200]}")
                     return
                 battle = res.json()
             if battle["status"] == "finished":
-                self.encounter_ids.append(battle["encounter_id"])
                 if battle["result"]["outcome"] == "defeat":
-                    self.team_id = None  # the run was reset: new starters and team next time
+                    self.team_id = None
                 return
 
     @task(2)
@@ -176,15 +218,30 @@ class Tamer(HttpUser):
         if page and page.get("items"):
             encounter_id = random.choice(page["items"])["encounter_id"]
             self.get(f"/api/history/{encounter_id}", name="/api/history/[encounter_id]")
+        if random.random() < 0.25:
+            self.get("/api/history/verify")
 
     @task(1)
-    def validate_team(self):
+    def validate_and_update_team(self):
         if not self.owned:
             return
         with self.client.post("/api/teams/validate", headers=self.auth, json={"members": self.owned},
                               name="/api/teams/validate", catch_response=True) as res:
+            if res.status_code == 401:
+                res.success()
+                self.refresh()
+                return
             if res.status_code != 200:
                 res.failure(f"validate: {res.status_code}")
-            elif not res.json().get("valid"):
-                # A defeat may have archived the members since the last check
+                return
+            if not res.json().get("valid"):
                 res.success()
+                return
+        if self.team_id and random.random() < 0.2:
+            with self.client.put(f"/api/teams/{self.team_id}", headers=self.auth,
+                                 json={"name": "Locust Squad", "members": list(reversed(self.owned))},
+                                 name="/api/teams/[id] [update]", catch_response=True) as res:
+                if res.status_code in (200, 404, 409):
+                    res.success()
+                else:
+                    res.failure(f"update: {res.status_code}")

@@ -1,0 +1,22 @@
+meta {
+  name: 08 - History: garbage token -> 401
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{historyUrl}}/api/history
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: not.a.valid.jwt
+}
+
+tests {
+  test("401 garbage token rejected", function () {
+    expect(res.getStatus()).to.equal(401);
+    expect(res.getHeader("www-authenticate")).to.include("Bearer");
+  });
+}

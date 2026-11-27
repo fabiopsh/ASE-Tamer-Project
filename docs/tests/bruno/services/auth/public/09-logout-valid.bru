@@ -1,0 +1,21 @@
+meta {
+  name: POST /api/auth/logout - valid: revokes refresh family
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{authUrl}}/api/auth/logout
+  body: formUrlEncoded
+  auth: none
+}
+
+body:form-urlencoded {
+  refresh_token: {{playerRefreshToken}}
+}
+
+tests {
+  test("204 No Content", function () {
+    expect(res.getStatus()).to.equal(204);
+  });
+}

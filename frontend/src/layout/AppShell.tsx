@@ -1,7 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
-import { useSession } from '../session/useSession';
+import { AvatarBadge } from '../components/AvatarIcon';
 import { useGameStatus } from '../session/useGameStatus';
+import { useSession } from '../session/useSession';
 import { Logo } from './Logo';
 import { NAV_ITEMS } from './nav-items';
 import { NavIcon } from './NavIcon';
@@ -57,7 +58,7 @@ export function AppShell() {
         </div>
       )}
 
-      <main id="main" className="shell__main" key={pathname}>
+      <main id="main" className="shell__main">
         <Outlet />
       </main>
     </div>
@@ -74,7 +75,7 @@ export function MinimalShell() {
             <Logo />
           </span>
           <span className="topbar__spacer" />
-          <HudRight hideRun />
+          <HudRight hideRun linkProfile={false} />
         </div>
       </header>
       <main id="main" className="shell__main">
@@ -84,19 +85,31 @@ export function MinimalShell() {
   );
 }
 
-function HudRight({ hideRun = false }: { hideRun?: boolean }) {
+function HudRight({ hideRun = false, linkProfile = true }: { hideRun?: boolean; linkProfile?: boolean }) {
   const { player, logout } = useSession();
   const name = player?.display_name ?? 'Tamer';
+  const badge = (
+    <>
+      <span className="hud__avatar" aria-hidden="true">
+        <AvatarBadge avatar={player?.avatar} displayName={name} size={18} />
+      </span>
+      <span className="hud__name">{name}</span>
+    </>
+  );
+
   return (
     <div className="hud">
       {!hideRun && <RunChip />}
-      <span className="hud__player" title={name}>
-        <span className="hud__avatar" aria-hidden="true">
-          {name.replace(/^Tamer-/, '').charAt(0).toUpperCase() || 'T'}
+      {linkProfile ? (
+        <Link to="/profile" className="hud__player" title={`Edit profile (${name})`} aria-label={`Profile: ${name}`}>
+          {badge}
+        </Link>
+      ) : (
+        <span className="hud__player" title={name}>
+          {badge}
         </span>
-        <span className="hud__name">{name}</span>
-      </span>
-      <button type="button" className="hud__logout" onClick={logout} aria-label="Log out" title="Log out">
+      )}
+      <button type="button" className="hud__logout" onClick={() => void logout()} aria-label="Log out" title="Log out">
         <NavIcon name="logout" size={20} />
       </button>
     </div>

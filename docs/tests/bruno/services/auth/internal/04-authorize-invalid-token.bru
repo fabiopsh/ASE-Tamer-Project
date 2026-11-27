@@ -1,0 +1,23 @@
+meta {
+  name: GET /internal/auth/authorize - invalid: missing token -> 401
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{authUrl}}/internal/auth/authorize
+  body: none
+  auth: none
+}
+
+headers {
+  X-Original-Method: GET
+  X-Original-URI: /api/players/me
+}
+
+tests {
+  test("401 with WWW-Authenticate: Bearer", function () {
+    expect(res.getStatus()).to.equal(401);
+    expect(res.getHeader("www-authenticate")).to.include("Bearer");
+  });
+}

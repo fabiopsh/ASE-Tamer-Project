@@ -6,13 +6,16 @@ import react from '@vitejs/plugin-react';
  * (docs/plan/09-frontend.md, Security). The dev server needs inline scripts for
  * hot reload, so the policy is not applied there. The API origin comes from
  * VITE_GATEWAY_URL, so a build for another gateway host gets a matching policy.
+ *
+ * Note: `frame-ancestors` is enforced via the HTTP Content-Security-Policy header
+ * in nginx.conf (browsers ignore frame-ancestors inside <meta> and log a warning).
  */
 function csp(gatewayUrl: string): string {
   const api = new URL(gatewayUrl).origin;
   return (
     "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; " +
     `img-src 'self' ${api}; connect-src ${api}; ` +
-    "frame-ancestors 'none'; base-uri 'self'"
+    "base-uri 'self'; object-src 'none'; form-action 'self'"
   );
 }
 
@@ -32,12 +35,28 @@ function cspPlugin(gatewayUrl: string): Plugin {
   };
 }
 
-export default defineConfig(({ mode }) => ({
-  plugins: [react(), cspPlugin(loadEnv(mode, process.cwd(), 'VITE_').VITE_GATEWAY_URL || 'https://localhost:8443')],
-  server: { port: 5173, strictPort: true },
-  preview: { port: 4173, strictPort: true },
-  build: {
-    // Never inline fonts or images as data: URIs: the CSP (default-src 'self') would block them.
-    assetsInlineLimit: 0,
-  },
-}));
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), 'VITE_');
+  const proxyTarget = env.VITE_PROXY_TARGET || process.env.VITE_PROXY_TARGET;
+  const gatewayForCsp = env.VITE_GATEWAY_URL || 'https://localhost:8443';
+  return {
+    plugins: [react(), cspPlugin(gatewayForCsp)],
+    server: {
+      port: 5173,
+      strictPort: true,
+      ...(proxyTarget
+        ? {
+            proxy: {
+              '/api': { target: proxyTarget, changeOrigin: true, secure: true },
+              '/images': { target: proxyTarget, changeOrigin: true, secure: true },
+            },
+          }
+        : {}),
+    },
+    preview: { port: 4173, strictPort: true },
+    build: {
+      // Never inline fonts or images as data: URIs: the CSP (default-src 'self') would block them.
+      assetsInlineLimit: 0,
+    },
+  };
+});

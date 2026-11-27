@@ -14,9 +14,9 @@ import org.hibernate.type.SqlTypes;
 
 /**
  * A finished encounter. Rows are inserted with a native {@code ON CONFLICT DO NOTHING} statement
- * (see HistoryService) and never updated: the entity is read-only. The JSON columns hold exactly
- * what the caller sent, as a tree, so naming strategies never touch their content. The P2 chain
- * columns (seq, prev_hash, hash) are not mapped yet.
+ * (see HistoryService) and never updated: the entity is read-only and protected by a database
+ * trigger ({@code V2__append_only.sql}). The JSON columns hold exactly what the caller sent, as a
+ * tree, so naming strategies never touch their content.
  */
 @Entity
 @Immutable
@@ -84,4 +84,13 @@ public class EncounterRecord extends PanacheEntityBase {
 
     @Column(name = "recorded_at", nullable = false, insertable = false, updatable = false)
     public Instant recordedAt;
+
+    @Column(name = "seq")
+    public Long seq;
+
+    @Column(name = "prev_hash", length = 64)
+    public String prevHash;
+
+    @Column(name = "hash", length = 64)
+    public String hash;
 }

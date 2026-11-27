@@ -23,8 +23,10 @@ tests {
     const body = res.getBody();
     expect(body.token_type).to.equal("Bearer");
     expect(body.scope).to.equal("player");
-    expect(body.expires_in).to.be.above(0);
+    expect(body.expires_in).to.equal(300);
     expect(body.access_token.split(".")).to.have.lengthOf(3);
+    expect(body.refresh_token).to.be.a("string").and.not.be.empty;
     bru.setVar("playerToken", body.access_token);
+    bru.setVar("playerRefreshToken", body.refresh_token);
   });
 }

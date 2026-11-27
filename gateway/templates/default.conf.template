@@ -1,11 +1,13 @@
-# Monster Tamers gateway - docs/plan/02-infrastructure.md (INFRA-5)
+# Monster Tamers gateway - docs/plan/02-infrastructure.md (INFRA-5, INFRA-9, SEC-4)
 # Variables in ${...} are substituted from the environment at start; nginx variables ($x) are not.
 
 # Docker DNS: resolve the services at request time, so a restarted service is found again.
 resolver 127.0.0.11 valid=10s ipv6=off;
 
-# Brute force protection on login and registration
+# Brute force protection on login, registration and logout
 limit_req_zone $binary_remote_addr zone=auth:10m rate=${LOGIN_RATE_LIMIT};
+# General API abuse protection (THREAT_MODEL #22)
+limit_req_zone $binary_remote_addr zone=api:10m rate=${API_RATE_LIMIT};
 limit_req_status 429;
 
 # CORS: the backend is headless, browser clients call it from their own origin.
@@ -15,12 +17,27 @@ map $http_origin $cors_origin {
     default                      "";
     "~${CORS_ALLOWED_ORIGINS}"   $http_origin;
 }
+map $cors_origin $cors_methods {
+    ""      "";
+    default "GET, POST, PUT, PATCH, DELETE, OPTIONS";
+}
+map $cors_origin $cors_headers {
+    ""      "";
+    default "Authorization, Content-Type, X-Request-Id";
+}
+map $cors_origin $cors_expose {
+    ""      "";
+    default "X-Request-Id";
+}
+map $cors_origin $cors_max_age {
+    ""      "";
+    default "600";
+}
 
-# Audit log (SEC-4, P-26): one JSON line per request, written after the response.
+# Audit log (SEC-4, P-26, P-28): one JSON line per request, written after the response.
 # escape=json escapes quotes and control characters, so a value cannot forge a second line.
 # The path is $uri (no query string), cut to 128 characters; no header and no body is logged.
-# user: "-" until INFRA-9, which sets it from the subject verified by the auth adapter (P-28);
-# it is never read from the request.
+# user comes solely from the verified subject returned by auth's /internal/auth/authorize (INFRA-9).
 map $status $audit_outcome {
     ~^[23]      success;
     ~^40[13]$   denied;
@@ -28,6 +45,10 @@ map $status $audit_outcome {
 }
 map $uri $audit_path {
     "~(?s)^(?<audit_path_cut>.{0,128})" $audit_path_cut;
+}
+map $auth_subject $audit_user {
+    ""      "-";
+    default $auth_subject;
 }
 # Health checks are noise, not evidence
 map $uri $audit_loggable {
@@ -47,26 +68,16 @@ server {
     ssl_certificate     /run/secrets/tls/server.crt;
     ssl_certificate_key /run/secrets/tls/server.key;
     ssl_protocols       TLSv1.2 TLSv1.3;
+    ssl_ciphers         ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305;
     ssl_prefer_server_ciphers on;
+    ssl_session_tickets off;
 
     server_tokens off;
     client_max_body_size 16k;
-    set $audit_user "-";
+    set $auth_subject "";
     access_log /dev/stdout audit if=$audit_loggable;
 
-    # Security headers (also on errors)
-    add_header Strict-Transport-Security "max-age=31536000" always;
-    add_header X-Content-Type-Options "nosniff" always;
-    add_header X-Frame-Options "DENY" always;
-    add_header Referrer-Policy "no-referrer" always;
-    add_header X-Request-Id $request_id always;
-    # CORS (an empty value means the header is not sent)
-    add_header Access-Control-Allow-Origin $cors_origin always;
-    add_header Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, OPTIONS" always;
-    add_header Access-Control-Allow-Headers "Authorization, Content-Type, X-Request-Id" always;
-    add_header Access-Control-Expose-Headers "X-Request-Id" always;
-    add_header Access-Control-Max-Age "600" always;
-    add_header Vary "Origin" always;
+    include /etc/nginx/snippets/headers.conf;
 
     # CORS preflight
     if ($request_method = OPTIONS) {
@@ -74,16 +85,43 @@ server {
     }
 
     default_type application/json;
+    error_page 401 = @unauthorized;
+    error_page 403 = @forbidden;
     error_page 413 = @too_large;
     error_page 429 = @too_many;
-    error_page 502 503 504 = @unavailable;
+    error_page 500 502 503 504 = @unavailable;
+
+    # Internal authorization subrequest (INFRA-9): verifies bearer JWT and access-policy.json in auth.
+    # Fails closed (503) on timeout, TLS error or auth outage; never reachable from outside.
+    location = /_auth_check {
+        internal;
+        set $auth_host auth;
+        proxy_pass https://$auth_host:8443/internal/auth/authorize; # nosemgrep: generic.nginx.security.dynamic-proxy-host.dynamic-proxy-host
+        proxy_pass_request_body off;
+        proxy_set_header Content-Length "";
+        proxy_set_header Host auth;
+        proxy_set_header Authorization $http_authorization;
+        proxy_set_header X-Request-Id $request_id;
+        proxy_set_header X-Original-Method $request_method;
+        proxy_set_header X-Original-URI $request_uri;
+        proxy_ssl_verify on;
+        proxy_ssl_verify_depth 2;
+        proxy_ssl_trusted_certificate /run/secrets/ca.crt;
+        proxy_ssl_server_name on;
+        proxy_ssl_name auth;
+        proxy_ssl_protocols TLSv1.2 TLSv1.3;
+        proxy_http_version 1.1;
+        proxy_connect_timeout 2s;
+        proxy_read_timeout 5s;
+        proxy_send_timeout 5s;
+    }
 
     # Used to accept the self-signed certificate in the browser and by health checks
     location = /health {
         return 200 '{"status":"UP"}';
     }
 
-    # ---- auth ----
+    # ---- auth (public / credential-authenticated routes) ----
     location = /api/auth/token {
         limit_req zone=auth burst=${LOGIN_RATE_BURST} nodelay;
         set $upstream_host auth;
@@ -94,41 +132,58 @@ server {
         set $upstream_host auth;
         include /etc/nginx/snippets/proxy.conf;
     }
-    location /api/auth/ {
+    location = /api/auth/logout {
+        limit_req zone=auth burst=${LOGIN_RATE_BURST} nodelay;
         set $upstream_host auth;
         include /etc/nginx/snippets/proxy.conf;
     }
 
     # ---- players ----
-    location /api/players/ {
+    location ~ ^/api/players(/|$) {
+        limit_req zone=api burst=${API_RATE_BURST} nodelay;
+        auth_request /_auth_check;
+        auth_request_set $auth_subject $upstream_http_x_auth_subject;
         set $upstream_host players;
         include /etc/nginx/snippets/proxy.conf;
     }
 
     # ---- monsters (images are public, P-16) ----
     location ~ ^/api/(monsters|abilities|elements|collection)(/|$) {
+        limit_req zone=api burst=${API_RATE_BURST} nodelay;
+        auth_request /_auth_check;
+        auth_request_set $auth_subject $upstream_http_x_auth_subject;
         set $upstream_host monsters;
         include /etc/nginx/snippets/proxy.conf;
     }
-    location /images/ {
+    location ~ ^/images/monsters/ {
+        limit_req zone=api burst=${API_RATE_BURST} nodelay;
         set $upstream_host monsters;
         include /etc/nginx/snippets/proxy.conf;
     }
 
     # ---- teams ----
     location ~ ^/api/teams(/|$) {
+        limit_req zone=api burst=${API_RATE_BURST} nodelay;
+        auth_request /_auth_check;
+        auth_request_set $auth_subject $upstream_http_x_auth_subject;
         set $upstream_host teams;
         include /etc/nginx/snippets/proxy.conf;
     }
 
     # ---- encounters ----
     location ~ ^/api/(encounters|runs|battles)(/|$) {
+        limit_req zone=api burst=${API_RATE_BURST} nodelay;
+        auth_request /_auth_check;
+        auth_request_set $auth_subject $upstream_http_x_auth_subject;
         set $upstream_host encounters;
         include /etc/nginx/snippets/proxy.conf;
     }
 
     # ---- history ----
     location ~ ^/api/history(/|$) {
+        limit_req zone=api burst=${API_RATE_BURST} nodelay;
+        auth_request /_auth_check;
+        auth_request_set $auth_subject $upstream_http_x_auth_subject;
         set $upstream_host history;
         include /etc/nginx/snippets/proxy.conf;
     }
@@ -144,6 +199,14 @@ server {
         return 404 '{"error":"NOT_FOUND","message":"Resource not found."}';
     }
 
+    location @unauthorized {
+        include /etc/nginx/snippets/headers.conf;
+        add_header WWW-Authenticate "Bearer" always;
+        return 401 '{"error":"UNAUTHORIZED","message":"Missing, invalid or expired token."}';
+    }
+    location @forbidden {
+        return 403 '{"error":"FORBIDDEN","message":"Not allowed."}';
+    }
     location @too_large {
         return 413 '{"error":"PAYLOAD_TOO_LARGE","message":"Request body too large."}';
     }

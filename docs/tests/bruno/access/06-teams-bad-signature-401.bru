@@ -1,0 +1,22 @@
+meta {
+  name: 06 - Teams: invalid signature -> 401
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{teamsUrl}}/api/teams
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{badSigToken}}
+}
+
+tests {
+  test("401 bad signature rejected", function () {
+    expect(res.getStatus()).to.equal(401);
+    expect(res.getHeader("www-authenticate")).to.include("Bearer");
+  });
+}

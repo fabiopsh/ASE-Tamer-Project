@@ -6,6 +6,7 @@ Rules shared by every service and by the frontend. There is **no shared Maven mo
 
 ```
 .github/workflows/ci.yml           CI (copy kept in docs/ci/)
+.github/dependabot.yml             automated dependency updates (P2, CI-4)
 backend/
   pom.xml                          aggregator: Quarkus BOM, Java 21, modules, plugin versions
   auth/ players/ monsters/ teams/ encounters/ history/
@@ -17,16 +18,18 @@ backend/
     src/test/java/...
   monsters/seed/                   catalogue seed (generated, do not edit by hand)
   encounters/seed/                 stage templates seed
-  security/access-policy.json      canonical method/path/role policy (P2, INFRA-10; not a Maven module)
+  security/access-policy.json      canonical method/path/role policy (52 rules, P2 INFRA-10; not a Maven module)
 gateway/
   Dockerfile
+  snippets/                        shared proxy, auth_request and CORS snippets
   templates/default.conf.template  nginx config with env substitution
 infra/
   init-secrets/Dockerfile
   init-secrets/init-secrets.sh
-  postgres/                        (only if a custom image is needed)
+  postgres/                        custom Postgres image (no gosu, pg_hba.conf hostssl — INFRA-3)
 frontend/                          Vite + React + TypeScript
-docker-compose.yml
+docker-compose.yml                 headless backend stack (isolated DB networks, read_only: true)
+docker-compose.frontend.yml        standalone frontend compose stack
 docker-compose.test.yml            exposes services on localhost for component tests
 scripts/                           helper scripts (export OpenAPI, read test secrets, ...)
 docs/
@@ -138,7 +141,7 @@ Implementation: an `ApiException(status, code, message)` thrown by services, plu
 | P2 audit log | One JSON line per event on the `audit` category, only at the gateway and in auth; values serialized with Jackson (or Nginx `escape=json`), never string formatting (P-26, SEC-3, SEC-4) |
 | Dev/test profiles | `%dev` and `%test` disable TLS and use Dev Services; `%prod` (containers) enforces TLS |
 
-The P1 `@RolesAllowed` checks remain the baseline until INFRA-10 is implemented. In P2, the policy reader follows the same reference-and-verbatim-copy convention as the other security helpers; its rule data comes only from the canonical JSON resource. Missing/invalid JWTs return 401 with `WWW-Authenticate: Bearer`; valid JWTs without an allowed role return 403. Ownership checks remain in the services and return 404 (P-11).
+Both `@RolesAllowed` and the shared `AccessPolicyFilter` (backed by the 52-rule `backend/security/access-policy.json`, verified in sync by `scripts/check-policy-sync.sh`) are active in every service. The policy reader follows the same reference-and-verbatim-copy convention as the other security helpers; its rule data comes only from the canonical JSON resource. Missing/invalid JWTs return 401 with `WWW-Authenticate: Bearer`; valid JWTs without an allowed role return 403. Ownership checks remain in the services and return 404 (P-11).
 
 The gateway authorization adapter is `GET /internal/auth/authorize` (INFRA-9). It accepts the caller's bearer token and the original method/path supplied by Nginx, then applies the shared policy. It is not routed to external clients. Token issuance and refresh do not require an existing access token; logout requires possession of the refresh token and remains usable after access-token expiry.
 
@@ -174,7 +177,7 @@ Record the chosen versions here when INFRA-1 is done:
 | Alpine (init-secrets) | `alpine:3.24.4` |
 | Node.js | 24 LTS (frontend tested with 24.13) |
 | Bruno CLI | `@usebruno/cli@4.3.0` (run with `npx`) |
-| Locust | _fill in_ |
+| Locust | `locust==2.46.0` (`docs/locust/requirements.txt`) |
 
 ## Git workflow
 

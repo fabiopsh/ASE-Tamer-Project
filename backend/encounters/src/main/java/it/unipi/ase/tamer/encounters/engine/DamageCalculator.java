@@ -31,8 +31,30 @@ public final class DamageCalculator {
     /** Element multiplier with {@code ignore_disadvantage}: weak (0.67) becomes 1. */
     public static ElementChart.Effectiveness effectiveness(ElementChart chart, String attackerElement,
                                                            String defenderElement, boolean ignoreDisadvantage) {
+        return effectiveness(chart, attackerElement, defenderElement, false, ignoreDisadvantage);
+    }
+
+    /**
+     * Element multiplier with optional {@code invert_advantage} (swaps {@code STRONG} ↔ {@code WEAK}) followed by
+     * {@code ignore_disadvantage} (effective {@code WEAK} becomes {@code NEUTRAL}).
+     */
+    public static ElementChart.Effectiveness effectiveness(ElementChart chart, String attackerElement,
+                                                           String defenderElement, boolean invertAdvantage,
+                                                           boolean ignoreDisadvantage) {
         ElementChart.Effectiveness e = chart.effectiveness(attackerElement, defenderElement);
+        if (invertAdvantage) {
+            e = invert(e);
+        }
         return e == ElementChart.Effectiveness.WEAK && ignoreDisadvantage ? ElementChart.Effectiveness.NEUTRAL : e;
+    }
+
+    /** Swaps {@code STRONG} (1.5) and {@code WEAK} (0.67); {@code NEUTRAL} is unchanged. */
+    public static ElementChart.Effectiveness invert(ElementChart.Effectiveness effectiveness) {
+        return switch (effectiveness) {
+            case STRONG -> ElementChart.Effectiveness.WEAK;
+            case WEAK -> ElementChart.Effectiveness.STRONG;
+            case NEUTRAL -> ElementChart.Effectiveness.NEUTRAL;
+        };
     }
 
     /** One RNG call: uniform in [0.9, 1.1). */

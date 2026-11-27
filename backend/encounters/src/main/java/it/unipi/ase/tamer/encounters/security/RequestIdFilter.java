@@ -32,9 +32,13 @@ public class RequestIdFilter {
 
     @ServerResponseFilter
     public void onResponse(ContainerRequestContext request, ContainerResponseContext response) {
-        Object id = request.getProperty(MDC_KEY);
-        if (id != null) {
-            response.getHeaders().putSingle(HEADER, id);
+        try {
+            Object id = request.getProperty(MDC_KEY);
+            if (id != null) {
+                response.getHeaders().putSingle(HEADER, id);
+            }
+        } finally {
+            MDC.remove(MDC_KEY);
         }
     }
 

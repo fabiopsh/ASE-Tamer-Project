@@ -33,6 +33,7 @@ public class HistoryInternalResource {
     @APIResponse(responseCode = "400", description = "Invalid body (VALIDATION_ERROR)")
     @APIResponse(responseCode = "401", description = "Missing or invalid token")
     @APIResponse(responseCode = "403", description = "Not a service token (FORBIDDEN)")
+    @APIResponse(responseCode = "409", description = "Encounter id belongs to another player (ENCOUNTER_CONFLICT)")
     public Response store(@Valid @NotNull EncounterRecordRequest request) {
         HistoryService.StoreResult result = service.store(request);
         return Response.status(result.created() ? Response.Status.CREATED : Response.Status.OK)

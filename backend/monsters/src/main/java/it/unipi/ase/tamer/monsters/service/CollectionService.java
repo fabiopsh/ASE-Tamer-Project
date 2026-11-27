@@ -10,12 +10,15 @@ import it.unipi.ase.tamer.monsters.api.dto.PageResponse;
 import it.unipi.ase.tamer.monsters.api.dto.RewardRequest;
 import it.unipi.ase.tamer.monsters.api.dto.StarterEntry;
 import it.unipi.ase.tamer.monsters.api.dto.StarterGrantRequest;
+import it.unipi.ase.tamer.monsters.api.dto.UpdateNicknameRequest;
 import it.unipi.ase.tamer.monsters.api.dto.XpGainResponse;
 import it.unipi.ase.tamer.monsters.api.dto.XpGrantRequest;
 import it.unipi.ase.tamer.monsters.domain.Monster;
 import it.unipi.ase.tamer.monsters.domain.OwnedMonster;
 import it.unipi.ase.tamer.monsters.domain.XpGrant;
 import it.unipi.ase.tamer.monsters.error.ApiException;
+import it.unipi.ase.tamer.monsters.error.ErrorCodes;
+import it.unipi.ase.tamer.monsters.error.ErrorDetail;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
@@ -26,10 +29,13 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 /** Owns the collection, stats, levelling and idempotent battle-side effects (MO-2). */
 @ApplicationScoped
 public class CollectionService {
+
+    private static final Pattern NICKNAME_PATTERN = Pattern.compile("^[A-Za-z0-9 _'-]+$");
 
     @Inject
     EntityManager em;
@@ -43,9 +49,8 @@ public class CollectionService {
                 : OwnedMonster.find("playerId = ?1 and runId = ?2", Sort.by("obtainedAt").and("ownedId"),
                         playerId, runId);
         long total = query.count();
-        var items = query.page(Page.of(spec.page(), spec.size())).list().stream()
-                .map(MonsterMapper::owned).toList();
-        return PageResponse.of(items, spec.page(), spec.size(), total);
+        List<OwnedMonster> rows = query.page(Page.of(spec.page(), spec.size())).list();
+        return PageResponse.of(MonsterMapper.ownedBatch(rows), spec.page(), spec.size(), total);
     }
 
     public OwnedMonsterResponse detail(UUID playerId, UUID ownedId) {
@@ -56,13 +61,35 @@ public class CollectionService {
         return MonsterMapper.owned(owned);
     }
 
+    @Transactional
+    public OwnedMonsterResponse updateNickname(UUID playerId, UUID ownedId, UpdateNicknameRequest request) {
+        String raw = request == null ? null : request.nickname();
+        String normalized = null;
+        if (raw != null && !raw.isBlank()) {
+            String trimmed = raw.trim();
+            if (trimmed.length() > 30 || !NICKNAME_PATTERN.matcher(trimmed).matches()) {
+                throw new ApiException(400, ErrorCodes.VALIDATION_ERROR,
+                        "Nickname must be 1-30 characters of letters, digits, spaces, underscores, apostrophes or dashes.",
+                        List.of(new ErrorDetail("nickname", "INVALID_VALUE")));
+            }
+            normalized = trimmed;
+        }
+        OwnedMonster owned = ownedByPlayer(playerId, ownedId);
+        if (owned == null) {
+            throw ApiException.notFound("Owned monster not found.");
+        }
+        owned.nickname = normalized;
+        em.flush();
+        return MonsterMapper.owned(owned);
+    }
+
     public List<OwnedMonsterResponse> instances(UUID playerId, String ids) {
         List<UUID> requested = parseUuids(ids);
         if (requested.isEmpty()) {
             return List.of();
         }
-        return OwnedMonster.<OwnedMonster>list("playerId = ?1 and ownedId in ?2", playerId, requested)
-                .stream().map(MonsterMapper::owned).toList();
+        List<OwnedMonster> rows = OwnedMonster.list("playerId = ?1 and ownedId in ?2", playerId, requested);
+        return MonsterMapper.ownedBatch(rows);
     }
 
     public record StarterGrant(boolean created, List<StarterEntry> starters) {
@@ -81,13 +108,16 @@ public class CollectionService {
             return new StarterGrant(false, entries(existing));
         }
         List<Integer> ids = request.monsterIds();
-        if (ids == null || ids.size() != 3 || ids.contains(null)
+        if (ids == null || ids.size() != 3 || ids.stream().anyMatch(java.util.Objects::isNull)
                 || new HashSet<>(ids).size() != 3) {
             throw invalid("Invalid starter selection.");
         }
         List<OwnedMonster> created = new ArrayList<>();
         for (int id : ids) {
-            Monster monster = CatalogueService.requireMonster(id);
+            Monster monster = Monster.findById(id);
+            if (monster == null) {
+                throw invalid("Unknown starter monster id: " + id + ".");
+            }
             if (!"common".equals(monster.rarity)) {
                 throw invalid("Starters must be common monsters.");
             }
@@ -214,7 +244,7 @@ public class CollectionService {
         }
         String[] parts = value.split(",", -1);
         if (parts.length > 50) {
-            throw invalid("Maximum 50 owned monster ids per request.");
+            throw CatalogueService.invalid("ids", "Maximum 50 owned monster ids per request.");
         }
         List<UUID> ids = new ArrayList<>();
         try {
@@ -222,7 +252,7 @@ public class CollectionService {
                 ids.add(UUID.fromString(part));
             }
         } catch (IllegalArgumentException e) {
-            throw invalid("Invalid owned monster id.");
+            throw CatalogueService.invalid("ids", "Invalid owned monster id.");
         }
         return ids;
     }
